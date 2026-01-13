@@ -22,6 +22,16 @@ docker run --platform linux/x86_64 --name myXampp -p 4001:22 -p 4000:80 -d \
 - **phpMyAdmin**: http://localhost:4000/phpmyadmin
 - Changes are live-reloaded (manual browser refresh needed)
 
+### Git Setup (after cloning)
+```bash
+# Enable git hooks (auto-builds frontend on commit)
+git config core.hooksPath .githooks
+
+# Create config.php from template
+cp config.sample.php config.php
+# Edit config.php with your credentials
+```
+
 ### API Testing
 HTTP test files in `tests/` directory can be used with REST Client extensions (VS Code, IntelliJ):
 - `tests/tests.http` - Main API endpoint tests
