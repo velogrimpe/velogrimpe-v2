@@ -12,13 +12,17 @@ export default defineConfig({
     rollupOptions: {
       input: {
         'carte-filters': resolve(__dirname, 'src/apps/carte-filters.ts'),
-        'tableau-filters': resolve(__dirname, 'src/apps/tableau-filters.ts'),
+        'tableau': resolve(__dirname, 'src/apps/tableau.ts'),
       },
       output: {
         entryFileNames: '[name].js',
         chunkFileNames: 'chunks/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash][extname]',
       },
+      external: [
+        /^\/images\//,
+        /^\/symbols\//,
+      ],
     },
 
     manifest: true,
