@@ -1,0 +1,9 @@
+bdd/images_falaises
+bdd/**/*.gpx
+bdd/**/*.geojson
+bdd/**/*.pmtiles
+bdd/**/*.zip
+images/news/
+images/articles/
+.DS_Store
+dist/

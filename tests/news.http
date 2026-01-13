@@ -1,0 +1,8 @@
+
+# @url=http://localhost:4000
+@url=https://velogrimpe.fr
+@slug=2025-10-nouveautes-velogrimpe
+
+###
+GET {{url}}/api/private/send_newsletter.php?slug={{slug}}
+Authorization: Bearer EZkabdP1caAlCbQbdaSE8patAArbbKCakarn5lH4gB2bSublY

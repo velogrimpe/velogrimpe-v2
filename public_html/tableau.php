@@ -1,0 +1,753 @@
+<?php
+
+$ville_id = $_GET['ville_id'] ?? null;
+if (empty($ville_id)) {
+  echo 'Pas de ville renseignée.';
+  exit;
+}
+
+function format_time($minutes)
+{
+  if ($minutes === null) {
+    return "";
+  }
+  $hours = floor($minutes / 60);
+  $remaining_minutes = $minutes % 60;
+
+  if ($hours > 0) {
+    return sprintf("%dh%02d", $hours, $remaining_minutes);
+  } else {
+    return sprintf("%d'", $remaining_minutes);
+  }
+}
+
+//Calculatrice de temps de trajet vélo (km/20+dplus/500 à vélo, km/4+dplus/500 à pied)
+
+function calculate_time($distance_km, $elevation_m, $velo_apieduniquement)
+{
+  if ($velo_apieduniquement == 1) {
+    $time_in_hours = $distance_km / 4 + $elevation_m / 500;
+  } else {
+    $time_in_hours = $distance_km / 20 + $elevation_m / 500;
+  }
+  $time_in_minutes = round($time_in_hours * 60);
+  return $time_in_minutes;
+}
+
+$nbvoies_corresp = [
+  10 => "0-20 voies",
+  20 => "~20 voies",
+  35 => "20-50 voies",
+  50 => "~50 voies",
+  75 => "50-100 voies",
+  100 => "~100 voies",
+  150 => "100-200 voies",
+  200 => "~200 voies",
+  350 => "200-500 voies",
+  500 => "~500 voies",
+  1000 => "&ge; 500 voies",
+];
+
+require_once $_SERVER['DOCUMENT_ROOT'] . '/database/velogrimpe.php';
+
+$ville = $mysqli->query("SELECT ville_nom FROM villes WHERE ville_id = $ville_id")->fetch_assoc();
+
+$stmt = $mysqli->prepare("
+  SELECT
+    f.*,
+    g.gare_nom,
+    t.train_depart, t.train_arrivee, t.train_temps, t.train_correspmin, t.train_correspmax, t.train_descr, COALESCE(t.train_tgv, 0) AS train_tgv,
+      v.velo_depart, v.velo_arrivee, v.velo_km, v.velo_dplus, v.velo_dmoins, v.velo_descr, v.velo_variante, v.velo_apieduniquement, velo_apiedpossible,
+      villes.ville_nom,
+      f.falaise_zonename AS zone_nom
+  FROM `falaises` f
+  left join velo v on v.falaise_id = f.falaise_id
+  left join gares g on g.gare_id = v.gare_id AND g.deleted = 0
+  left join train t on t.gare_id = g.gare_id
+  left join villes on villes.ville_id = t.ville_id
+  where
+    f.falaise_fermee = ''
+    and villes.ville_id = ?
+    and v.velo_id is not null
+    and t.train_id is not null
+    and f.falaise_public >= 0
+    and v.velo_public >= 0
+    and t.train_public >= 0
+  order by f.falaise_id;
+  ");
+$stmt->bind_param("i", $ville_id);
+
+$stmt->execute();
+$result = $stmt->get_result();
+// Store the results in a record where the key is the falaise_id and the value is the list of row where falaise_id is the same
+if ($result->num_rows > 0) {
+  while ($row = $result->fetch_assoc()) {
+    $row['temps_total'] = calculate_time($row['velo_km'], $row['velo_dplus'], $row['velo_apieduniquement']) + $row["train_temps"] + $row["falaise_maa"];
+    // If there is already a record for this falaise with the same train_arrivee, keep the one with the shortest total time and increment an attribute 'variante'
+    // 1. find the existing row with the same train_arrivee
+    // 2. if there is one, compare the total times and keep the shortest
+    // 3. if the new row is shorter, replace the existing row with the new row and set the new row 'variante' to 1 + the existing row 'variante'
+    // 4. if the new row is longer, increment the existing row 'variante' by 1
+    // 5. if there is no existing row with the same train_arrivee, add the new row to the record
+    // 6. sort the rows in the record by the total time ascending
+    $existing_index = null;
+    $existing_row = null;
+    foreach ($falaises[$row['falaise_id']] ?? [] as $key => $existing) {
+      if ($existing['train_arrivee'] == $row['train_arrivee']) {
+        $existing_index = $key;
+        $existing_row = $existing;
+        break;
+      }
+    }
+    if ($existing_index !== null) {
+      if ($row['temps_total'] < $existing_row['temps_total']) {
+        $row['variante'] = $existing_row['variante'] + 1;
+        $falaises[$row['falaise_id']][$existing_index] = $row;
+      } else {
+        $falaises[$row['falaise_id']][$existing_index]['variante']++;
+      }
+      if ($row["velo_apiedpossible"] == 1) {
+        $falaises[$row['falaise_id']][$existing_index]['variante_a_pied'] = 1;
+      }
+    } else {
+      $row['variante'] = 0;
+      $row['variante_a_pied'] = $row['velo_apiedpossible'];
+      $falaises[$row['falaise_id']][] = $row;
+    }
+    // sort the rows in the record by the total time ascending
+    usort($falaises[$row['falaise_id']], function ($a, $b) {
+      return $a['temps_total'] <=> $b['temps_total'];
+    });
+
+  }
+  // sort the falaises by the minimum total time ascending
+  usort($falaises, function ($a, $b) {
+    return $a[0]['temps_total'] <=> $b[0]['temps_total'];
+  });
+} else {
+  echo "0 results";
+}
+$stmt->close();
+
+?>
+<!DOCTYPE html>
+<html lang="fr" data-theme="velogrimpe">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Meta tags for SEO and Social Networks -->
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://velogrimpe.fr/tableau.php?ville_id=<?= $ville_id ?>" />
+  <meta name="description"
+    content="Sorties escalade au départ de <?= $ville['ville_nom'] ?>. <?= count($falaises) ?> falaises décrites avec accès vélo-train.">
+  <meta property="og:locale" content="fr_FR">
+  <meta property="og:title" content="Escalade au départ de <?= $ville['ville_nom'] ?> - Vélogrimpe.fr">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Velogrimpe.fr">
+  <meta property="og:url" content="https://velogrimpe.fr/tableau.php?ville_id=<?= $ville_id ?>">
+  <meta property="og:image" content="https://velogrimpe.fr/images/mw/velogrimpe-social-60.webp">
+  <meta property="og:description"
+    content="Sorties escalade au départ de <?= $ville['ville_nom'] ?>. <?= count($falaises) ?> falaises décrites avec accès vélo-train.">
+  <meta name="twitter:image" content="https://velogrimpe.fr/images/mw/velogrimpe-social-60.webp">
+  <meta name="twitter:title" content="Escalade au départ de <?= $ville['ville_nom'] ?> - Vélogrimpe.fr">
+  <meta name="twitter:description"
+    content="Sorties escalade au départ de <?= $ville['ville_nom'] ?>. <?= count($falaises) ?> falaises décrites avec accès vélo-train.">
+  <title>Escalade au départ de <?= $ville['ville_nom'] ?> - Vélogrimpe.fr</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.min.css" rel="stylesheet" type="text/css" />
+  <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+  <!-- Velogrimpe Styles -->
+  <link rel="stylesheet" href="/global.css" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <script src="/js/rose-des-vents.js"></script>
+  <!-- Pageviews -->
+  <script async defer src="/js/pv.js"></script>
+  <style type="text/tailwindcss"> @tailwind base;
+    @tailwind components;
+    @tailwind utilities;
+    @layer base {
+      a {
+        @apply text-[#2e8b57] font-bold;
+      }
+  }
+  </style>
+</head>
+
+<body class="w-screen min-h-screen">
+  <?php include "./components/header.html"; ?>
+  <div class="hero min-h-[400px] bg-center" style="background-image: url(/images/mw/005-train-2-10.webp);">
+    <div class="hero-overlay bg-opacity-60"></div>
+    <div class="hero-content text-center text-base-100">
+      <div class="max-w-md">
+        <h1 class="text-5xl font-bold"> Falaises proches de <?php echo $ville['ville_nom'] ?>
+        </h1>
+      </div>
+    </div>
+  </div>
+  <main class="md:w-4/5 max-w-screen-xl mx-auto p-4 flex flex-col gap-4">
+    <div class="flex flex-col justify-center gap-1 items-end w-full">
+      <div class="flex justify-between w-full items-center">
+        <button class="btn btn-xs w-fit" onclick="instructionsDialog.showModal()">
+          <svg class="w-4 h-4 fill-current">
+            <use xlink:href="/symbols/icons.svg#ri-information-line"></use>
+          </svg> Comment lire ce tableau ?</button>
+        <dialog id="instructionsDialog" class="modal">
+          <div class="modal-box">
+            <h3 class="text-lg font-bold"> Comment lire ce tableau ? </h3>
+            <div class="p-2">
+              <p>Les falaises sont classées en fonction du temps total de trajet depuis
+                <?php echo $ville["ville_nom"] ?>. Ce «temps total», très théorique, est l’addition du meilleur temps
+                possible en train, du temps à vélo et du temps de marche d’approche. </p>
+              <p><b>Abréviations</b> : </p>
+              <ul class="list-disc list-inside">
+                <li><b>D</b> pour "train direct", <b>1C</b> pour "une correspondance".</li>
+                <li><b>D+/D-</b> pour dénivelé positif/négatif.</li>
+                <li><b>GV</b> pour "grande voie".</li>
+                <li>Cotations : <b>6-</b> : voies de 6a à 6b ; <b>6+</b>: voies de 6b+ à 6c+.</li>
+              </ul>
+            </div>
+          </div>
+          <form method="dialog" class="modal-backdrop">
+            <button>close</button>
+          </form>
+        </dialog>
+        <div id="nbFalaisesInFilter" class="text-primary text-sm font-bold">
+          <!-- Rempli dynamiquement par la fonction `updateInfo` -->
+        </div>
+      </div>
+      <div class="mx-auto">
+        <div class="flex flex-row items-center gap-1 px-8">
+          <div class="h-[1px] my-2 bg-base-300 rounded-lg flex-grow"></div>
+          <div class="text-xs text-slate-500 rounded-lg px-3"> Filtres</div>
+          <div class="h-[1px] my-2 bg-base-300 rounded-lg flex-grow"></div>
+        </div>
+        <!-- Vue Filter Panel -->
+        <div id="vue-filters" class="flex flex-col md:flex-row gap-1 items-center w-full max-w-full justify-center flex-wrap"></div>
+        <!-- Sort dropdown (separate from Vue) -->
+        <div class="flex gap-1 items-center justify-center mt-1">
+          <div class="dropdown dropdown-end w-fit">
+            <div tabindex="0" role="button" class="btn btn-sm text-nowrap focus:pointer-events-none"
+              id="sortMobileBtn">Tri ↕️</div>
+            <div id="sortMobileDropdown"
+              class="dropdown-content menu bg-base-200 rounded-box z-[1] m-1 w-48 p-2 shadow-lg items-start"
+              tabindex="1">
+              <div class="font-bold">Trier par</div>
+              <hr class="w-1/2 bg-base-300 mb-1 mt-2 mx-auto" />
+              <ul>
+                <li><a class="p-1 justify-start" data-sort="total-asc">Temps total ↗</a></li>
+                <li><a class="p-1 justify-start" data-sort="total-desc">Temps total ↘</a></li>
+                <li><a class="p-1 justify-start" data-sort="train-asc">Temps Train ↗</a></li>
+                <li><a class="p-1 justify-start" data-sort="train-desc">Temps Train ↘</a></li>
+                <li><a class="p-1 justify-start" data-sort="velo-asc">Temps Vélo ↗</a></li>
+                <li><a class="p-1 justify-start" data-sort="velo-desc">Temps Vélo ↘</a></li>
+                <li><a class="p-1 justify-start" data-sort="voies-asc">Nb voies ↗</a></li>
+                <li><a class="p-1 justify-start" data-sort="voies-desc">Nb voies ↘</a></li>
+                <li><a class="p-1 justify-start" data-sort="approche-asc">Approche ↗</a></li>
+                <li><a class="p-1 justify-start" data-sort="approche-desc">Approche ↘</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- VERSION MOBILE -->
+    <div id="mobileList" class="flex flex-col gap-4 md:hidden">
+      <?php foreach ($falaises as $falaise_id => $acces): ?>
+        <?php $common = $acces[0]; ?>
+        <a href="<?php echo '/falaise.php?falaise_id=' . $common['falaise_id'] . "&ville_id=" . $ville_id ?>"
+          class="text-base-content hover:no-underline font-normal" id="falaise-<?= $common['falaise_id'] ?>-mobile">
+          <div class="flex flex-col rounded-lg shadow-xl bg-base-100 p-2 text-sm
+                      ">
+            <div class="flex flex-row justify-between gap-1">
+              <h3 class="text-xl font-bold text-primary hover:underline">
+                <?php echo $common["falaise_nom"] ?>
+                <?php if (!empty($common["falaise_fermee"])): ?>
+                  <span class="text-error font-normal">Falaise Interdite</span>
+                <?php endif; ?>
+              </h3>
+              <div class="font-bold text-xl"><?php echo format_time($common["temps_total"]) ?></div>
+            </div>
+            <div class="w-full flex flex-row items-center justify-between gap-2">
+              <div class="flex flex-col items-start justify-start flex-grow">
+                <div>
+                  <b>Zone</b> : <?php echo $common['zone_nom'] ?>
+                </div>
+                <div>
+                  <b title="Cotations (6-: 6a à 6b, 6+: 6b+ à 6c+ etc.)">Cotations</b> : <span>de
+                    <?php echo $common["falaise_cotmin"] ?> à <?php echo $common["falaise_cotmax"] ?>
+                  </span>
+                </div>
+                <?php if ($common["falaise_gvnb"] > 0): ?>
+                  <div class="text-accent"><?php echo $common["falaise_gvnb"] ?></div>
+                <?php endif; ?>
+                <?php if ($common["falaise_bloc"] === 1): ?>
+                  <div class="text-accent">Secteur de bloc</div>
+                <?php elseif ($common["falaise_bloc"] === 2): ?>
+                  <div class="text-accent">Psychobloc 🌊</div>
+                <?php endif; ?>
+                <div>
+                  <b title="Marche d'approche">Marche d'approche</b> : <?php if ($common["falaise_maa"] > 0): ?>
+                    <span>
+                      <?php echo format_time($common["falaise_maa"]) ?>
+                    </span>
+                  <?php else: ?>
+                    <span>Aucune</span>
+                  <?php endif; ?>
+                </div>
+              </div>
+              <div id="<?php echo 'rose-mobile-' . $common['falaise_id'] ?>" class="w-[72px]"></div>
+            </div>
+            <div class="w-full">
+              <!-- <hr class="w-4/5 border-base-300 border-t-[1px] mx-auto" /> -->
+              <div class="border-base-300"><b>Accès depuis <?php echo $common["ville_nom"] ?> :</b></div>
+              <ul class="list-disc list-inside">
+                <?php foreach ($acces as $row): ?>
+                  <li>
+                    <?php if ($row["train_temps"] > 0): ?>
+                      <?php if (!empty($row['train_tgv'])): ?>
+                        <span class="badge badge-accent badge-sm" title="Trajet empruntant un segment TGV">TGV</span>
+                      <?php endif; ?> Train pour <?php echo $row["train_arrivee"] ?>
+                      (<?php echo format_time($row["train_temps"]) ?>, <span title='D=Direct / C=Correspondances'>
+                        <?php echo ($row["train_correspmin"] == 0 ? "D" : $row["train_correspmin"] . "C")
+                          . ($row["train_correspmax"] == 0 || $row["train_correspmax"] == $row["train_correspmin"] ? "" : "/" . $row["train_correspmax"] . "C")
+                          ?></span>) + <?php endif; ?>
+                    <?php echo format_time(calculate_time($row['velo_km'], $row['velo_dplus'], $row['velo_apieduniquement'])) ?>
+                    <?php echo $row["velo_apieduniquement"] == 1 ? "À pied" : "à vélo" ?>
+                    <?php if (($row["variante_a_pied"] ?? 0) == 1): ?>
+                      <br /><span class='text-primary'>Aussi accessible à pied</span>
+                    <?php endif; ?>
+                  </li>
+                <?php endforeach; ?>
+              </ul>
+            </div>
+          </div>
+        </a>
+      <?php endforeach; ?>
+      <div id="nomatch-mobile"
+        class="bg-base-100 text-center w-full col-span-6 py-4 font-bold hidden rounded-lg shadow-lg">Aucune falaise ne
+        correspond aux filtres. </div>
+    </div>
+    <!-- VERSION DESKTOP -->
+    <div id="desktopGrid" class="hidden
+                md:grid grid-cols-[1.5fr_60px_1fr_2fr_2fr] gap-[1px] 
+                bg-base-300 shadow-xl rounded-lg overflow-hidden
+                text-center items-center text-sm">
+      <div class="bg-base-100 px-2 py-1 self-stretch flex items-center justify-center vg-desktop-header">
+      </div>
+      <div
+        class="bg-base-100 px-1 py-1 self-stretch flex items-center justify-center font-bold text-xs vg-desktop-header">
+        Temps total (T+V+A)</div>
+      <div class="bg-base-100 px-2 py-1 self-stretch flex flex-col items-center justify-center vg-desktop-header">
+        <img class="h-12" alt="Train" src="/images/icons/train-station_color.png" />
+      </div>
+      <div class="bg-base-100 px-2 py-1 self-stretch flex flex-col items-center justify-center vg-desktop-header">
+        <img class="h-12" alt="Vélo" src="/images/icons/bicycle_color.png" />
+      </div>
+      <div class="bg-base-100 px-2 py-1 self-stretch flex flex-col items-center justify-center vg-desktop-header">
+        <img class="h-12" alt="Escalade" src="/images/icons/rock-climbing_color.png" />
+      </div>
+      <!-- <div class="bg-base-100 px-2 py-1 self-stretch flex items-center justify-center font-bold">Zone</div> -->
+      <?php foreach ($falaises as $falaise_id => $acces): ?>
+        <?php $common = $acces[0]; ?>
+        <div
+          class="bg-base-100 px-2 py-1 self-stretch font-bold flex flex-col items-center justify-center text-base falaise-<?= $common['falaise_id'] ?>-desktop">
+          <div>
+            <a href="<?php echo '/falaise.php?falaise_id=' . $acces[0]['falaise_id'] . "&ville_id=" . $ville_id ?>">
+              <?php echo $common["falaise_nom"] ?>
+            </a>
+            <?php if (!empty($common["falaise_fermee"])): ?>
+              <div class="text-error text-sm font-normal">Falaise Interdite</div>
+            <?php endif; ?>
+            <?php if (!empty($common["zone_nom"])): ?>
+              <div class="font-normal text-xs">(<?= $common["zone_nom"] ?>)</div>
+            <?php endif; ?>
+          </div>
+        </div>
+        <div
+          class="font-bold bg-base-100 py-1 self-stretch grid grid-rows-<?php echo count($acces) ?> divide-y divide-slate-200 items-center falaise-<?= $common['falaise_id'] ?>-desktop">
+          <?php foreach ($acces as $row): ?>
+            <div class="self-stretch flex flex-col justify-center py-2 px-2">
+              <?php echo format_time(calculate_time($row['velo_km'], $row['velo_dplus'], $row['velo_apieduniquement']) + $row["train_temps"] + $row["falaise_maa"]) ?>
+            </div>
+          <?php endforeach; ?>
+        </div>
+        <div
+          class="bg-base-100 py-1 self-stretch grid grid-rows-<?php echo count($acces) ?> divide-y divide-slate-200 items-center falaise-<?= $common['falaise_id'] ?>-desktop">
+          <?php foreach ($acces as $row): ?>
+            <div class="self-stretch flex flex-col justify-center py-2 px-2">
+              <div class="text-base font-bold">
+                <?php if ($row["train_temps"] > 0): ?>
+                  <?php if (!empty($row['train_tgv'])): ?>
+                    <span class="badge badge-accent badge-sm" title="Trajet empruntant un segment TGV">TGV</span>
+                  <?php endif; ?>
+                  <?= format_time($row["train_temps"]) ?>
+                  <span
+                    title='D=Direct / C=Correspondances'>(<?= $row["train_correspmin"] == 0 ? "D" : $row["train_correspmin"] . "C" ?><?= $row["train_correspmax"] == 0 || $row["train_correspmax"] == $row["train_correspmin"] ? "" : "/" . $row["train_correspmax"] . "C" ?>)</span>
+                <?php else: ?> Pas de train à prendre <?php endif; ?>
+              </div>
+              <div class="text-nowrap"><?php echo $row["train_arrivee"] ?></div>
+            </div>
+          <?php endforeach; ?>
+        </div>
+        <div
+          class="bg-base-100 py-1 self-stretch grid grid-rows-<?php echo count($acces) ?> divide-y divide-slate-200 items-center falaise-<?= $common['falaise_id'] ?>-desktop">
+          <?php foreach ($acces as $row): ?>
+            <div class="self-stretch flex flex-col justify-center py-2 px-2">
+              <div class="text-base font-bold"> Aller :
+                <?php echo format_time(calculate_time($row['velo_km'], $row['velo_dplus'], $row['velo_apieduniquement'])) ?>
+                - Retour :
+                <?php echo format_time(calculate_time($row['velo_km'], $row['velo_dmoins'], $row['velo_apieduniquement'])) ?>
+              </div>
+              <div><?php echo $row["velo_km"] ?> km, <?php echo $row["velo_dplus"] ?> D+, <?php echo $row["velo_dmoins"] ?>
+                D- </div>
+              <?php if ($row["velo_apieduniquement"] == 1): ?>
+                <div class="text-primary">À pied uniquement</div>
+              <?php endif; ?>
+              <?php if (($row["variante_a_pied"] ?? 0) == 1): ?>
+                <div class="text-primary">Aussi accessible à pied</div>
+              <?php endif; ?>
+            </div>
+          <?php endforeach; ?>
+        </div>
+        <div
+          class="bg-base-100 px-2 py-1 self-stretch flex flex-row items-center justify-end gap-2 falaise-<?= $common['falaise_id'] ?>-desktop">
+          <div class="flex flex-col items-center justify-center gap-1 flex-grow">
+            <?php $row = $acces[0]; ?>
+            <div><span title="Marche d'approche">Marche d'approche</span> : <span class="font-bold">
+                <?php if ($row["falaise_maa"] > 0): ?>
+                  <?= format_time($row["falaise_maa"]) ?>
+                <?php else: ?> Aucune <?php endif; ?>
+              </span>
+            </div>
+            <div>
+              <span class="font-bold"><?= $nbvoies_corresp[$row["falaise_nbvoies"]] ?? "Voies" ?></span> de <span
+                class="font-bold" title="Cotations (6-: 6a à 6b, 6+: 6b+ à 6c+ etc.)"><?= $row["falaise_cotmin"] ?> à
+                <?= $row["falaise_cotmax"] ?></span>
+            </div>
+            <?php if ($row["falaise_gvnb"]): ?>
+              <div class="text-accent"><?php echo $row["falaise_gvnb"] ?></div>
+            <?php endif; ?>
+            <?php if ($row["falaise_bloc"] === 1): ?>
+              <div class="text-accent">Secteur de bloc</div>
+            <?php elseif ($row["falaise_bloc"] === 2): ?>
+              <div class="text-accent">Psychobloc 🌊</div>
+            <?php endif; ?>
+          </div>
+          <div id="<?php echo 'rose-' . $row['falaise_id'] ?>" class="w-[72px]"></div>
+        </div>
+        <!-- <div
+          class="bg-base-100 px-2 py-1 self-stretch flex flex-col justify-center items-center falaise-<?= $common['falaise_id'] ?>-desktop">
+          <?php echo $row["zone_nom"] ?>
+        </div> --> <?php endforeach; ?> <div id="nomatch"
+        class="bg-base-100 text-center w-full col-span-5 py-4 font-bold hidden">Aucune falaise ne correspond aux
+        filtres. </div>
+    </div>
+  </main>
+  <?php include $_SERVER['DOCUMENT_ROOT'] . "/components/footer.html"; ?>
+</body>
+<script>
+  window.addEventListener("DOMContentLoaded", function () {
+    <?php foreach ($falaises as $falaise_id => $acces): ?>
+      roseFromExpo("rose-" + <?php echo $acces[0]['falaise_id'] ?>, "<?php echo $acces[0]["falaise_exposhort1"] ?>", "<?php echo $acces[0]["falaise_exposhort2"] ?>", 72, 72);
+      roseFromExpo("rose-mobile-" + <?php echo $acces[0]['falaise_id'] ?>, "<?php echo $acces[0]["falaise_exposhort1"] ?>", "<?php echo $acces[0]["falaise_exposhort2"] ?>", 72, 72);
+    <?php endforeach; ?>
+  });
+
+
+  const calculate_time = (it) => {
+    const { velo_km, velo_dplus, velo_apieduniquement } = it;
+    let time_in_hours;
+    if (velo_apieduniquement == "1") {
+      time_in_hours = parseFloat(velo_km) / 4 + parseInt(velo_dplus) / 500;
+    } else {
+      time_in_hours = parseFloat(velo_km) / 20 + parseInt(velo_dplus) / 500;
+    }
+    const time_in_minutes = Math.round(time_in_hours * 60);
+    return time_in_minutes;
+  }
+
+  // ============================================ TRI (DESKTOP) ============================================
+  const sortState = { key: 'total', dir: 'asc' }; // tri par défaut : Temps total asc (déjà côté serveur)
+
+  function metricsForFalaise(f) {
+    // f: tableau des itinéraires pour une falaise
+    const minTotal = Math.min.apply(null, f.map(it => parseInt(it.temps_total || 0)));
+    const minTrain = Math.min.apply(null, f.map(it => parseInt(it.train_temps || 0)));
+    const minVelo = Math.min.apply(null, f.map(it => calculate_time(it)));
+    const nbVoies = parseInt(f[0].falaise_nbvoies || 0);
+    const approche = parseInt(f[0].falaise_maa || 0);
+    return { minTotal, minTrain, minVelo, nbVoies, approche };
+  }
+
+  function applySort() {
+    falaises.sort((a, b) => {
+      const ma = metricsForFalaise(a);
+      const mb = metricsForFalaise(b);
+      let va = 0, vb = 0;
+      switch (sortState.key) {
+        case 'total': va = ma.minTotal; vb = mb.minTotal; break;
+        case 'train': va = ma.minTrain; vb = mb.minTrain; break;
+        case 'velo': va = ma.minVelo; vb = mb.minVelo; break;
+        case 'voies': va = ma.nbVoies; vb = mb.nbVoies; break;
+        case 'approche': va = ma.approche; vb = mb.approche; break;
+      }
+      const cmp = (va === vb) ? 0 : (va < vb ? -1 : 1);
+      return sortState.dir === 'asc' ? cmp : -cmp;
+    });
+    reorderDesktopGrid();
+    reorderMobileList();
+  }
+
+  function reorderDesktopGrid() {
+    const grid = document.getElementById('desktopGrid');
+    if (!grid) return;
+    const nomatchEl = document.getElementById('nomatch');
+    // Move each falaise group (5 cellules avec la classe falaise-<id>-desktop) avant #nomatch selon l'ordre courant
+    falaises.forEach(f => {
+      const id = f[0].falaise_id;
+      const nodes = Array.from(document.getElementsByClassName(`falaise-${id}-desktop`));
+      nodes.forEach(n => {
+        // Insert before nomatch to keep header cells at top and preserve end marker
+        if (nomatchEl) grid.insertBefore(n, nomatchEl);
+        else grid.appendChild(n);
+      });
+    });
+  }
+
+  function updateSortControls() {
+    const sortMobileDropdown = document.getElementById('sortMobileDropdown');
+    if (sortMobileDropdown) {
+      const links = Array.from(sortMobileDropdown.querySelectorAll('[data-sort]'));
+      links.forEach(l => {
+        l.classList.remove('font-bold', 'text-primary');
+        l.classList.add('font-normal', 'text-base-content');
+      });
+      const current = sortMobileDropdown.querySelector(`[data-sort="${sortState.key}-${sortState.dir}"]`);
+      if (current) {
+        current.classList.remove('font-normal', 'text-base-content');
+        current.classList.add('font-bold', 'text-primary');
+      };
+    }
+  }
+
+  function reorderMobileList() {
+    const list = document.getElementById('mobileList');
+    if (!list) return;
+    const nomatchMobileEl = document.getElementById('nomatch-mobile');
+    falaises.forEach(f => {
+      const id = f[0].falaise_id;
+      const el = document.getElementById(`falaise-${id}-mobile`);
+      if (el) {
+        if (nomatchMobileEl) list.insertBefore(el, nomatchMobileEl);
+        else list.appendChild(el);
+      }
+    });
+  }
+
+  // Bind sort via dropdown (desktop + mobile)
+  document.addEventListener('DOMContentLoaded', () => {
+    const sortMobileDropdown = document.getElementById('sortMobileDropdown');
+    if (sortMobileDropdown) {
+      Array.from(sortMobileDropdown.querySelectorAll('[data-sort]')).forEach(link => {
+        link.addEventListener('click', (e) => {
+          const value = e.currentTarget.getAttribute('data-sort');
+          const [key, dir] = value.split('-');
+          sortState.key = key;
+          sortState.dir = dir;
+          // keep desktop select in sync if present
+          updateSortControls();
+          applySort();
+        });
+      });
+    }
+    // Initialize controls and apply default sort to normalize order
+    updateSortControls();
+    applySort();
+  });
+
+  // ============================================ FILTRES ============================================
+  const falaises = <?php echo json_encode($falaises); ?>;
+
+  function renderFalaises() {
+    falaises.forEach(f => {
+      const desktopEls = [].slice.call(document.getElementsByClassName("falaise-" + f[0].falaise_id + "-desktop"));
+      const mobileEl = document.getElementById("falaise-" + f[0].falaise_id + "-mobile");
+      if (f[0].filteredOut) {
+        desktopEls.forEach(el => el.style.display = "none");
+        mobileEl.style.display = "none";
+      } else {
+        // remove display style
+        desktopEls.forEach(el => el.style.removeProperty("display"));
+        mobileEl.style.removeProperty("display");
+      }
+    });
+    if (falaises.filter(f => !f[0].filteredOut).length === 0) {
+      document.getElementById("nomatch").style.display = "block";
+      document.getElementById("nomatch-mobile").style.display = "block";
+    } else {
+      document.getElementById("nomatch").style.display = "none";
+      document.getElementById("nomatch-mobile").style.display = "none";
+    }
+  }
+
+  function updateInfo() {
+    const nbFalaisesInFilter = falaises.filter(f => !f[0].filteredOut).length;
+    const nbFalaises = falaises.length;
+    const infoDiv = document.getElementById("nbFalaisesInFilter");
+    infoDiv.textContent = nbFalaisesInFilter + " falaises";
+  }
+  updateInfo();
+
+
+  function resetFalaises() {
+    falaises.forEach(falaise => {
+      falaise[0].filteredOut = false;
+    });
+    renderFalaises();
+    updateInfo();
+  }
+
+  // Vue filter event handler - receives filter state from Vue component
+  function applyVueFilters(filters) {
+    // Extract filter values from Vue state
+    const expoN = filters.exposition.includes('N');
+    const expoE = filters.exposition.includes('E');
+    const expoS = filters.exposition.includes('S');
+    const expoO = filters.exposition.includes('O');
+    const cot40 = filters.cotations.includes('40');
+    const cot50 = filters.cotations.includes('50');
+    const cot59 = filters.cotations.includes('59');
+    const cot60 = filters.cotations.includes('60');
+    const cot69 = filters.cotations.includes('69');
+    const cot70 = filters.cotations.includes('70');
+    const cot79 = filters.cotations.includes('79');
+    const cot80 = filters.cotations.includes('80');
+    const couenne = filters.typeVoies.couenne;
+    const avecgv = filters.typeVoies.grandeVoie;
+    const bloc = filters.typeVoies.bloc;
+    const psychobloc = filters.typeVoies.psychobloc;
+    const apieduniquement = filters.velo.apiedPossible;
+    const tempsMaxVelo = filters.velo.tempsMax;
+    const distMaxVelo = filters.velo.distMax;
+    const denivMaxVelo = filters.velo.denivMax;
+    const tempsMaxTrain = filters.train.tempsMax;
+    const terOnly = filters.train.terOnly;
+    const nbCorrespMax = filters.train.correspMax !== null ? filters.train.correspMax : 10;
+    const tempsMaxMA = filters.approche.tempsMax;
+    const tempsMaxTV = filters.total.tempsTV;
+    const tempsMaxTVA = filters.total.tempsTVA;
+    const nbVoies = filters.nbVoiesMin;
+
+    const expoFiltered = [expoN, expoE, expoS, expoO].some(e => e);
+    const cotFiltered = [cot40, cot50, cot59, cot60, cot69, cot70, cot79, cot80].some(e => e);
+    const typeVoiesFiltered = couenne || avecgv || bloc || psychobloc;
+
+    // Case 1: No filters active - show all
+    const noFiltersActive = (
+      !expoFiltered
+      && !cotFiltered
+      && !typeVoiesFiltered
+      && nbVoies === 0
+      && !apieduniquement
+      && tempsMaxVelo === null
+      && denivMaxVelo === null
+      && distMaxVelo === null
+      && tempsMaxMA === null
+      && tempsMaxTV === null
+      && tempsMaxTVA === null
+      && nbCorrespMax === 10
+      && tempsMaxTrain === null
+      && !terOnly
+    );
+
+    if (noFiltersActive) {
+      resetFalaises();
+      return;
+    }
+
+    // Case 2: Apply filters
+    falaises.forEach(falaiseItineraires => {
+      const falaise = falaiseItineraires[0];
+      const estCotationsCompatible = (
+        (!cot40 || ("4+".localeCompare(falaise.falaise_cotmin) >= 0))
+        && (!cot50 || ("5-".localeCompare(falaise.falaise_cotmin) >= 0 && falaise.falaise_cotmax.localeCompare("5-") >= 0))
+        && (!cot59 || ("5+".localeCompare(falaise.falaise_cotmin) >= 0 && falaise.falaise_cotmax.localeCompare("5+") >= 0))
+        && (!cot60 || ("6-".localeCompare(falaise.falaise_cotmin) >= 0 && falaise.falaise_cotmax.localeCompare("6-") >= 0))
+        && (!cot69 || ("6+".localeCompare(falaise.falaise_cotmin) >= 0 && falaise.falaise_cotmax.localeCompare("6+") >= 0))
+        && (!cot70 || ("7-".localeCompare(falaise.falaise_cotmin) >= 0 && falaise.falaise_cotmax.localeCompare("7-") >= 0))
+        && (!cot79 || ("7+".localeCompare(falaise.falaise_cotmin) >= 0 && falaise.falaise_cotmax.localeCompare("7+") >= 0))
+        && (!cot80 || (falaise.falaise_cotmax.localeCompare("8-") >= 0))
+      );
+      const estNbVoiesCompatible = (parseInt(falaise.falaise_nbvoies) >= nbVoies) || nbVoies === 0;
+      const estTypeVoiesCompatible = (
+        (couenne && !!!parseInt(falaise.falaise_bloc))
+        || (avecgv && !!falaise.falaise_gvnb)
+        || (bloc && parseInt(falaise.falaise_bloc) === 1)
+        || (psychobloc && parseInt(falaise.falaise_bloc) === 2)
+      );
+      const estTrainCompatible = (
+        falaiseItineraires.some(it => {
+          const duration = calculate_time(it);
+          const isTerOk = (!terOnly) || parseInt(it.train_tgv || 0) === 0;
+          return (
+            isTerOk
+            && (tempsMaxTrain === null || parseInt(it.train_temps) <= tempsMaxTrain)
+            && (nbCorrespMax === 10 || parseInt(it.train_correspmax) <= nbCorrespMax)
+            && (tempsMaxTV === null || parseInt(it.train_temps) + duration <= tempsMaxTV)
+            && (tempsMaxTVA === null || parseInt(it.temps_total) <= tempsMaxTVA)
+          )
+        }));
+
+      // Main filter logic
+      if (
+        (!expoFiltered || (
+          (expoN && (falaise.falaise_exposhort1.includes("'N") || falaise.falaise_exposhort2.includes("'N")))
+          || (expoE && (falaise.falaise_exposhort1.match(/('E|'NE'|'SE')/) || falaise.falaise_exposhort2.match(/('E|'NE'|'SE')/)))
+          || (expoS && (falaise.falaise_exposhort1.includes("'S") || falaise.falaise_exposhort2.includes("'S")))
+          || (expoO && (falaise.falaise_exposhort1.match(/('O|'NO'|'SO')/) || falaise.falaise_exposhort2.match(/('O|'NO'|'SO')/)))
+        ))
+        && (!cotFiltered || estCotationsCompatible)
+        && estNbVoiesCompatible
+        && (tempsMaxMA === null || parseInt(falaise.falaise_maa || 0) <= tempsMaxMA)
+        && (!typeVoiesFiltered || estTypeVoiesCompatible)
+        && estTrainCompatible
+        && falaiseItineraires.some(it => {
+          const duration = calculate_time(it);
+          return (
+            (tempsMaxVelo === null || duration <= tempsMaxVelo)
+            && (denivMaxVelo === null || parseInt(it.velo_dplus) <= denivMaxVelo)
+            && (distMaxVelo === null || parseFloat(it.velo_km) <= distMaxVelo)
+            && (apieduniquement === false || it.velo_apieduniquement === 1 || it.velo_apiedpossible === 1)
+          );
+        })
+      ) {
+        falaise.filteredOut = false;
+      } else {
+        falaise.filteredOut = true;
+      }
+    });
+
+    renderFalaises();
+    updateInfo();
+    reorderDesktopGrid();
+    reorderMobileList();
+  }
+
+  // Listen for Vue filter changes
+  window.addEventListener('velogrimpe:filters', (e) => {
+    applyVueFilters(e.detail);
+  });
+
+  // Initialize on page load
+  document.addEventListener("DOMContentLoaded", function () {
+    resetFalaises();
+    updateInfo();
+  });
+
+</script>
+
+<!-- Vue.js Filter Panel -->
+<script type="module" src="/dist/tableau-filters.js"></script>
+
+</html>

@@ -1,0 +1,39 @@
+###
+GET http://localhost:4000/api/public/oblyk-get-id.php?oblyk_id=1985
+Authorization: Bearer acDcbawkCh2IWgbajbbe-bnd5AgobrLjordkq
+
+###
+GET http://localhost:4000/api/private/falaise_details.php?falaise_id=247
+
+###
+GET http://localhost:4000/api/private/falaise_details.php?falaise_id=30
+
+
+
+###
+POST http://localhost:4000/api/private/exclude_train.php
+Authorization: Bearer EZkabdP1caAlCbQbdaSE8patAArbbKCakarn5lH4gB2bSublY
+Content-Type: application/json
+
+{
+  "ville_id": 6,
+  "gare_id": 33
+}
+
+
+
+###
+POST http://localhost:4000/api/private/exclude_falaise.php
+Authorization: Bearer EZkabdP1caAlCbQbdaSE8patAArbbKCakarn5lH4gB2bSublY
+Content-Type: application/json
+
+{
+  "ville_id": 6,
+  "falaise_id": 33
+}
+
+###
+GET http://localhost:4000/api/private/falaises.php
+
+
+

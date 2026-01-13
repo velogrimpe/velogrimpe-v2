@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# Pre-commit hook: Build frontend and stage dist/ changes
+# Only runs if frontend/ files are being committed
+
+# Get the repo root
+REPO_ROOT=$(git rev-parse --show-toplevel)
+
+# Check if any frontend files are staged
+FRONTEND_STAGED=$(git diff --cached --name-only | grep -E "^frontend/")
+
+if [ -n "$FRONTEND_STAGED" ]; then
+    echo "Frontend changes detected, building..."
+
+    cd "$REPO_ROOT/frontend" || exit 1
+
+    # Build frontend
+    if ! bun run build; then
+        echo "Frontend build failed!"
+        exit 1
+    fi
+
+    echo "Build successful, staging dist/ changes..."
+
+    # Stage the built files
+    cd "$REPO_ROOT"
+    git add public_html/dist/
+
+    echo "Frontend built and dist/ staged."
+fi
+
+exit 0
