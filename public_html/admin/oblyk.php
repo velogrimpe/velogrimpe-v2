@@ -34,11 +34,9 @@ $itineraires = $mysqli->query("SELECT * FROM velo WHERE velo_public >= 1")->fetc
   <meta charset="UTF-8" />
   <title>Correspondances Oblyk - Vélogrimpe.fr</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src=" https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js "></script>
-  <link href=" https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css " rel="stylesheet">
-  <script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js'></script>
-  <link href='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css'
-    rel='stylesheet' />
+  <!-- Map libraries bundle (Leaflet, Fullscreen) -->
+  <script src="/dist/map.js"></script>
+  <link rel="stylesheet" href="/dist/map.css" />
   <?php vite_css('main'); ?>
   <!-- Pageviews -->
   <script async defer src="/js/pv.js"></script>

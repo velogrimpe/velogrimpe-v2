@@ -26,11 +26,9 @@ $falaisesVG = $mysqli->query("SELECT * FROM falaises WHERE falaise_public >= 1")
     content="Falaises proches d'une gare en france. 1134 falaises à moins de 10km d'une gare SNCF.">
   <title>Falaises prioritaires - Vélogrimpe.fr</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src=" https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js "></script>
-  <link href=" https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css " rel="stylesheet">
-  <script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js'></script>
-  <link href='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css'
-    rel='stylesheet' />
+  <!-- Map libraries bundle (Leaflet, Fullscreen) -->
+  <script src="/dist/map.js"></script>
+  <link rel="stylesheet" href="/dist/map.css" />
   <?php vite_css('main'); ?>
   <!-- Pageviews -->
   <script async defer src="/js/pv.js"></script>

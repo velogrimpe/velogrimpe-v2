@@ -12,6 +12,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         'main': resolve(__dirname, 'src/apps/main.ts'),
+        // 'map' is built separately with esbuild for IIFE format (see build-map.ts)
         'carte-filters': resolve(__dirname, 'src/apps/carte-filters.ts'),
         'carte-info': resolve(__dirname, 'src/apps/carte-info.ts'),
         'carte-search': resolve(__dirname, 'src/apps/carte-search.ts'),

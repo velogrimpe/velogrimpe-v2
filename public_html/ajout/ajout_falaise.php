@@ -52,17 +52,10 @@ if ($falaise_id) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title><?= $falaise_id ? "Modifier" : "Ajouter" ?> une falaise - Vélogrimpe.fr</title>
-  <link href=" https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css " rel="stylesheet">
-  <script src=" https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js "></script>
-  <script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js'></script>
-  <link href='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css'
-    rel='stylesheet' />
+  <!-- Map libraries bundle (Leaflet, Fullscreen, Locate) -->
+  <script src="/dist/map.js"></script>
+  <link rel="stylesheet" href="/dist/map.css" />
   <?php vite_css('main'); ?>
-  <!-- Carte : locate -->
-  <link rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.84.2/dist/L.Control.Locate.min.css" />
-  <script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.84.2/dist/L.Control.Locate.min.js"
-    charset="utf-8"></script>
   <!-- Pageviews -->
   <script async defer src="/js/pv.js"></script>
   <link rel="manifest" href="/site.webmanifest" />

@@ -63,15 +63,9 @@ $stmtIt->close();
   <meta charset="UTF-8" />
   <title>Editeur détails falaise - Vélogrimpe.fr</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src=" https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js "></script>
-  <link href=" https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css " rel="stylesheet">
-  <script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js'></script>
-  <link href='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css'
-    rel='stylesheet' />
-  <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css" />
-  <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/2.1.2/gpx.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
+  <!-- Map libraries bundle (Leaflet, Fullscreen, Geoman, GPX, Turf) -->
+  <script src="/dist/map.js"></script>
+  <link rel="stylesheet" href="/dist/map.css" />
   <script src="/js/vendor/leaflet-textpath.js"></script>
   <?php vite_css('main'); ?>
   <!-- Pageviews -->

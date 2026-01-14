@@ -104,7 +104,7 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
           <label class="form-control" for="train_arrivee">
             <b>Gare d'arrivée :</b>
             <div id="vue-ajout-train"
-              data-gares='<?= json_encode(array_values($gares)) ?>'
+              data-gares='<?= htmlspecialchars(json_encode(array_values($gares)), ENT_QUOTES, 'UTF-8') ?>'
               <?php if ($preset_gare_nom): ?>data-preset-gare-nom="<?= htmlspecialchars($preset_gare_nom) ?>"<?php endif; ?>>
             </div>
           </label>

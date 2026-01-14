@@ -207,20 +207,9 @@ $stmtC->close();
     content="Escalade à <?= htmlspecialchars(mb_strtoupper($falaise_nom, 'UTF-8')) ?><?php if ($ville_id_get): ?> au départ de <?= htmlspecialchars($selected_ville_nom) ?><?php endif; ?> - Velogrimpe.fr">
   <meta name="twitter:description"
     content="Escalade à <?= htmlspecialchars(mb_strtoupper($falaise_nom, 'UTF-8')) ?><?php if ($ville_id_get): ?> au départ de <?= htmlspecialchars($selected_ville_nom) ?><?php endif; ?>. Découvrez les accès en vélo et en train, les topos et les informations pratiques pour une sortie vélo-grimpe en mobilité douce.">
-  <!-- Carte -->
-  <script src=" https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js "></script>
-  <link href=" https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css " rel="stylesheet">
-  <!-- Carte : traces gpx -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/2.1.2/gpx.min.js"></script>
-  <!-- Carte : fullscreen -->
-  <script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js'></script>
-  <link href='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css'
-    rel='stylesheet' />
-  <!-- Carte : locate -->
-  <link rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.84.2/dist/L.Control.Locate.min.css" />
-  <script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.84.2/dist/L.Control.Locate.min.js"
-    charset="utf-8"></script>
+  <!-- Map libraries bundle (Leaflet, GPX, Fullscreen, Locate, Turf) -->
+  <script src="/dist/map.js"></script>
+  <link rel="stylesheet" href="/dist/map.css" />
   <!-- Carte : Lignes de train-->
   <!-- <script src="https://unpkg.com/protomaps-leaflet@5.1.0/dist/protomaps-leaflet.js"></script> -->
   <script src="/js/vendor/protomaps-leaflet.js"></script>
@@ -228,8 +217,6 @@ $stmtC->close();
   <script src="/js/vendor/leaflet-textpath.js"></script>
   <!-- Styles -->
   <?php vite_css('main'); ?>
-  <!-- Barycentre -->
-  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
   <!-- Pageviews -->
   <script async defer src="/js/pv.js"></script>
   <link rel="stylesheet" href="/global.css">
@@ -944,8 +931,8 @@ $stmtC->close();
               <input type="email" id="email" name="email" class="input input-primary w-full" required>
             </div>
             <div id="vue-falaise-comment"
-              data-villes='<?= json_encode(array_map(function($v) { return ["id" => $v["ville_nom"], "nom" => $v["ville_nom"]]; }, $allVilles)) ?>'
-              data-gares='<?= json_encode(array_map(function($g) { return ["id" => $g["gare_id"], "nom" => $g["gare_nom"]]; }, $allGares)) ?>'>
+              data-villes='<?= htmlspecialchars(json_encode(array_map(function($v) { return ["id" => $v["ville_nom"], "nom" => $v["ville_nom"]]; }, $allVilles)), ENT_QUOTES, 'UTF-8') ?>'
+              data-gares='<?= htmlspecialchars(json_encode(array_map(function($g) { return ["id" => $g["gare_id"], "nom" => $g["gare_nom"]]; }, $allGares)), ENT_QUOTES, 'UTF-8') ?>'>
             </div>
             <div class="form-control w-full">
               <label class="label" for="velo_id">

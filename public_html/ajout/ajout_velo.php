@@ -121,8 +121,8 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
       </div>
       <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-xs">
         <div id="vue-ajout-velo"
-          data-gares='<?= json_encode(array_values($gares)) ?>'
-          data-falaises='<?= json_encode(array_values($falaises)) ?>'
+          data-gares='<?= htmlspecialchars(json_encode(array_values($gares)), ENT_QUOTES, 'UTF-8') ?>'
+          data-falaises='<?= htmlspecialchars(json_encode(array_values($falaises)), ENT_QUOTES, 'UTF-8') ?>'
           <?php if ($falaisePreset): ?>data-preset-falaise-id="<?= $falaisePreset['id'] ?>"<?php endif; ?>>
         </div>
         <!-- Hidden fields for form submission -->
