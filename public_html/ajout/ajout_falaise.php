@@ -137,11 +137,6 @@ if ($falaise_id) {
     </div>
     <form method="post" action="/api/add_falaise.php" enctype="multipart/form-data" class="flex flex-col gap-4"
       id="form">
-      <datalist id="falaises">
-        <?php foreach ($falaises as $falaise): ?>
-          <option value="<?= $falaise['nom']; ?>" label="<?= $falaise['nom']; ?> (<?= $falaise['status'] ?>)"></option>
-        <?php endforeach; ?>
-      </datalist>
       <input type="hidden" id="admin" name="admin" value="0" />
       <!-- Partie Nom / Position / Zone (admin) -->
       <div class="relative flex items-center">
@@ -157,13 +152,12 @@ if ($falaise_id) {
             <div class="relative not-prose z-[11000] flex-1">
               <label class="form-control">
                 <b>Nom de la falaise</b>
-                <input class="input input-primary input-sm <?php if ($falaise_id): ?> input-disabled <?php endif ?>"
-                  type="text" id="falaise_nom" name="falaise_nom" required autocomplete="off"
-                  oninput="formatNomFalaise();" <?php if ($falaise_id): ?> readonly <?php endif ?> />
+                <div id="vue-ajout-falaise"
+                  data-falaises='<?= json_encode($falaises) ?>'
+                  data-admin="<?= $admin ? 'true' : 'false' ?>"
+                  <?php if ($falaise_id): ?>data-preset-falaise-id="<?= $falaise_id ?>"<?php endif; ?>>
+                </div>
               </label>
-              <ul id="falaise-list"
-                class="autocomplete-list absolute w-full bg-white border border-primary mt-1 hidden">
-              </ul>
             </div>
             <label class="admin form-control flex-1">
               <b>Statut</b>
@@ -926,47 +920,6 @@ champ rqvillefalaise_txt de la table rqvillefalaise).</pre>
 
 </script>
 <script>window.customElements.define('multi-select', MultiselectWebcomponent);</script>
-<script src="/js/autocomplete.js"></script>
-<script>
-  const falaises = <?= json_encode($falaises) ?>;
-  function falaiseCallback(falaiseNom) {
-    document.getElementById("confirmButton").textContent = "Ajouter la falaise";
-    if (!falaiseNom) {
-      document.getElementById("falaiseExistsAlert").classList.add("hidden");
-      document.getElementById("falaiseEditInfo").classList.add("hidden");
-      document.getElementById("form").reset();
-      return;
-    }
-    const existing = falaises.find((f) => f.nom.toLowerCase() === falaiseNom.toLowerCase());
-    if (existing) {
-      document.getElementById("falaise_img1_preview").classList.add("hidden");
-      document.getElementById("falaise_img2_preview").classList.add("hidden");
-      document.getElementById("falaise_img3_preview").classList.add("hidden");
-      document.getElementById("falaise_latlng").value = existing.latlng;
-      updateMarker();
-      document.getElementById("falaise_nomformate").value = existing.nomformate;
-      if (existing.status === "verrouillée") {
-        document.getElementById("falaiseExistsAlert").classList.remove("hidden");
-        document.getElementById("falaiseEditInfo").classList.add("hidden");
-        document.getElementById("linkSelectedFalaise").href = `/falaise.php?falaise_id=${existing.id}`;
-        <?php if ($admin): ?>
-          fetchAndPrefillData(existing.id);
-        <?php endif ?>
-      } else {
-        document.getElementById("falaiseExistsAlert").classList.add("hidden");
-        document.getElementById("falaiseEditInfo").classList.remove("hidden");
-        document.getElementById("falaise_id").value = existing.id;
-        fetchAndPrefillData(existing.id);
-      }
-    } else {
-      document.getElementById("falaiseExistsAlert").classList.add("hidden");
-      document.getElementById("falaiseEditInfo").classList.add("hidden");
-      // document.getElementById("form").reset();
-      updateMarker();
-      formatNomFalaise(falaiseNom);
-    }
-  }
-  setupAutocomplete("falaise_nom", "falaise-list", "falaises", falaiseCallback, true);
-</script>
+<script type="module" src="/dist/ajout-falaise.js"></script>
 
 </html>

@@ -83,11 +83,6 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
     <form method="POST" action="/api/add_train.php" enctype="multipart/form-data" class="flex flex-col gap-4">
       <input type="hidden" class="input input-primary input-sm" id="train_public" name="train_public" value="2">
       <input class="input input-primary input-sm" type="hidden" id="admin" name="admin" value="0">
-      <datalist id="gares">
-        <?php foreach ($gares as $gare_id => $gare): ?>
-          <option value="<?= $gare['nom']; ?>"></option>
-        <?php endforeach; ?>
-      </datalist>
       <div class="flex flex-row gap-4 items-center">
         <!-- Menu déroulant des villes -->
         <div class="flex flex-col gap-1 w-1/2">
@@ -106,21 +101,13 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
         </div>
         <!-- Menu déroulant des gares -->
         <div class="flex flex-col gap-1 w-1/2">
-          <div class="relative not-prose">
-            <label class="form-control" for="train_arrivee">
-              <b>Gare d'arrivée :</b>
-              <div class="input input-primary input-sm flex items-center gap-2 w-full">
-                <input class="grow" type="text" id="train_arrivee" name="train_arrivee" required autocomplete="off"
-                  value="<?= $preset_gare_nom ?? '' ?>" />
-                <svg class="w-4 h-4 fill-current">
-                  <use xlink:href="/symbols/icons.svg#ri-search-line"></use>
-                </svg>
-              </div>
-            </label>
-            <ul id="arrivee-search-list"
-              class="autocomplete-list absolute w-full bg-white border border-primary mt-1 hidden">
-            </ul>
-          </div>
+          <label class="form-control" for="train_arrivee">
+            <b>Gare d'arrivée :</b>
+            <div id="vue-ajout-train"
+              data-gares='<?= json_encode(array_values($gares)) ?>'
+              <?php if ($preset_gare_nom): ?>data-preset-gare-nom="<?= htmlspecialchars($preset_gare_nom) ?>"<?php endif; ?>>
+            </div>
+          </label>
           <input tabindex="-1" type="text" class="input input-disabled input-xs w-1/2 admin" id="gare_id" name="gare_id"
             value="<?= $preset_gare_id ?? '' ?>" readonly required>
         </div>
@@ -316,21 +303,7 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
   };
 
 
-  const arriveeCallback = (gareNom) => {
-    const gare = gareNom ? Object.values(gares).find(g => g.nom === gareNom) : {};
-    document.getElementById('gare_id').value = gare.id;
-    verifierExistenceItineraire();
-  };
-  const departCallback = (gareNom) => {
-    const gare = gareNom ? Object.values(gares).find(g => g.nom === gareNom) : {};
-    document.getElementById('train_depart_id').value = gare.id;
-  };
-  document.getElementById('ville_id').addEventListener('change', () => {
-    verifierExistenceItineraire();
-  });
-  document.getElementById('train_tgv').addEventListener('change', () => {
-    verifierExistenceItineraire();
-  });
+  // Callbacks are now handled by Vue component in /dist/ajout-train.js
 
   // Update only the description from API-provided fields; numeric fields are derived from selected trips
   const updateFields = (fields) => {
@@ -446,10 +419,6 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
     document.getElementById("fetchTrains").disabled = false;
   });
 </script>
-<script src="/js/autocomplete.js"></script>
-<script>
-  // setupAutocomplete("train_depart", "depart-search-list", "gares", departCallback);
-  setupAutocomplete("train_arrivee", "arrivee-search-list", "gares", arriveeCallback);
-</script>
+<script type="module" src="/dist/ajout-train.js"></script>
 
 </html>

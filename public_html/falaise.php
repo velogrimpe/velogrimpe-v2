@@ -956,39 +956,9 @@ $stmtC->close();
               </label>
               <input type="email" id="email" name="email" class="input input-primary w-full" required>
             </div>
-            <div class="relative">
-              <div class="form-control w-full">
-                <label class="label" for="ville_nom">
-                  <span class="label-text">Ville de départ</span>
-                </label>
-                <input type="text" id="ville_nom" name="ville_nom" class="input input-bordered w-full"
-                  autocomplete="off">
-              </div>
-              <ul id="ville-list" class="autocomplete-list absolute w-full bg-white border border-primary mt-1 hidden">
-              </ul>
-            </div>
-            <div class="relative">
-              <div class="form-control w-full">
-                <label class="label" for="gare_depart">
-                  <span class="label-text">Gare de départ</span>
-                </label>
-                <input type="text" id="gare_depart" name="gare_depart" class="input input-bordered w-full"
-                  autocomplete="off">
-              </div>
-              <ul id="depart-list" class="autocomplete-list absolute w-full bg-white border border-primary mt-1 hidden">
-              </ul>
-            </div>
-            <div class="relative">
-              <div class="form-control w-full">
-                <label class="label" for="gare_arrivee">
-                  <span class="label-text">Gare d'arrivée</span>
-                </label>
-                <input type="text" id="gare_arrivee" name="gare_arrivee" class="input input-bordered w-full"
-                  autocomplete="off">
-              </div>
-              <ul id="arrivee-list"
-                class="autocomplete-list absolute w-full bg-white border border-primary mt-1 hidden">
-              </ul>
+            <div id="vue-falaise-comment"
+              data-villes='<?= json_encode(array_map(function($v) { return ["id" => $v["ville_nom"], "nom" => $v["ville_nom"]]; }, $allVilles)) ?>'
+              data-gares='<?= json_encode(array_map(function($g) { return ["id" => $g["gare_id"], "nom" => $g["gare_nom"]]; }, $allGares)) ?>'>
             </div>
             <div class="form-control w-full">
               <label class="label" for="velo_id">
@@ -1053,16 +1023,6 @@ $stmtC->close();
       </dialog>
     </section>
   </main>
-  <datalist id="gares">
-    <?php foreach ($allGares as $gare): ?>
-      <option value="<?= htmlspecialchars($gare['gare_nom']) ?>"></option>
-    <?php endforeach; ?>
-  </datalist>
-  <datalist id="villes">
-    <?php foreach ($allVilles as $ville): ?>
-      <option value="<?= htmlspecialchars($ville['ville_nom']) ?>"></option>
-    <?php endforeach; ?>
-  </datalist>
   <script>
     const ignTiles = L.tileLayer(
       "https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&STYLE=normal&FORMAT=image/png&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}", {
@@ -1203,7 +1163,7 @@ $stmtC->close();
     layerControl.addOverlay(giteLayer, 'Gîtes');
     layerControl.addOverlay(biodivLayer, 'Aires de protections de la biodiversité (escalade réglementée ou interdite)');
   </script>
-  <script src="/js/autocomplete.js"></script>
+  <script type="module" src="/dist/falaise-comment.js"></script>
   <script>
     const comments = <?= json_encode($comments) ?>;
     function editComment(commentId) {
@@ -1242,9 +1202,14 @@ $stmtC->close();
             document.getElementById('commentaire_id').value = comment.id;
             document.getElementById('nom').value = comment.nom;
             document.getElementById('email').value = email;
-            document.getElementById('ville_nom').value = comment.ville_nom || '';
-            document.getElementById('gare_depart').value = comment.gare_depart || '';
-            document.getElementById('gare_arrivee').value = comment.gare_arrivee || '';
+            // Update Vue autocomplete values
+            if (window.setCommentFormValues) {
+              window.setCommentFormValues({
+                ville_nom: comment.ville_nom || '',
+                gare_depart: comment.gare_depart || '',
+                gare_arrivee: comment.gare_arrivee || ''
+              });
+            }
             document.getElementById('velo_id').value = comment.velo_id || '';
             document.getElementById('commentaire').value = comment.commentaire;
 
@@ -1331,13 +1296,7 @@ $stmtC->close();
         });
     }
 
-    // Autocomplete in input fields in form
-    const departCallback = (gareNom) => document.getElementById('gare_depart').value = gareNom;
-    const arriveeCallback = (gareNom) => document.getElementById('gare_arrivee').value = gareNom;
-    const villeCallback = (villeNom) => document.getElementById('ville_nom').value = villeNom;
-    setupAutocomplete("ville_nom", "ville-list", "villes", villeCallback, true);
-    setupAutocomplete("gare_depart", "depart-list", "gares", departCallback, true);
-    setupAutocomplete("gare_arrivee", "arrivee-list", "gares", arriveeCallback, true);
+    // Autocomplete is now handled by Vue component in /dist/falaise-comment.js
 
   </script>
   <script>

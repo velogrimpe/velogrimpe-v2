@@ -109,16 +109,6 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
       <i>Les champs obligatoires sont en noir, les optionnels en gris.</i>
     </div>
     <form method="POST" action="/api/add_velo.php" enctype="multipart/form-data" class="flex flex-col gap-4">
-      <datalist id="gares">
-        <?php foreach ($gares as $gare_id => $gare): ?>
-          <option value="<?= $gare['nom']; ?>"></option>
-        <?php endforeach; ?>
-      </datalist>
-      <datalist id="falaises">
-        <?php foreach ($falaises as $falaise_id => $falaise): ?>
-          <option value="<?= $falaise['nom']; ?>"></option>
-        <?php endforeach; ?>
-      </datalist>
       <input class="input input-primary input-sm" type="hidden" id="velo_public" name="velo_public" value="2">
       <input class="input input-primary input-sm" type="hidden" id="admin" name="admin" value="0">
       <!-- Partie Départ / Arrivées -->
@@ -130,51 +120,21 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
         <hr class="my-0 flex-grow border-[#2e8b57]" />
       </div>
       <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-sm">
-        <div class="flex flex-col md:flex-row gap-4 md:items-center flex-1">
-          <div class="flex flex-col gap-1 flex-grow">
-            <div class="relative not-prose">
-              <label class="form-control" for="gare_nom">
-                <b>Gare de départ de l'itinéraire vélo :</b>
-                <div class="input input-primary input-sm flex items-center gap-2">
-                  <input class="grow" type="text" id="gare_nom" name="gare_nom" required autocomplete="off" />
-                  <svg class="w-4 h-4 fill-current">
-                    <use xlink:href="/symbols/icons.svg#ri-search-line"></use>
-                  </svg>
-                </div>
-              </label>
-              <ul id="gares-search-list"
-                class="autocomplete-list absolute w-full bg-white border border-primary mt-1 hidden">
-              </ul>
-            </div>
-            <div class="admin flex flex-row gap-4">
-              <input tabindex="-1" class="input input-disabled input-xs w-1/2" type="text" id="velo_depart"
-                name="velo_depart" readonly required>
-              <input tabindex="-1" class="input input-disabled input-xs w-1/2" type="text" id="gare_id" name="gare_id"
-                readonly required>
-            </div>
-          </div>
-          <div class="flex flex-col gap-1 flex-grow">
-            <div class="relative not-prose">
-              <label class="form-control" for="falaise_nom">
-                <b>Falaise d'arrivée de l'itinéraire vélo :</b>
-                <div class="input input-primary input-sm flex items-center gap-2">
-                  <input class="grow" type="text" id="falaise_nom" name="falaise_nom" required autocomplete="off" />
-                  <svg class="w-4 h-4 fill-current">
-                    <use xlink:href="/symbols/icons.svg#ri-search-line"></use>
-                  </svg>
-                </div>
-              </label>
-              <ul id="falaises-search-list"
-                class="autocomplete-list absolute w-full bg-white border border-primary mt-1 hidden">
-              </ul>
-            </div>
-            <div class="admin flex flex-row gap-4">
-              <input tabindex="-1" class="input input-disabled input-xs w-1/2" type="text" id="velo_arrivee"
-                name="velo_arrivee" required readonly />
-              <input tabindex="-1" class="input input-disabled input-xs w-1/2" type="text" id="falaise_id"
-                name="falaise_id" required readonly />
-            </div>
-          </div>
+        <div id="vue-ajout-velo"
+          data-gares='<?= json_encode(array_values($gares)) ?>'
+          data-falaises='<?= json_encode(array_values($falaises)) ?>'
+          <?php if ($falaisePreset): ?>data-preset-falaise-id="<?= $falaisePreset['id'] ?>"<?php endif; ?>>
+        </div>
+        <!-- Hidden fields for form submission -->
+        <div class="admin flex flex-row gap-4">
+          <input tabindex="-1" class="input input-disabled input-xs w-1/4" type="text" id="velo_depart"
+            name="velo_depart" readonly required>
+          <input tabindex="-1" class="input input-disabled input-xs w-1/4" type="text" id="gare_id" name="gare_id"
+            readonly required>
+          <input tabindex="-1" class="input input-disabled input-xs w-1/4" type="text" id="velo_arrivee"
+            name="velo_arrivee" required readonly />
+          <input tabindex="-1" class="input input-disabled input-xs w-1/4" type="text" id="falaise_id"
+            name="falaise_id" required readonly />
         </div>
         <div id="itineraireExistsAlert" class="hidden bg-red-200 border border-red-900 text-red-900 p-2 rounded-lg">
           <svg class="w-4 h-4 mb-1 fill-current inline-block">
@@ -330,56 +290,6 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
   </main>
   <?php include $_SERVER['DOCUMENT_ROOT'] . "/components/footer.html"; ?>
 </body>
-<script>
-  const gares = <?php echo json_encode($gares); ?>;
-  const falaises = <?php echo json_encode($falaises); ?>;
-
-  const verifierExistenceItineraire = () => {
-    const gareId = document.getElementById('gare_id').value;
-    const falaiseId = document.getElementById('falaise_id').value;
-    if (!gareId || !falaiseId) {
-      document.getElementById("itineraireExistsAlert").classList.add("hidden");
-      return;
-    }
-    fetch(`/api/verify_velo_dup.php?gare_id=${gareId}&falaise_id=${falaiseId}`)
-      .then(response => response.json())
-      .then(exists => {
-        if (exists) {
-          document.getElementById("itineraireExistsAlert").classList.remove("hidden");
-        } else {
-          document.getElementById("itineraireExistsAlert").classList.add("hidden");
-        }
-      });
-  };
-
-  const gareCallback = (gareNom) => {
-    const gareId = gareNom ? Object.values(gares).find(g => g.nom === gareNom)?.id : '';
-    const gareNomFormate = gareNom ? Object.values(gares).find(g => g.nom === gareNom)?.nomformate : '';
-    document.getElementById('gare_id').value = gareId;
-    document.getElementById('velo_depart').value = gareNomFormate;
-    verifierExistenceItineraire();
-  };
-  const falaiseCallback = (falaiseNom) => {
-    console.log("Falaise sélectionnée :", falaiseNom);
-    const falaiseId = falaiseNom ? Object.values(falaises).find(f => f.nom === falaiseNom)?.id : '';
-    const falaiseNomFormate = falaiseNom ? Object.values(falaises).find(f => f.nom === falaiseNom)?.nomformate : '';
-    document.getElementById('velo_arrivee').value = falaiseNomFormate;
-    document.getElementById('falaise_id').value = falaiseId;
-    verifierExistenceItineraire();
-  };
-</script>
-<script src="/js/autocomplete.js"></script>
-<script>
-  setupAutocomplete("gare_nom", "gares-search-list", "gares", gareCallback);
-  setupAutocomplete("falaise_nom", "falaises-search-list", "falaises", falaiseCallback);
-  <?php if ($falaisePreset): ?>
-    document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('falaise_nom').disabled = true;
-      document.getElementById('falaise_nom').value = "<?= $falaisePreset['nom'] ?>";
-      document.getElementById('falaise_id').value = "<?= $falaisePreset['id'] ?>";
-      document.getElementById('velo_arrivee').value = "<?= $falaisePreset['nomformate'] ?>";
-    });
-  <?php endif; ?>
-</script>
+<script type="module" src="/dist/ajout-velo.js"></script>
 
 </html>

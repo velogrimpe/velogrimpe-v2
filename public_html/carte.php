@@ -91,25 +91,11 @@ $highlight = $_GET['h'] ?? '';
           <div class="flex flex-col gap-2">
             <div id="searchFormPanelContainer">
               <div class="text-lg font-bold">Recherche</div>
-              <div id="searchForm" class="relative">
-                <label class="input input-primary input-sm flex items-center gap-2 w-full">
-                  <input tabindex="0" type="search" id="search" class="w-full" placeholder="falaise/gare"
-                    autocomplete="off" />
-                  <svg class="w-4 h-4 fill-current">
-                    <use xlink:href="/symbols/icons.svg#ri-search-line"></use>
-                  </svg>
-                </label>
-                <ul id="search-list"
-                  class="autocomplete-list absolute w-full bg-white border border-primary mt-1 hidden">
-                </ul>
-                <datalist id="garesetfalaises">
-                  <?php foreach ($falaises as $falaise): ?>
-                    <option value="<?= $falaise["falaise_nom"] ?> (falaise)"></option>
-                  <?php endforeach; ?>
-                  <?php foreach ($gares as $gare): ?>
-                    <option value="<?= $gare["gare_nom"] ?> (gare)"></option>
-                  <?php endforeach; ?>
-                </datalist>
+              <div id="searchForm">
+                <div id="vue-search"
+                  data-falaises='<?= htmlspecialchars(json_encode(array_map(fn($f) => ["falaise_id" => $f["falaise_id"], "falaise_nom" => $f["falaise_nom"]], $falaises)), ENT_QUOTES) ?>'
+                  data-gares='<?= htmlspecialchars(json_encode(array_map(fn($g) => ["gare_id" => $g["gare_id"], "gare_nom" => $g["gare_nom"]], $gares)), ENT_QUOTES) ?>'>
+                </div>
               </div>
             </div>
           </div>
@@ -838,38 +824,37 @@ $highlight = $_GET['h'] ?? '';
   layerControl.addOverlay(biodivLayer, 'Aires de protections de la biodiversité (escalade réglementée ou interdite)');
 </script>
 <script>
-  // ============================================ RECHERCHE ============================================
+  // ============================================ RECHERCHE (Vue.js) ============================================
 
-  const baseList = [
-    ...falaises.map(f => ({ id: f.falaise_id, type: "falaise", name: f.falaise_nom, item: f })),
-    ...gares.map(g => ({ id: g.gare_id, type: "gare", name: g.gare_nom, item: g }))
-  ];
-  const searchByNameHandler = (value) => {
-    document.getElementById("searchModal").close();
+  // Listen for Vue search selection event
+  window.addEventListener('velogrimpe:search-select', (e) => {
+    const { id, type, name } = e.detail;
+    document.getElementById("searchModal")?.close();
     document.getElementById("map").scrollIntoView({ behavior: "smooth", block: "nearest" });
-    const q = value;
-    const filtered = baseList.find(item => (
-      item.name === q
-      || (q.includes(" (falaise)") && item.type === "falaise" && item.name === q.replace(" (falaise)", ""))
-      || (q.includes(" (gare)") && item.type === "gare" && item.name === q.replace(" (gare)", ""))
-    ));
-    if (filtered) {
-      if (filtered.item.type === "falaise_hors_topo") {
-        setFalaiseHTMarker(filtered.item, map, "normal");
-        map.flyTo(filtered.item.falaise_latlng.split(",").map(parseFloat), 12, { duration: 0.5 });
-        setTimeout(() => filtered.item.marker?.openPopup(), 600);
-        return;
-      }
-      else if (filtered.item.type === "gare_hors_topo") {
-        map.flyTo(filtered.item.gare_latlng.split(",").map(parseFloat), 11, { duration: 0.5 });
-        setTimeout(() => filtered.item.marker?.openPopup(), 600);
-        return;
-      }
-      filtered.item.marker?.fire("click");
-      setTimeout(() => filtered.item.marker?.openPopup(), 600);
 
+    let item = null;
+    if (type === "falaise") {
+      item = falaises.find(f => f.falaise_id === id);
+    } else if (type === "gare") {
+      item = gares.find(g => g.gare_id === id);
     }
-  }
+
+    if (item) {
+      if (item.type === "falaise_hors_topo") {
+        setFalaiseHTMarker(item, map, "normal");
+        map.flyTo(item.falaise_latlng.split(",").map(parseFloat), 12, { duration: 0.5 });
+        setTimeout(() => item.marker?.openPopup(), 600);
+        return;
+      }
+      else if (item.type === "gare_hors_topo") {
+        map.flyTo(item.gare_latlng.split(",").map(parseFloat), 11, { duration: 0.5 });
+        setTimeout(() => item.marker?.openPopup(), 600);
+        return;
+      }
+      item.marker?.fire("click");
+      setTimeout(() => item.marker?.openPopup(), 600);
+    }
+  });
 
   // ============================================ FILTRES (Vue.js) ============================================
   const falaisesDuTopo = falaises.filter(f => f.access.length > 0);
@@ -1034,11 +1019,8 @@ $highlight = $_GET['h'] ?? '';
     moveForm();
   });
 </script>
-<script src="/js/autocomplete.js"></script>
-<script>
-  setupAutocomplete("search", "search-list", "garesetfalaises", searchByNameHandler);
-</script>
-
+<!-- Vue.js Search Autocomplete -->
+<script type="module" src="/dist/carte-search.js"></script>
 <!-- Vue.js Filter Panel -->
 <script type="module" src="/dist/carte-filters.js"></script>
 <!-- Vue.js Info Panel -->

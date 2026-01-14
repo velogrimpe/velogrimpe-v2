@@ -13,8 +13,13 @@ export default defineConfig({
       input: {
         'carte-filters': resolve(__dirname, 'src/apps/carte-filters.ts'),
         'carte-info': resolve(__dirname, 'src/apps/carte-info.ts'),
+        'carte-search': resolve(__dirname, 'src/apps/carte-search.ts'),
         'tableau': resolve(__dirname, 'src/apps/tableau.ts'),
         'utils': resolve(__dirname, 'src/apps/utils.ts'),
+        'ajout-velo': resolve(__dirname, 'src/apps/ajout-velo.ts'),
+        'ajout-falaise': resolve(__dirname, 'src/apps/ajout-falaise.ts'),
+        'ajout-train': resolve(__dirname, 'src/apps/ajout-train.ts'),
+        'falaise-comment': resolve(__dirname, 'src/apps/falaise-comment.ts'),
       },
       output: {
         entryFileNames: '[name].js',
