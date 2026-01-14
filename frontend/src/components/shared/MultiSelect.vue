@@ -97,9 +97,6 @@ function handleClickOutside(event: MouseEvent) {
   }
 }
 
-function handleMouseLeave() {
-  isOpen.value = false
-}
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
@@ -114,7 +111,6 @@ onUnmounted(() => {
   <div
     ref="containerRef"
     class="multi-select-container relative"
-    @mouseleave="handleMouseLeave"
   >
     <!-- Hidden input for form submission -->
     <input
