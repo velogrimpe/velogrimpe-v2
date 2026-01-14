@@ -9,13 +9,13 @@ body {
   padding: 0;
 }
 
-/* Links styling */
-a {
+/* Links styling - exclude navbar and menu links */
+a:not(.navbar a):not(.menu a):not(.btn) {
   color: #2e8b57;
   text-decoration: none;
   font-weight: bold;
 }
-a:hover {
+a:not(.navbar a):not(.menu a):not(.btn):hover {
   /* color: #1e5d3e; */
   text-decoration: underline;
 }

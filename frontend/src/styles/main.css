@@ -64,21 +64,4 @@
   }
 }
 
-/* Base layer customizations previously in PHP inline styles */
-@layer base {
-  /* Global link styling - exclude navbar, menu, btn components */
-  a:not(.navbar a):not(.menu a):not(.btn):not([class*="btn-"]) {
-    @apply text-[#2e8b57] font-bold;
-  }
-  a:not(.navbar a):not(.menu a):not(.btn):not([class*="btn-"]):hover {
-    @apply underline;
-  }
-
-  /* Scoped link styling for vg-a-primary class (from falaise.php) */
-  .vg-a-primary a {
-    @apply text-[#2e8b57] font-bold;
-  }
-  .vg-a-primary a:hover {
-    @apply underline;
-  }
-}
+/* Link styling is handled in global.css */
