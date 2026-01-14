@@ -487,35 +487,39 @@ if ($falaise_id) {
         <hr class="my-0 flex-grow border-[#2e8b57]" />
       </div>
       <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-sm">
-        <div>
-          <div class="flex flex-col md:flex-row gap-4">
-            <label class="form-control w-full md:w-1/2 relative">
-              <div><b>Exposition(s) principale(s)</b></div>
-              <div id="vue-exposhort1" class="mb-1"></div>
-            </label>
-            <label class="form-control w-full md:w-1/2 relative">
-              <div><b class="">Exposition(s) secondaire(s) <span class="text-accent opacity-50">(optionnel)</span></b>
-              </div>
-              <div id="vue-exposhort2" class="mb-1"></div>
-            </label>
+        <!-- Rose preview header -->
+        <div class="flex flex-col items-center gap-2">
+          <div class="text-center">
+            <div class="text-sm text-slate-500">Aperçu</div>
+            <div class="font-semibold text-primary">Rose des vents</div>
           </div>
-          <div class="flex flex-col md:flex-row gap-6 md:items-center">
-            <div class="flex-grow">
-              <i class="text-slate-400 text-sm"> Ces deux champs apparaitront dans la rose des vents sur la fiche
-                falaise, et sont utilisés pour les filtres.<br> Le champ "exposition(s) secondaire(s)" est prévu pour le
-                cas où il existe un petit nombre de voies avec une orientation différente des autres. </i>
-            </div>
-            <div class="flex-grow flex justify-center">
-              <div id="vue-rose-preview" class="w-20 h-20"></div>
-            </div>
-          </div>
+          <div id="vue-rose-preview"></div>
         </div>
+
+        <!-- Exposition selects -->
+        <div class="flex flex-col md:flex-row gap-4">
+          <label class="form-control w-full md:w-1/2 relative">
+            <div><b>Exposition(s) principale(s)</b></div>
+            <div id="vue-exposhort1" class="mb-1"></div>
+          </label>
+          <label class="form-control w-full md:w-1/2 relative">
+            <div><b>Exposition(s) secondaire(s) <span class="text-accent opacity-50">(optionnel)</span></b></div>
+            <div id="vue-exposhort2" class="mb-1"></div>
+          </label>
+        </div>
+
+        <i class="text-slate-400 text-sm">
+          Ces deux champs apparaitront dans la rose des vents sur la fiche falaise, et sont utilisés pour les filtres.
+          Le champ "exposition(s) secondaire(s)" est prévu pour le cas où il existe un petit nombre de voies avec une orientation différente.
+        </i>
+
+        <!-- Text description -->
         <label class="form-control" for="falaise_expotxt">
           <b>Précisions sur l'exposition</b>
           <textarea class="textarea textarea-primary textarea-sm leading-6" id="falaise_expotxt" name="falaise_expotxt"
             rows="1" placeholder="ex : majoritairement orienté Sud, quelques faces à l'Ouest" required></textarea>
-          <i class="text-slate-400 text-sm"> Ecrivez un court texte décrivant l'exposition. Ex : "falaise orientée Sud à
-            Sud-Est", "la plupart des voies orientées Ouest, quelques voies orientées Nord".<br>
+          <i class="text-slate-400 text-sm">
+            Ecrivez un court texte décrivant l'exposition. Ex : "falaise orientée Sud à Sud-Est", "la plupart des voies orientées Ouest, quelques voies orientées Nord".
           </i>
         </label>
       </div>

@@ -260,7 +260,7 @@ function mountExpositionSelects() {
         return () => h(RoseDesVents, {
           expo1: expo1String.value,
           expo2: expo2String.value,
-          size: 80,
+          size: 100,
         })
       }
     })
