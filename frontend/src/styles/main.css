@@ -66,11 +66,11 @@
 
 /* Base layer customizations previously in PHP inline styles */
 @layer base {
-  /* Global link styling (from tableau.php) */
-  a {
+  /* Global link styling - exclude navbar, menu, btn components */
+  a:not(.navbar a):not(.menu a):not(.btn):not([class*="btn-"]) {
     @apply text-[#2e8b57] font-bold;
   }
-  a:hover {
+  a:not(.navbar a):not(.menu a):not(.btn):not([class*="btn-"]):hover {
     @apply underline;
   }
 
