@@ -487,25 +487,25 @@ if ($falaise_id) {
         <hr class="my-0 flex-grow border-[#2e8b57]" />
       </div>
       <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-sm">
-        <!-- Rose preview header -->
-        <div class="flex flex-col items-center gap-2">
-          <div class="text-center">
-            <div class="text-sm text-slate-500">Aperçu</div>
-            <div class="font-semibold text-primary">Rose des vents</div>
-          </div>
-          <div id="vue-rose-preview"></div>
-        </div>
-
-        <!-- Exposition selects -->
+        <!-- Mobile: rose on top, Desktop: rose on right -->
         <div class="flex flex-col md:flex-row gap-4">
-          <label class="form-control w-full md:w-1/2 relative">
-            <div><b>Exposition(s) principale(s)</b></div>
-            <div id="vue-exposhort1" class="mb-1"></div>
-          </label>
-          <label class="form-control w-full md:w-1/2 relative">
-            <div><b>Exposition(s) secondaire(s) <span class="text-accent opacity-50">(optionnel)</span></b></div>
-            <div id="vue-exposhort2" class="mb-1"></div>
-          </label>
+          <!-- Rose preview - first on mobile (order-first), last on desktop (md:order-last) -->
+          <div class="flex flex-col items-center gap-1 md:order-last md:justify-center md:px-4">
+            <div class="text-sm text-slate-500">Aperçu</div>
+            <div id="vue-rose-preview"></div>
+          </div>
+
+          <!-- Exposition selects - stacked vertically -->
+          <div class="flex flex-col gap-3 flex-grow">
+            <label class="form-control w-full relative">
+              <div><b>Exposition(s) principale(s)</b></div>
+              <div id="vue-exposhort1"></div>
+            </label>
+            <label class="form-control w-full relative">
+              <div><b>Exposition(s) secondaire(s) <span class="text-accent opacity-50">(optionnel)</span></b></div>
+              <div id="vue-exposhort2"></div>
+            </label>
+          </div>
         </div>
 
         <i class="text-slate-400 text-sm">
