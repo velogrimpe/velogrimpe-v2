@@ -35,6 +35,7 @@ function calculate_time($distance_km, $elevation_m, $velo_apieduniquement)
 }
 
 require_once $_SERVER['DOCUMENT_ROOT'] . '/database/velogrimpe.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/vite.php';
 
 $ville = $mysqli->query("SELECT ville_nom FROM villes WHERE ville_id = $ville_id")->fetch_assoc();
 
@@ -140,22 +141,12 @@ $stmt->close();
   <meta name="twitter:description"
     content="Sorties escalade au départ de <?= $ville['ville_nom'] ?>. <?= count($falaises) ?> falaises décrites avec accès vélo-train.">
   <title>Escalade au départ de <?= $ville['ville_nom'] ?> - Vélogrimpe.fr</title>
-  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.min.css" rel="stylesheet" type="text/css" />
-  <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+  <?php vite_css('main'); ?>
   <!-- Velogrimpe Styles -->
   <link rel="stylesheet" href="/global.css" />
   <link rel="manifest" href="/site.webmanifest" />
   <!-- Pageviews -->
   <script async defer src="/js/pv.js"></script>
-  <style type="text/tailwindcss"> @tailwind base;
-    @tailwind components;
-    @tailwind utilities;
-    @layer base {
-      a {
-        @apply text-[#2e8b57] font-bold;
-      }
-  }
-  </style>
 </head>
 
 <body class="w-screen min-h-screen">

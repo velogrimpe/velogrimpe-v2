@@ -57,8 +57,7 @@ if ($falaise_id) {
   <script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js'></script>
   <link href='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css'
     rel='stylesheet' />
-  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.min.css" rel="stylesheet" type="text/css" />
-  <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+  <?php vite_css('main'); ?>
   <!-- Carte : locate -->
   <link rel="stylesheet"
     href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.84.2/dist/L.Control.Locate.min.css" />
@@ -154,7 +153,7 @@ if ($falaise_id) {
               <label class="form-control">
                 <b>Nom de la falaise</b>
                 <div id="vue-ajout-falaise"
-                  data-falaises='<?= json_encode($falaises) ?>'
+                  data-falaises="<?= htmlspecialchars(json_encode($falaises), ENT_QUOTES, 'UTF-8') ?>"
                   data-admin="<?= $admin ? 'true' : 'false' ?>"
                   <?php if ($falaise_id): ?>data-preset-falaise-id="<?= $falaise_id ?>"<?php endif; ?>>
                 </div>

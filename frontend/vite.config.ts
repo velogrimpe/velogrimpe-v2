@@ -11,6 +11,7 @@ export default defineConfig({
 
     rollupOptions: {
       input: {
+        'main': resolve(__dirname, 'src/apps/main.ts'),
         'carte-filters': resolve(__dirname, 'src/apps/carte-filters.ts'),
         'carte-info': resolve(__dirname, 'src/apps/carte-info.ts'),
         'carte-search': resolve(__dirname, 'src/apps/carte-search.ts'),

@@ -1,6 +1,7 @@
 <?php
 $config = require $_SERVER['DOCUMENT_ROOT'] . '/../config.php';
 $email = $config['contact_mail'];
+require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/vite.php';
 ?>
 <!DOCTYPE html>
 <html lang="fr" data-theme="velogrimpe">
@@ -24,8 +25,7 @@ $email = $config['contact_mail'];
   <meta name="twitter:description"
     content="Escalade en mobilité douce à vélo et en train. Contribuez au topos d'accès vélo + train pour se rendre en falaise. Partagez vos bon plans et expérience, traces et falaises accessibles à vélo.">
   <title>Contribuer - Vélogrimpe.fr</title>
-  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.min.css" rel="stylesheet" type="text/css" />
-  <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+  <?php vite_css('main'); ?>
   <!-- Pageviews -->
   <script async defer src="/js/pv.js"></script>
   <link rel="manifest" href="/site.webmanifest" />

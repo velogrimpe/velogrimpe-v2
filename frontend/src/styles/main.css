@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base layer customizations previously in PHP inline styles */
+@layer base {
+  /* Global link styling (from tableau.php) */
+  a {
+    @apply text-[#2e8b57] font-bold;
+  }
+  a:hover {
+    @apply underline;
+  }
+
+  /* Scoped link styling for vg-a-primary class (from falaise.php) */
+  .vg-a-primary a {
+    @apply text-[#2e8b57] font-bold;
+  }
+  .vg-a-primary a:hover {
+    @apply underline;
+  }
+}

@@ -7,6 +7,7 @@ if (empty($falaise_id)) {
 }
 
 require_once $_SERVER['DOCUMENT_ROOT'] . '/database/velogrimpe.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/vite.php';
 
 $stmtF = $mysqli->prepare("SELECT * FROM falaises WHERE falaise_id = ?");
 if (!$stmtF) {
@@ -226,26 +227,13 @@ $stmtC->close();
   <!-- Carte : Pour les détails falaise-->
   <script src="/js/vendor/leaflet-textpath.js"></script>
   <!-- Styles -->
-  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.min.css" rel="stylesheet" type="text/css" />
-  <script src="https://cdn.tailwindcss.com"></script>
+  <?php vite_css('main'); ?>
   <!-- Barycentre -->
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
   <!-- Pageviews -->
   <script async defer src="/js/pv.js"></script>
   <link rel="stylesheet" href="/global.css">
   <link rel="stylesheet" href="falaise.css">
-  <style type="text/tailwindcss"> @tailwind base;
-    @tailwind components;
-    @tailwind utilities;
-    @layer base {
-      .vg-a-primary a {
-        @apply text-[#2e8b57] font-bold;
-      }
-      .vg-a-primary a:hover {
-        @apply underline;
-      }
-  }
-  </style>
 </head>
 
 <body>
