@@ -152,20 +152,16 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
         <!-- Champs libres pour la recherche d'horaires (non envoyés au serveur) -->
         <div class="flex flex-col gap-2">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <label class="form-control" for="horaires_depart">
+            <div class="form-control">
               <b>Gare de départ</b>
-              <input type="text" class="input input-sm" id="horaires_depart"
-                placeholder="ex: Lyon Part-Dieu" autocomplete="off">
-              <span class="text-xs opacity-70">Utilisé uniquement pour consulter les horaires. Non transmis lors de
-                l'envoi. Soyez précis pour éviter les erreurs de noms.</span>
-            </label>
-            <label class="form-control" for="horaires_arrivee">
+              <div id="vue-station-depart"></div>
+              <span class="text-xs opacity-70">Recherche via Transitous. Non transmis lors de l'envoi.</span>
+            </div>
+            <div class="form-control">
               <b>Gare d'arrivée</b>
-              <input type="text" class="input input-sm" id="horaires_arrivee"
-                placeholder="ex: Dijon Ville" autocomplete="off">
-              <span class="text-xs opacity-70">Utilisé uniquement pour consulter les horaires. Non transmis lors de
-                l'envoi. Soyez précis pour éviter les erreurs de noms.</span>
-            </label>
+              <div id="vue-station-arrivee"></div>
+              <span class="text-xs opacity-70">Recherche via Transitous. Non transmis lors de l'envoi.</span>
+            </div>
           </div>
         </div>
         <div class="flex flex-col gap-4 mt-2">
@@ -405,13 +401,22 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
   };
 
   document.getElementById("fetchTrains").addEventListener('click', async () => {
+    // Check if stations are selected from Vue
+    const stations = window.__transitousStations__;
+    if (!stations?.depart || !stations?.arrivee) {
+      alert('Veuillez sélectionner une gare de départ et une gare d\'arrivée dans les listes.');
+      return;
+    }
+
     // Add loader in the button and disable it
     document.querySelector("#fetchTrains .loading").classList.remove("hidden");
     document.getElementById("fetchTrains").disabled = true;
-    // Use decoupled free-text fields for schedule lookup; fallback to velogrimpe fields if empty
-    const fromValue = (document.getElementById('horaires_depart')?.value || '').trim() || document.getElementById('train_depart').value;
-    const toValue = (document.getElementById('horaires_arrivee')?.value || '').trim() || document.getElementById('train_arrivee').value;
-    const { stats, fields } = await horairesTrains.fetchRoute(fromValue, toValue);
+
+    // Use coordinates from selected stations (already geocoded)
+    const { stats, fields } = await horairesTrains.fetchRouteByCoords(
+      stations.depart.lat, stations.depart.lon,
+      stations.arrivee.lat, stations.arrivee.lon
+    );
     renderItineraries(stats.uniqueTrips || []);
     // Update only description from fields; numeric fields already derived from selected trips
     updateFields(fields);

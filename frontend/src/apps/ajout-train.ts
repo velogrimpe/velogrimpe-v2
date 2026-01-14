@@ -1,5 +1,6 @@
 import { createApp, h, ref } from 'vue'
 import FormAutocomplete, { type FormAutocompleteItem } from '@/components/shared/FormAutocomplete.vue'
+import TransitousStationSearch, { type TransitousStation } from '@/components/shared/TransitousStationSearch.vue'
 
 interface GareItem extends FormAutocompleteItem {
   codeuic?: string
@@ -7,6 +8,14 @@ interface GareItem extends FormAutocompleteItem {
 
 // Wait for DOM to be ready
 document.addEventListener('DOMContentLoaded', () => {
+  // Mount gare autocomplete (for form submission)
+  mountGareAutocomplete()
+
+  // Mount Transitous station search fields (for route lookup)
+  mountStationSearch()
+})
+
+function mountGareAutocomplete() {
   const mountEl = document.getElementById('vue-ajout-train')
   if (!mountEl) {
     console.warn('[velogrimpe] #vue-ajout-train mount point not found')
@@ -57,7 +66,6 @@ document.addEventListener('DOMContentLoaded', () => {
       })
   }
 
-  // Create Vue app
   const app = createApp({
     setup() {
       const gareValue = ref(presetGareNom || '')
@@ -93,7 +101,85 @@ document.addEventListener('DOMContentLoaded', () => {
     },
   })
 
-  // Mount the app
   app.mount(mountEl)
-  console.log('[velogrimpe] Vue ajout-train autocomplete mounted')
-})
+  console.log('[velogrimpe] Vue ajout-train gare autocomplete mounted')
+}
+
+// Store selected stations for route lookup
+interface SelectedStations {
+  depart: TransitousStation | null
+  arrivee: TransitousStation | null
+}
+
+declare global {
+  interface Window {
+    __transitousStations__?: SelectedStations
+  }
+}
+
+function mountStationSearch() {
+  const departMountEl = document.getElementById('vue-station-depart')
+  const arriveeMountEl = document.getElementById('vue-station-arrivee')
+
+  if (!departMountEl && !arriveeMountEl) {
+    return // No station search fields on page
+  }
+
+  // Initialize global storage for selected stations
+  window.__transitousStations__ = {
+    depart: null,
+    arrivee: null,
+  }
+
+  if (departMountEl) {
+    const app = createApp({
+      setup() {
+        const value = ref('')
+
+        const onSelect = (station: TransitousStation | null) => {
+          if (window.__transitousStations__) {
+            window.__transitousStations__.depart = station
+          }
+        }
+
+        return () =>
+          h(TransitousStationSearch, {
+            modelValue: value.value,
+            'onUpdate:modelValue': (v: string) => {
+              value.value = v
+            },
+            placeholder: 'ex: Lyon Part-Dieu',
+            onSelect,
+          })
+      },
+    })
+    app.mount(departMountEl)
+    console.log('[velogrimpe] Vue station-depart search mounted')
+  }
+
+  if (arriveeMountEl) {
+    const app = createApp({
+      setup() {
+        const value = ref('')
+
+        const onSelect = (station: TransitousStation | null) => {
+          if (window.__transitousStations__) {
+            window.__transitousStations__.arrivee = station
+          }
+        }
+
+        return () =>
+          h(TransitousStationSearch, {
+            modelValue: value.value,
+            'onUpdate:modelValue': (v: string) => {
+              value.value = v
+            },
+            placeholder: 'ex: Dijon Ville',
+            onSelect,
+          })
+      },
+    })
+    app.mount(arriveeMountEl)
+    console.log('[velogrimpe] Vue station-arrivee search mounted')
+  }
+}
