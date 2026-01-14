@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useFiltersStore } from '@/stores'
 import type { Exposition, Cotation } from '@/types'
+import SortDropdown from '@/components/tableau/SortDropdown.vue'
 
 const store = useFiltersStore()
 
@@ -410,6 +411,9 @@ function parseNumberInput(value: string): number | null {
         </svg>
         Réinitialiser
       </button>
+
+      <!-- Sort Dropdown -->
+      <SortDropdown />
     </div>
   </div>
 </template>

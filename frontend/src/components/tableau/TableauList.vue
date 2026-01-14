@@ -3,7 +3,6 @@ import { computed } from 'vue'
 import { useTableauStore } from '@/stores'
 import FalaiseMobileCard from './FalaiseMobileCard.vue'
 import FalaiseDesktopRow from './FalaiseDesktopRow.vue'
-import SortDropdown from './SortDropdown.vue'
 
 const store = useTableauStore()
 
@@ -15,12 +14,9 @@ const hasResults = computed(() => filteredCount.value > 0)
 
 <template>
   <div class="flex flex-col gap-4">
-    <!-- Info and Sort controls -->
-    <div class="flex justify-between w-full items-center">
-      <div id="nbFalaisesInFilter" class="text-primary text-sm font-bold">
-        {{ filteredCount }} falaises
-      </div>
-      <SortDropdown />
+    <!-- Results count -->
+    <div id="nbFalaisesInFilter" class="text-primary text-sm font-bold">
+      {{ filteredCount }} falaises
     </div>
 
     <!-- Mobile List -->
