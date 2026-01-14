@@ -1,18 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useFiltersStore } from './filters'
-import type { SortState, SortKey, SortDir, TableauFalaise, TableauItinerary } from '@/types/tableau'
-
-function calculateVeloTime(it: TableauItinerary): number {
-  const { velo_km, velo_dplus, velo_apieduniquement } = it
-  let timeInHours: number
-  if (velo_apieduniquement === 1) {
-    timeInHours = velo_km / 4 + velo_dplus / 500
-  } else {
-    timeInHours = velo_km / 20 + velo_dplus / 500
-  }
-  return Math.round(timeInHours * 60)
-}
+import { calculateVeloTime } from '@/utils'
+import type { SortState, SortKey, SortDir, TableauFalaise } from '@/types/tableau'
 
 export const useTableauStore = defineStore('tableau', () => {
   const filtersStore = useFiltersStore()
@@ -199,4 +189,5 @@ export const useTableauStore = defineStore('tableau', () => {
   }
 })
 
-export { calculateVeloTime }
+// Re-export for convenience
+export { calculateVeloTime } from '@/utils'

@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import type { TableauFalaise, TableauItinerary } from '@/types/tableau'
-import { calculateVeloTime } from '@/stores'
-import { formatTime } from './utils'
+import { formatTime, calculateVeloTime } from '@/utils'
 
 declare function roseFromExpo(id: string, expo1: string, expo2: string, w: number, h: number): void
 

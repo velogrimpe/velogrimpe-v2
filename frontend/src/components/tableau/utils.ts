@@ -1,17 +1,3 @@
-export function formatTime(minutes: number | null | undefined): string {
-  if (minutes === null || minutes === undefined) {
-    return ''
-  }
-  const hours = Math.floor(minutes / 60)
-  const remainingMinutes = minutes % 60
-
-  if (hours > 0) {
-    return `${hours}h${remainingMinutes.toString().padStart(2, '0')}`
-  } else {
-    return `${remainingMinutes}'`
-  }
-}
-
 export const nbVoiesCorresp: Record<number, string> = {
   10: '0-20 voies',
   20: '~20 voies',
