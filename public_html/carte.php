@@ -696,99 +696,32 @@ $highlight = $_GET['h'] ?? '';
   };
   searchAndFilter.addTo(map);
 
-  // PANNEAU D'INFORMATION SUR LA FALAISE/GARE SELECTIONNEE
+  // PANNEAU D'INFORMATION SUR LA FALAISE/GARE SELECTIONNEE (Vue.js)
   var info = L.control({ position: 'bottomright' });
   info.onAdd = function (map) {
-    this._div = L.DomUtil.create('div', 'info w-[calc(100%-20px)]'); // create a div with a class "info"
-    this.top = "";
-    this.bot = "";
+    this._div = L.DomUtil.create('div', 'info w-[calc(100%-20px)]');
+    this._div.id = 'vue-info-panel';
     L.DomEvent.disableClickPropagation(this._div);
     L.DomEvent.disableScrollPropagation(this._div);
-    this.update();
     return this._div;
   };
-  // method that we will use to update the control based on feature properties passed
+  // Update Vue store instead of regenerating HTML
   info.update = function () {
-    const mode = selected === null ? undefined : selected.type;
     const nFalaises = falaises.filter(f => (f.type === "falaise")).length;
     const nFalaiseFiltered = falaises.filter(f => (f.type === "falaise") && !f.filteredOut).length;
-    const updateTop = () => {
-      if (selected === null) {
-        this.top = (`<div class="flex gap-1 items-center justify-center font-bold text-primary border-b border-base-300 pb-1 mb-1">`
-          + `<svg class="w-4 h-4 fill-current"><use xlink:href="/symbols/icons.svg#ri-filter-line"></use></svg>`
-          + ` ${nFalaises !== nFalaiseFiltered ? nFalaiseFiltered : nFalaises} falaises`
-          + (nFalaises !== nFalaiseFiltered ? ` correspondent aux filtres` : "")
-          + `</div>`)
-      } else {
-        this.top = "";
+
+    // Wait for Vue to be ready, then update
+    if (window.velogrimpe?.carteInfo) {
+      window.velogrimpe.carteInfo.updateStats(nFalaises, nFalaiseFiltered);
+      window.velogrimpe.carteInfo.setSelected(selected);
+    }
+
+    // Open details on desktop after Vue renders
+    setTimeout(() => {
+      if (window.innerWidth >= 768) {
+        this._div.querySelectorAll("details").forEach((details) => details.open = true);
       }
-    }
-    const updateBot = () => {
-      switch (mode) {
-        case undefined:
-          this.bot = (
-            `<div class="flex flex-col gap-1 items-center">`
-            + `<div>Cliquez sur une falaise pour voir ses informations</div>`
-            + (
-              isSamsungInternet() ? (
-                '<div>Vous utilisez Samsung Internet : '
-                + 'si vous êtes en mode sombre, désactivez-le ou changez de navigateur '
-                + 'pour un affichage correct de la carte.</div>')
-                : ""
-            )
-            + `</div>`
-          );
-          break;
-        case "falaise":
-          this.bot = `<div class="flex flex-col gap-1">`
-            + '<div class="flex flex-col md:flex-row justify-between items-center gap-4">'
-            + `<h3 class="text-xl font-bold"><a href="/falaise.php?falaise_id=${selected.falaise_id}">${selected.falaise_nom}</a></h3>`
-            + `<a class="btn btn-primary btn-xs text-base-100! hover:text-base-100!"
-          href="/falaise.php?falaise_id=${selected.falaise_id}">Voir la fiche falaise</a>`
-            + `</div>`
-            + (
-              selected.falaise_fermee
-                ? `<p class="text-wrap text-error">${selected.falaise_fermee.replace(/\n/g, "<br>") || ""}</p>`
-                : `<p class="text-wrap">${selected.falaise_voletcarto.replace(/\n/g, "<br>") || ""}</p>`
-            )
-            + `<details><summary><i>Liste des accès</i></summary>`
-            + "<ul>"
-            + selected.access.map((it, i) => (
-              `<li class="relative ml-8">` +
-              `<div class="absolute top-[6px] -left-2 w-6 h-1 -translate-x-full ${itinerairesColors[i % itinerairesColors.length]}"></div>` +
-              `<div><b>${it.gare.gare_nom} (${format_time(calculate_time(it))})</b> : ` +
-              `${it.velo_km} km, ${it.velo_dplus} D+${it.velo_apieduniquement === "1" ? " (à pied)" : ""}</div>` +
-              `</li>`)).join("")
-            + "</ul></details>"
-            + `</div>`;
-          break;
-        case "gare":
-          this.bot = `<div class="flex flex-col gap-1">`
-            + `<h3 class="text-xl font-bold">Gare de ${selected.gare_nom}</h3>`
-            + `<details><summary><i>Falaises accessibles depuis la gare</i></summary>`
-            + "<ul>"
-            + selected.access.map((it, i) => (
-              `<li class="relative ml-8">`
-              + `<div class="absolute top-2 -left-2 w-6 h-1 -translate-x-full ${itinerairesColors[i % itinerairesColors.length]}"></div>`
-              + `<div>`
-              + `<a class="link" href="/falaise.php?falaise_id=${it.falaise.falaise_id}">${it.falaise.falaise_nom}</a>`
-              + ` : <b>${format_time(calculate_time(it))}</b> ${it.velo_apieduniquement === "1" ? "à pied" : "à vélo"} (${it.velo_km}
-              km, ${it.velo_dplus} D+).`
-              + `</div>`
-              + `</li>`)
-            ).join("")
-            + "</ul></details>"
-            + `</div>`;
-          break;
-      }
-    }
-    updateTop();
-    updateBot();
-    this._div.innerHTML = this.top + this.bot;
-    if (window.innerWidth >= 768) {
-      // details should be open by default on desktop
-      this._div.querySelectorAll("details").forEach((details) => details.open = true);
-    }
+    }, 50);
   };
   info.addTo(map);
 
@@ -1068,8 +1001,8 @@ $highlight = $_GET['h'] ?? '';
     applyVueFilters(e.detail);
   });
 
-  // Initial render
-  document.addEventListener("DOMContentLoaded", function () {
+  // Initial render - wait for Vue info panel to be ready
+  window.addEventListener('velogrimpe:info-ready', function () {
     info.update();
   });
 
@@ -1108,5 +1041,7 @@ $highlight = $_GET['h'] ?? '';
 
 <!-- Vue.js Filter Panel -->
 <script type="module" src="/dist/carte-filters.js"></script>
+<!-- Vue.js Info Panel -->
+<script type="module" src="/dist/carte-info.js"></script>
 
 </html>

@@ -32,3 +32,6 @@ npm-debug.log*
 # Temp files
 *.tmp
 *.temp
+
+db_backup.sql
+db_init.sql

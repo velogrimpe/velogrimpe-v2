@@ -1,3 +1,5 @@
 export { useFiltersStore } from './filters'
 export { useFalaisesStore } from './falaises'
 export { useTableauStore, calculateVeloTime } from './tableau'
+export { useCarteStore } from './carte'
+export type { CarteFalaise, CarteGare, CarteItineraire, SelectedItem } from './carte'
