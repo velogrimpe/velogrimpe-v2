@@ -34,20 +34,6 @@ function calculate_time($distance_km, $elevation_m, $velo_apieduniquement)
   return $time_in_minutes;
 }
 
-$nbvoies_corresp = [
-  10 => "0-20 voies",
-  20 => "~20 voies",
-  35 => "20-50 voies",
-  50 => "~50 voies",
-  75 => "50-100 voies",
-  100 => "~100 voies",
-  150 => "100-200 voies",
-  200 => "~200 voies",
-  350 => "200-500 voies",
-  500 => "~500 voies",
-  1000 => "&ge; 500 voies",
-];
-
 require_once $_SERVER['DOCUMENT_ROOT'] . '/database/velogrimpe.php';
 
 $ville = $mysqli->query("SELECT ville_nom FROM villes WHERE ville_id = $ville_id")->fetch_assoc();
