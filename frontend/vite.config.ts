@@ -13,6 +13,7 @@ export default defineConfig({
       input: {
         'carte-filters': resolve(__dirname, 'src/apps/carte-filters.ts'),
         'tableau': resolve(__dirname, 'src/apps/tableau.ts'),
+        'utils': resolve(__dirname, 'src/apps/utils.ts'),
       },
       output: {
         entryFileNames: '[name].js',

@@ -58,6 +58,8 @@ $highlight = $_GET['h'] ?? '';
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Pageviews -->
   <script async defer src="/js/pv.js"></script>
+  <!-- Shared utilities -->
+  <script src="/js/utils-global.js"></script>
   <!-- Velogrimpe Styles -->
   <link rel="stylesheet" href="/global.css" />
   <link rel="stylesheet" href="./index.css" />
@@ -200,30 +202,7 @@ $highlight = $_GET['h'] ?? '';
     });
   };
 
-  function format_time(minutes) {
-    if (minutes === null) {
-      return "";
-    }
-    const hours = Math.floor(minutes / 60);
-    const remaining_minutes = minutes % 60;
-
-    if (hours > 0) {
-      return `${hours}h${remaining_minutes.toString().padStart(2, "0")}`;
-    } else {
-      return `${remaining_minutes}&apos;`;
-    }
-  }
-  const calculate_time = (it) => {
-    const { velo_km, velo_dplus, velo_apieduniquement } = it;
-    let time_in_hours;
-    if (velo_apieduniquement === "1") {
-      time_in_hours = parseFloat(velo_km) / 4 + parseInt(velo_dplus) / 500;
-    } else {
-      time_in_hours = parseFloat(velo_km) / 20 + parseInt(velo_dplus) / 500;
-    }
-    const time_in_minutes = Math.round(time_in_hours * 60);
-    return time_in_minutes;
-  }
+  // format_time and calculate_time are loaded from /js/utils-global.js
 
   const halo = "[text-shadow:-1px_-1px_0_#fff,1px_-1px_0_#fff,-1px_1px_0_#fff,1px_1px_0_#fff,0_1px_0_#fff,0_-1px_0_#fff,1px_0_0_#fff,-1px_0_0_#fff]";
 
