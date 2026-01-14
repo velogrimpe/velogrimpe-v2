@@ -62,6 +62,8 @@ $highlight = $_GET['h'] ?? '';
   <script src="/js/utils-global.js"></script>
   <!-- Velogrimpe Styles -->
   <link rel="stylesheet" href="/global.css" />
+  <!-- Vue Component Styles -->
+  <link rel="stylesheet" href="/dist/assets/carte-info-DzEZSJq_.css" />
   <link rel="stylesheet" href="./index.css" />
   <link rel="manifest" href="./site.webmanifest" />
   <style>
