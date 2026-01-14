@@ -1,11 +1,32 @@
 import { createApp, h, ref, watch } from 'vue'
 import FormAutocomplete, { type FormAutocompleteItem } from '@/components/shared/FormAutocomplete.vue'
+import MultiSelect, { type MultiSelectOption } from '@/components/shared/MultiSelect.vue'
 
 interface FalaiseItem extends FormAutocompleteItem {
   latlng?: string
   status?: string
   nomformate?: string
 }
+
+// Exposition options for multi-select
+const expositionOptions: MultiSelectOption[] = [
+  { value: "'N'", label: 'N' },
+  { value: "'S'", label: 'S' },
+  { value: "'E'", label: 'E' },
+  { value: "'O'", label: 'O' },
+  { value: "'NE'", label: 'NE' },
+  { value: "'NO'", label: 'NO' },
+  { value: "'SE'", label: 'SE' },
+  { value: "'SO'", label: 'SO' },
+  { value: "'NNE'", label: 'NNE' },
+  { value: "'NNO'", label: 'NNO' },
+  { value: "'SSE'", label: 'SSE' },
+  { value: "'SSO'", label: 'SSO' },
+  { value: "'ENE'", label: 'ENE' },
+  { value: "'ESE'", label: 'ESE' },
+  { value: "'OSO'", label: 'OSO' },
+  { value: "'ONO'", label: 'ONO' },
+]
 
 // Wait for DOM to be ready
 document.addEventListener('DOMContentLoaded', () => {
@@ -163,4 +184,72 @@ document.addEventListener('DOMContentLoaded', () => {
   // Mount the app
   app.mount(mountEl)
   console.log('[velogrimpe] Vue ajout-falaise autocomplete mounted')
+
+  // Mount exposition multi-selects
+  mountExpositionSelects()
 })
+
+// Helper to parse comma-separated values with quotes (e.g., "'N','S'" -> ["'N'", "'S'"])
+function parseExpositionValue(value: string): string[] {
+  if (!value) return []
+  // Split by comma and trim, keeping the quotes
+  return value.split(',').map(v => v.trim()).filter(v => v.length > 0)
+}
+
+function mountExpositionSelects() {
+  // Mount exposhort1 (required)
+  const expo1El = document.getElementById('vue-exposhort1')
+  if (expo1El) {
+    const presetValue = expo1El.dataset.value || ''
+    const expo1Value = ref<string[]>(parseExpositionValue(presetValue))
+
+    const expo1App = createApp({
+      setup() {
+        return () => h(MultiSelect, {
+          modelValue: expo1Value.value,
+          'onUpdate:modelValue': (v: string[]) => {
+            expo1Value.value = v
+          },
+          options: expositionOptions,
+          name: 'falaise_exposhort1',
+          required: true,
+          placeholder: 'Sélectionner...',
+        })
+      }
+    })
+    expo1App.mount(expo1El)
+
+    // Expose setter for prefill from PHP
+    ;(window as unknown as Record<string, unknown>).setExpo1Value = (value: string) => {
+      expo1Value.value = parseExpositionValue(value)
+    }
+  }
+
+  // Mount exposhort2 (optional)
+  const expo2El = document.getElementById('vue-exposhort2')
+  if (expo2El) {
+    const presetValue = expo2El.dataset.value || ''
+    const expo2Value = ref<string[]>(parseExpositionValue(presetValue))
+
+    const expo2App = createApp({
+      setup() {
+        return () => h(MultiSelect, {
+          modelValue: expo2Value.value,
+          'onUpdate:modelValue': (v: string[]) => {
+            expo2Value.value = v
+          },
+          options: expositionOptions,
+          name: 'falaise_exposhort2',
+          required: false,
+          placeholder: 'Sélectionner...',
+        })
+      }
+    })
+    expo2App.mount(expo2El)
+
+    // Expose setter for prefill from PHP
+    ;(window as unknown as Record<string, unknown>).setExpo2Value = (value: string) => {
+      expo2Value.value = parseExpositionValue(value)
+    }
+  }
+}

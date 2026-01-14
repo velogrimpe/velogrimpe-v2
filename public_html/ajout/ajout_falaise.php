@@ -1,4 +1,6 @@
-<?php require_once $_SERVER['DOCUMENT_ROOT'] . '/database/velogrimpe.php';
+<?php
+require_once $_SERVER['DOCUMENT_ROOT'] . '/database/velogrimpe.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/vite.php';
 $config = require $_SERVER['DOCUMENT_ROOT']
   . '/../config.php';
 // Read the admin search parameter
@@ -64,10 +66,9 @@ if ($falaise_id) {
     charset="utf-8"></script>
   <!-- Pageviews -->
   <script async defer src="/js/pv.js"></script>
-  <!-- Multi-select -->
-  <script src="/js/multi-select.min.js"></script>
   <link rel="manifest" href="/site.webmanifest" />
   <link rel="stylesheet" href="/global.css" />
+  <?php vite_css('ajout-falaise'); ?>
   <style>
     .admin {
       <?= !$admin ? 'display: none !important;' : '' ?>
@@ -488,57 +489,14 @@ if ($falaise_id) {
       <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-sm">
         <div>
           <div class="flex flex-col md:flex-row gap-4">
-            <label class="form-control w-full md:w-1/2 relative" for="falaise_exposhort1">
+            <label class="form-control w-full md:w-1/2 relative">
               <div><b>Exposition(s) principale(s)</b></div>
-              <multi-select id="falaise_exposhort1" name="falaise_exposhort1" required
-                class="input input-primary input-sm mb-1" selected="items-center"
-                selecteditem="p-1 badge badge-info text-white w-10 badge-sm m-1 cursor-pointer"
-                dropdownitem="p-1 badge badge-info text-white m-1 w-12 cursor-pointer"
-                dropdown="border bg-white w-96 text-xs flex flex-row flew-wrap items-center rounded-lg shadow-lg"
-                selectallbutton="false" clearbutton="btn btn-xs p-1">
-                <option value="'N'">N</option>
-                <option value="'S'">S</option>
-                <option value="'E'">E</option>
-                <option value="'O'">O</option>
-                <option value="'NE'">NE</option>
-                <option value="'NO'">NO</option>
-                <option value="'SE'">SE</option>
-                <option value="'SO'">SO</option>
-                <option value="'NNE'">NNE</option>
-                <option value="'NNO'">NNO</option>
-                <option value="'SSE'">SSE</option>
-                <option value="'SSO'">SSO</option>
-                <option value="'ENE'">ENE</option>
-                <option value="'ESE'">ESE</option>
-                <option value="'OSO'">OSO</option>
-                <option value="'ONO'">ONO</option>
-              </multi-select>
+              <div id="vue-exposhort1" class="mb-1"></div>
             </label>
-            <label class="form-control w-full md:w-1/2 relative" for="falaise_exposhort2">
+            <label class="form-control w-full md:w-1/2 relative">
               <div><b class="">Exposition(s) secondaire(s) <span class="text-accent opacity-50">(optionnel)</span></b>
               </div>
-              <multi-select id="falaise_exposhort2" name="falaise_exposhort2" class="input input-bordered input-sm mb-1"
-                selected="items-center" selecteditem="p-1 badge badge-info text-white w-10 badge-sm m-1 cursor-pointer"
-                dropdownitem="p-1 badge badge-info text-white m-1 w-12 cursor-pointer"
-                dropdown="border bg-white w-96 text-xs flex flex-row flew-wrap items-center rounded-lg shadow-lg"
-                selectallbutton="false" clearbutton="btn btn-xs p-1">
-                <option value="'N'">N</option>
-                <option value="'S'">S</option>
-                <option value="'E'">E</option>
-                <option value="'O'">O</option>
-                <option value="'NE'">NE</option>
-                <option value="'NO'">NO</option>
-                <option value="'SE'">SE</option>
-                <option value="'SO'">SO</option>
-                <option value="'NNE'">NNE</option>
-                <option value="'NNO'">NNO</option>
-                <option value="'SSE'">SSE</option>
-                <option value="'SSO'">SSO</option>
-                <option value="'ENE'">ENE</option>
-                <option value="'ESE'">ESE</option>
-                <option value="'OSO'">OSO</option>
-                <option value="'ONO'">ONO</option>
-              </multi-select>
+              <div id="vue-exposhort2" class="mb-1"></div>
             </label>
           </div>
           <div class="flex flex-col md:flex-row gap-6 md:items-center">
@@ -838,8 +796,9 @@ champ rqvillefalaise_txt de la table rqvillefalaise).</pre>
         document.getElementById("falaise_cotmin").value = falaise.falaise_cotmin;
         document.getElementById("falaise_cotmax").value = falaise.falaise_cotmax;
         document.getElementById("falaise_expotxt").value = falaise.falaise_expotxt;
-        document.getElementById("falaise_exposhort1").value = falaise.falaise_exposhort1;
-        document.getElementById("falaise_exposhort2").value = falaise.falaise_exposhort2;
+        // Use Vue setters for exposition multi-selects
+        if (window.setExpo1Value) window.setExpo1Value(falaise.falaise_exposhort1 || '');
+        if (window.setExpo2Value) window.setExpo2Value(falaise.falaise_exposhort2 || '');
         document.getElementById("falaise_voies").value = falaise.falaise_voies;
         document.getElementById("falaise_nbvoies").value = falaise.falaise_nbvoies;
         document.getElementById("falaise_topo").value = falaise.falaise_topo;
@@ -919,7 +878,6 @@ champ rqvillefalaise_txt de la table rqvillefalaise).</pre>
   })
 
 </script>
-<script>window.customElements.define('multi-select', MultiselectWebcomponent);</script>
 <script type="module" src="/dist/ajout-falaise.js"></script>
 
 </html>
