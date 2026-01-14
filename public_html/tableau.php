@@ -140,13 +140,11 @@ $stmt->close();
   <meta name="twitter:description"
     content="Sorties escalade au départ de <?= $ville['ville_nom'] ?>. <?= count($falaises) ?> falaises décrites avec accès vélo-train.">
   <title>Escalade au départ de <?= $ville['ville_nom'] ?> - Vélogrimpe.fr</title>
-  <script src="https://d3js.org/d3.v7.min.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.min.css" rel="stylesheet" type="text/css" />
   <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
   <!-- Velogrimpe Styles -->
   <link rel="stylesheet" href="/global.css" />
   <link rel="manifest" href="/site.webmanifest" />
-  <script src="/js/rose-des-vents.js"></script>
   <!-- Pageviews -->
   <script async defer src="/js/pv.js"></script>
   <style type="text/tailwindcss"> @tailwind base;

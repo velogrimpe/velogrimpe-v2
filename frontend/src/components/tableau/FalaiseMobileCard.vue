@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import type { TableauFalaise, TableauItinerary } from '@/types/tableau'
 import { formatTime, calculateVeloTime } from '@/utils'
-
-declare function roseFromExpo(id: string, expo1: string, expo2: string, w: number, h: number): void
+import RoseDesVents from '@/components/shared/RoseDesVents.vue'
 
 const props = defineProps<{
   falaise: TableauFalaise
@@ -11,13 +10,6 @@ const props = defineProps<{
 }>()
 
 const common = computed(() => props.falaise[0])
-const roseId = computed(() => `rose-mobile-${common.value.falaise_id}`)
-
-onMounted(() => {
-  if (typeof roseFromExpo === 'function') {
-    roseFromExpo(roseId.value, common.value.falaise_exposhort1, common.value.falaise_exposhort2, 72, 72)
-  }
-})
 
 function formatCorrespondances(it: TableauItinerary): string {
   const min = it.train_correspmin === 0 ? 'D' : `${it.train_correspmin}C`
@@ -59,7 +51,11 @@ function formatCorrespondances(it: TableauItinerary): string {
             <span v-else>Aucune</span>
           </div>
         </div>
-        <div :id="roseId" class="w-[72px]"></div>
+        <RoseDesVents
+          :expo1="common.falaise_exposhort1"
+          :expo2="common.falaise_exposhort2"
+          :size="72"
+        />
       </div>
       <div class="w-full">
         <div class="border-base-300"><b>Acces depuis {{ common.ville_nom }} :</b></div>

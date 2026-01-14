@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import type { TableauFalaise, TableauItinerary } from '@/types/tableau'
 import { formatTime, calculateVeloTime } from '@/utils'
 import { getNbVoiesLabel } from './utils'
-
-declare function roseFromExpo(id: string, expo1: string, expo2: string, w: number, h: number): void
+import RoseDesVents from '@/components/shared/RoseDesVents.vue'
 
 const props = defineProps<{
   falaise: TableauFalaise
@@ -12,13 +11,6 @@ const props = defineProps<{
 }>()
 
 const common = computed(() => props.falaise[0])
-const roseId = computed(() => `rose-${common.value.falaise_id}`)
-
-onMounted(() => {
-  if (typeof roseFromExpo === 'function') {
-    roseFromExpo(roseId.value, common.value.falaise_exposhort1, common.value.falaise_exposhort2, 72, 72)
-  }
-})
 
 function formatCorrespondances(it: TableauItinerary): string {
   const min = it.train_correspmin === 0 ? 'D' : `${it.train_correspmin}C`
@@ -115,6 +107,10 @@ function getVeloReturnTime(it: TableauItinerary): string {
       <div v-if="common.falaise_bloc === 1" class="text-accent">Secteur de bloc</div>
       <div v-else-if="common.falaise_bloc === 2" class="text-accent">Psychobloc</div>
     </div>
-    <div :id="roseId" class="w-[72px]"></div>
+    <RoseDesVents
+      :expo1="common.falaise_exposhort1"
+      :expo2="common.falaise_exposhort2"
+      :size="72"
+    />
   </div>
 </template>

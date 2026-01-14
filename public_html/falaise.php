@@ -230,14 +230,10 @@ $stmtC->close();
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Barycentre -->
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
-  <!-- Rose des vents -->
-  <script src="https://d3js.org/d3.v7.min.js"></script>
   <!-- Pageviews -->
   <script async defer src="/js/pv.js"></script>
   <link rel="stylesheet" href="/global.css">
   <link rel="stylesheet" href="falaise.css">
-  <!-- Rose des vents -->
-  <script src="js/rose-des-vents.js"></script>
   <style type="text/tailwindcss"> @tailwind base;
     @tailwind components;
     @tailwind utilities;
@@ -416,10 +412,13 @@ $stmtC->close();
                 <!-- <div class="font-bold ">Remarques</div> -->
                 <div class=""><?= nl2br($falaise_rq) ?></div>
               <?php endif; ?>
-              <!-- <img src="/images/icons/expo.png" alt="Exposition" class="h-12 w-12 mx-auto" /> -->
-              <div id="rose-des-vents"></div>
-              <!-- <div id="rose-mini" class="sm:hidden"></div> -->
-              <!-- <div class="font-bold self-stretch flex items-center">Exposition</div> -->
+              <!-- Rose des vents (Vue component) -->
+              <div
+                id="vue-rose-des-vents"
+                data-expo1="<?= htmlspecialchars($falaise_exposhort1) ?>"
+                data-expo2="<?= htmlspecialchars($falaise_exposhort2) ?>"
+                data-size="60"
+              ></div>
               <div class=" flex flex-row gap-2 items-center">
                 <?= nl2br($falaise_expotxt) ?>
               </div>
@@ -1164,6 +1163,7 @@ $stmtC->close();
     layerControl.addOverlay(biodivLayer, 'Aires de protections de la biodiversité (escalade réglementée ou interdite)');
   </script>
   <script type="module" src="/dist/falaise-comment.js"></script>
+  <script type="module" src="/dist/falaise-rose.js"></script>
   <script>
     const comments = <?= json_encode($comments) ?>;
     function editComment(commentId) {
@@ -1298,23 +1298,6 @@ $stmtC->close();
 
     // Autocomplete is now handled by Vue component in /dist/falaise-comment.js
 
-  </script>
-  <script>
-    window.addEventListener("DOMContentLoaded", function () {
-      roseFromExpo("rose-des-vents", "<?php echo $falaise_exposhort1 ?>", "<?php echo $falaise_exposhort2 ?>", 60, 60);
-      // # SOMEDAY
-      // const quill = new Quill('#editor', {
-      //   modules: {
-      //     toolbar: [
-      //       ['bold', 'italic', 'underline'],
-      //       ['image', 'link'],
-      //     ],
-      //   },
-      //   placeholder: 'Compose an epic...',
-      //   theme: 'snow', // or 'bubble'
-      // });
-      // roseFromExpo("rose-mini", "<?php echo $falaise_exposhort1 ?>", "<?php echo $falaise_exposhort2 ?>", 36, 36);
-    });
   </script>
   <?php include "./components/footer.html"; ?>
 </body>
