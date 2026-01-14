@@ -1,16 +1,16 @@
 <header>
-  <nav class="z-10000">
+  <nav class="z-[10000]">
     <!-- VERSION MOBILE -->
-    <div class="drawer text-base-100 text-primary z-10000">
+    <div class="drawer text-base-100 text-primary z-[10000]">
       <input id="my-drawer-3" type="checkbox" class="drawer-toggle" />
       <div class="drawer-content flex flex-col">
         <!-- Navbar -->
         <div class="navbar py-0 w-full shadow-lg bg-primary text-base-100">
-          <div class="flex-none lg:hidden">
+          <div class="navbar-start">
             <label
               for="my-drawer-3"
               aria-label="open sidebar"
-              class="btn btn-square btn-ghost"
+              class="btn btn-square btn-ghost lg:hidden"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -26,25 +26,22 @@
                 ></path>
               </svg>
             </label>
-          </div>
-          <div class="gap-2 px-2 font-bold text-xl">
             <a
-              class="text-lg w-8 h-8 lg:w-9 lg:h-9 shadow-xl bg-white p-[3px] rounded-full"
+              class="flex items-center gap-2 px-2 font-bold text-xl"
               href="/"
             >
-              <img
-                alt="Velogrimpe.fr"
-                src="/images/logo_no_bg.png"
-                class="h-full object-cover w-auto"
-              />
+              <span class="w-8 h-8 lg:w-9 lg:h-9 shadow-xl bg-white p-[3px] rounded-full">
+                <img
+                  alt="Velogrimpe.fr"
+                  src="/images/logo_no_bg.png"
+                  class="h-full object-cover w-auto"
+                />
+              </span>
+              <span>Vélogrimpe.fr</span>
             </a>
-            <span> Vélogrimpe.fr</span>
           </div>
-          <div class="hidden lg:block flex-1">
-            <ul
-              class="menu menu-horizontal w-full flex-row justify-center text-lg"
-            >
-              <!-- Navbar menu content here -->
+          <div class="navbar-center hidden lg:flex">
+            <ul class="menu menu-horizontal px-1 text-lg">
               <li>
                 <a
                   class="hover:text-base-100 text-base-100 focus:text-base-100"
@@ -52,60 +49,56 @@
                   >Carte</a
                 >
               </li>
-              <li class="dropdown dropdown-bottom">
-                <a
-                  class="hover:text-base-100 text-base-100 focus:text-base-100"
-                  tabindex="0"
-                  role="button"
-                  class="font-bold"
-                >
-                  Falaises proches de...
-                </a>
-                <ul
-                  tabindex="0"
-                  class="dropdown-content menu bg-base-100 rounded-box z-1 w-52 p-2 shadow-xl"
-                >
-                  <li>
-                    <a class="text-primary" href="/tableau.php?ville_id=13">
-                      Annecy
-                    </a>
-                  </li>
-                  <li>
-                    <a class="text-primary" href="/tableau.php?ville_id=7">
-                      Chambéry
-                    </a>
-                  </li>
-                  <li>
-                    <a class="text-primary" href="/tableau.php?ville_id=11">
-                      Grenoble
-                    </a>
-                  </li>
-                  <li>
-                    <a class="text-primary" href="/tableau.php?ville_id=6">
-                      Lyon
-                    </a>
-                  </li>
-                  <li>
-                    <a class="text-primary" href="/tableau.php?ville_id=15">
-                      Marseille
-                    </a>
-                  </li>
-                  <li>
-                    <a class="text-primary" href="/tableau.php?ville_id=19">
-                      Montpellier
-                    </a>
-                  </li>
-                  <li>
-                    <a class="text-primary" href="/tableau.php?ville_id=18">
-                      Paris
-                    </a>
-                  </li>
-                  <li>
-                    <a class="text-primary" href="/tableau.php?ville_id=12">
-                      Valence
-                    </a>
-                  </li>
-                </ul>
+              <li>
+                <details>
+                  <summary
+                    class="hover:text-base-100 text-base-100 focus:text-base-100"
+                  >
+                    Falaises proches de...
+                  </summary>
+                  <ul class="bg-base-100 rounded-box z-[1] w-52 p-2 shadow-xl">
+                    <li>
+                      <a class="text-primary" href="/tableau.php?ville_id=13">
+                        Annecy
+                      </a>
+                    </li>
+                    <li>
+                      <a class="text-primary" href="/tableau.php?ville_id=7">
+                        Chambéry
+                      </a>
+                    </li>
+                    <li>
+                      <a class="text-primary" href="/tableau.php?ville_id=11">
+                        Grenoble
+                      </a>
+                    </li>
+                    <li>
+                      <a class="text-primary" href="/tableau.php?ville_id=6">
+                        Lyon
+                      </a>
+                    </li>
+                    <li>
+                      <a class="text-primary" href="/tableau.php?ville_id=15">
+                        Marseille
+                      </a>
+                    </li>
+                    <li>
+                      <a class="text-primary" href="/tableau.php?ville_id=19">
+                        Montpellier
+                      </a>
+                    </li>
+                    <li>
+                      <a class="text-primary" href="/tableau.php?ville_id=18">
+                        Paris
+                      </a>
+                    </li>
+                    <li>
+                      <a class="text-primary" href="/tableau.php?ville_id=12">
+                        Valence
+                      </a>
+                    </li>
+                  </ul>
+                </details>
               </li>
               <li>
                 <a
@@ -116,8 +109,8 @@
               </li>
             </ul>
           </div>
-          <div class="hidden lg:block">
-            <ul class="menu menu-horizontal flex-row text-base text-base-100">
+          <div class="navbar-end hidden lg:flex">
+            <ul class="menu menu-horizontal text-base text-base-100">
               <li>
                 <a
                   class="hover:text-base-100 text-base-100 focus:text-base-100 font-normal"
@@ -150,7 +143,7 @@
           </div>
         </div>
       </div>
-      <div class="drawer-side z-10000">
+      <div class="drawer-side z-[10000]">
         <label
           for="my-drawer-3"
           aria-label="close sidebar"
@@ -159,19 +152,6 @@
         <ul
           class="menu bg-base-200 h-[calc(100%-64px)] w-80 p-4 text-xl gap-4 mt-16 flex-nowrap overflow-scroll max-h-[calc(100vh-64px)]"
         >
-          <!-- <div class="pl-14 h-12 flex flex-row gap-2 font-bold text-xl">
-            <a
-              class="text-lg w-8 h-8 lg:w-9 lg:h-9 shadow-xl border-2 border-white rounded-full"
-              href="/"
-            >
-              <img
-                alt="Velogrimpe.fr"
-                src="/images/logo_no_bg.png"
-                class="h-full object-fill w-auto"
-              />
-            </a>
-            <span> Vélogrimpe.fr</span>
-          </div> -->
           <!-- Sidebar content here -->
           <li><a href="/carte.php">Carte</a></li>
           <li>
