@@ -1,5 +1,6 @@
 <?php
 require_once $_SERVER['DOCUMENT_ROOT'] . '/database/velogrimpe.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/vite.php';
 
 $falaises = $mysqli->query("SELECT * FROM falaises WHERE falaise_public >= 1")->fetch_all(MYSQLI_ASSOC);
 $villes = $mysqli->query("SELECT * FROM villes ORDER BY ville_nom")->fetch_all(MYSQLI_ASSOC);
@@ -63,7 +64,7 @@ $highlight = $_GET['h'] ?? '';
   <!-- Velogrimpe Styles -->
   <link rel="stylesheet" href="/global.css" />
   <!-- Vue Component Styles -->
-  <link rel="stylesheet" href="/dist/assets/carte-info-D02U7RXn.css" />
+  <?php vite_css('carte-info'); ?>
   <link rel="stylesheet" href="./index.css" />
   <link rel="manifest" href="./site.webmanifest" />
   <style>
