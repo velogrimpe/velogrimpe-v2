@@ -13,12 +13,10 @@ const props = withDefaults(defineProps<{
   placeholder?: string
   disabled?: boolean
   required?: boolean
-  showSelectAll?: boolean
 }>(), {
   placeholder: '',
   disabled: false,
-  required: false,
-  showSelectAll: false
+  required: false
 })
 
 const emit = defineEmits<{
@@ -60,15 +58,6 @@ function deselectOption(option: MultiSelectOption) {
   const newValue = props.modelValue.filter(v => v !== option.value)
   emit('update:modelValue', newValue)
   emit('change', newValue)
-}
-
-function selectAll() {
-  const allValues = props.options.map(opt => opt.value)
-  emit('update:modelValue', allValues)
-  emit('change', allValues)
-  isOpen.value = false
-  searchQuery.value = ''
-  searchInputRef.value?.focus()
 }
 
 function clearAll(event: Event) {
@@ -122,65 +111,46 @@ onUnmounted(() => {
 
     <!-- Main input area -->
     <div
-      class="input input-primary input-sm flex items-center flex-wrap gap-1 h-auto min-h-8 cursor-text"
+      class="input input-primary input-sm flex items-center gap-1 h-auto min-h-8 cursor-text py-1"
       :class="{ 'input-disabled': disabled }"
       @click="handleContainerClick"
     >
       <!-- Selected items -->
-      <div class="flex flex-wrap items-center gap-1 flex-grow">
-        <span
-          v-for="option in selectedOptions"
-          :key="option.value"
-          class="badge badge-info text-white badge-sm px-2 py-1 cursor-pointer select-none"
-          :class="{ 'cursor-not-allowed': disabled }"
-          @click.stop="deselectOption(option)"
-        >
-          {{ option.label }}
-        </span>
+      <span
+        v-for="option in selectedOptions"
+        :key="option.value"
+        class="badge badge-info text-white badge-sm cursor-pointer select-none shrink-0"
+        :class="{ 'cursor-not-allowed': disabled }"
+        @click.stop="deselectOption(option)"
+      >
+        {{ option.label }}
+      </span>
 
-        <!-- Search input -->
-        <input
-          ref="searchInputRef"
-          v-model="searchQuery"
-          type="text"
-          class="flex-grow min-w-[40px] border-0 outline-none bg-transparent text-sm"
-          :placeholder="selectedOptions.length === 0 ? placeholder : ''"
-          :disabled="disabled"
-          @keyup="handleSearchKeyup"
-          @focus="isOpen = true"
-        />
-      </div>
+      <!-- Search input -->
+      <input
+        ref="searchInputRef"
+        v-model="searchQuery"
+        type="text"
+        class="flex-grow min-w-[30px] border-0 outline-none bg-transparent text-sm h-5"
+        :placeholder="selectedOptions.length === 0 ? placeholder : ''"
+        :disabled="disabled"
+        @keyup="handleSearchKeyup"
+        @focus="isOpen = true"
+      />
 
-      <!-- Buttons -->
-      <div class="flex items-center gap-1">
-        <!-- Select all button -->
-        <button
-          v-if="showSelectAll && availableOptions.length > 0"
-          type="button"
-          class="btn btn-xs btn-ghost p-1"
-          title="Tout"
-          :disabled="disabled"
-          @click.stop="selectAll"
-        >
-          <svg class="w-4 h-4 fill-current">
-            <use :href="'/symbols/icons.svg#ri-check-double-line'"></use>
-          </svg>
-        </button>
-
-        <!-- Clear button -->
-        <button
-          v-if="selectedOptions.length > 0"
-          type="button"
-          class="btn btn-xs btn-ghost p-1"
-          title="Clear Selection"
-          :disabled="disabled"
-          @click="clearAll"
-        >
-          <svg class="w-4 h-4 fill-current">
-            <use :href="'/symbols/icons.svg#ri-close-line'"></use>
-          </svg>
-        </button>
-      </div>
+      <!-- Clear button -->
+      <button
+        v-if="selectedOptions.length > 0"
+        type="button"
+        class="btn btn-xs btn-ghost p-0 h-5 min-h-0 shrink-0"
+        title="Clear Selection"
+        :disabled="disabled"
+        @click="clearAll"
+      >
+        <svg class="w-4 h-4 fill-current">
+          <use :href="'/symbols/icons.svg#ri-close-line'"></use>
+        </svg>
+      </button>
     </div>
 
     <!-- Dropdown -->
