@@ -28,6 +28,16 @@ document.addEventListener('DOMContentLoaded', () => {
   // Create shared Pinia instance
   const pinia = createPinia()
 
+  // Initialize tableau store with data from PHP FIRST
+  const tableauStore = useTableauStore(pinia)
+
+  if (window.__TABLEAU_DATA__) {
+    tableauStore.initialize(window.__TABLEAU_DATA__)
+    console.log('[velogrimpe] Tableau store initialized with', window.__TABLEAU_DATA__.falaises.length, 'falaises')
+  } else {
+    console.warn('[velogrimpe] No tableau data found on window.__TABLEAU_DATA__')
+  }
+
   // Mount filters panel
   if (filtersMountEl) {
     const filtersApp = createApp(TableauFilterPanel)
@@ -42,15 +52,5 @@ document.addEventListener('DOMContentLoaded', () => {
     listApp.use(pinia)
     listApp.mount(listMountEl)
     console.log('[velogrimpe] Vue tableau list mounted')
-  }
-
-  // Initialize tableau store with data from PHP
-  const tableauStore = useTableauStore(pinia)
-
-  if (window.__TABLEAU_DATA__) {
-    tableauStore.initialize(window.__TABLEAU_DATA__)
-    console.log('[velogrimpe] Tableau store initialized with', window.__TABLEAU_DATA__.falaises.length, 'falaises')
-  } else {
-    console.warn('[velogrimpe] No tableau data found on window.__TABLEAU_DATA__')
   }
 })

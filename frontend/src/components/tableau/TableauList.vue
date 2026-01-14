@@ -49,13 +49,13 @@ const hasResults = computed(() => filteredCount.value > 0)
         Temps total (T+V+A)
       </div>
       <div class="bg-base-100 px-2 py-1 self-stretch flex flex-col items-center justify-center vg-desktop-header">
-        <img class="h-12" alt="Train" src="/images/icons/train-station_color.png" />
+        <img class="h-12" alt="Train" :src="'/images/icons/train-station_color.png'" />
       </div>
       <div class="bg-base-100 px-2 py-1 self-stretch flex flex-col items-center justify-center vg-desktop-header">
-        <img class="h-12" alt="Velo" src="/images/icons/bicycle_color.png" />
+        <img class="h-12" alt="Velo" :src="'/images/icons/bicycle_color.png'" />
       </div>
       <div class="bg-base-100 px-2 py-1 self-stretch flex flex-col items-center justify-center vg-desktop-header">
-        <img class="h-12" alt="Escalade" src="/images/icons/rock-climbing_color.png" />
+        <img class="h-12" alt="Escalade" :src="'/images/icons/rock-climbing_color.png'" />
       </div>
 
       <!-- Data rows -->

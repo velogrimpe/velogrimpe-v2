@@ -30,62 +30,7 @@ const types = [
   { id: 'psychobloc' as const, label: 'Psychobloc' },
 ]
 
-// Train options
-const trainTempsOptions = [
-  { value: null, label: 'Pas de maximum' },
-  { value: 60, label: 'Moins de 1h' },
-  { value: 120, label: 'Moins de 2h' },
-  { value: 180, label: 'Moins de 3h' },
-  { value: 240, label: 'Moins de 4h' },
-]
-
-const correspOptions = [
-  { value: null, label: 'Peu importe' },
-  { value: 0, label: 'Direct' },
-  { value: 1, label: '1 max' },
-  { value: 2, label: '2 max' },
-]
-
-// Velo options
-const veloTempsOptions = [
-  { value: null, label: 'Pas de maximum' },
-  { value: 30, label: "Moins de 30'" },
-  { value: 60, label: "Moins de 1h" },
-  { value: 90, label: "Moins de 1h30" },
-]
-
-const veloDistOptions = [
-  { value: null, label: 'Pas de maximum' },
-  { value: 10, label: 'Moins de 10km' },
-  { value: 20, label: 'Moins de 20km' },
-  { value: 30, label: 'Moins de 30km' },
-]
-
-const veloDenivOptions = [
-  { value: null, label: 'Pas de maximum' },
-  { value: 200, label: 'Moins de 200m' },
-  { value: 400, label: 'Moins de 400m' },
-  { value: 600, label: 'Moins de 600m' },
-]
-
-// Approche options
-const approcheOptions = [
-  { value: null, label: 'Pas de maximum' },
-  { value: 10, label: "Moins de 10'" },
-  { value: 20, label: "Moins de 20'" },
-  { value: 30, label: "Moins de 30'" },
-]
-
-// Total options
-const totalOptions = [
-  { value: null, label: 'Pas de maximum' },
-  { value: 120, label: 'Moins de 2h' },
-  { value: 180, label: 'Moins de 3h' },
-  { value: 240, label: 'Moins de 4h' },
-  { value: 300, label: 'Moins de 5h' },
-]
-
-// Nb voies options
+// Nb voies options (keep as select)
 const nbVoiesOptions = [
   { value: 0, label: 'Pas de minimum' },
   { value: 20, label: 'Plus de 20' },
@@ -129,6 +74,11 @@ function isCotChecked(id: Cotation): boolean {
   return store.filters.cotations.includes(id)
 }
 
+// Helper to parse number input (empty string -> null)
+function parseNumberInput(value: string): number | null {
+  const num = parseInt(value, 10)
+  return isNaN(num) ? null : num
+}
 </script>
 
 <template>
@@ -235,7 +185,7 @@ function isCotChecked(id: Cotation): boolean {
       </div>
 
       <!-- Train Dropdown -->
-      <div class="dropdown w-fit">
+      <div class="dropdown w-fit dropdown-end">
         <div
           tabindex="0"
           role="button"
@@ -244,34 +194,69 @@ function isCotChecked(id: Cotation): boolean {
         >
           Train 🚞
         </div>
-        <div class="dropdown-content menu bg-base-200 rounded-box z-[1] m-1 w-52 p-2 shadow-lg" tabindex="1">
-          <div class="flex flex-col gap-2">
-            <div class="font-bold">Temps de trajet</div>
-            <select
-              class="select border-base-300 select-sm focus:outline-base-300 w-full"
+        <div class="dropdown-content menu bg-base-200 rounded-box z-[1] m-1 w-64 p-2 shadow-lg" tabindex="1">
+          <label class="flex flex-row gap-2 items-center">
+            <div class="font-bold">Durée</div>
+            <div class="text-normal font-bold">≤</div>
+            <input
+              type="number"
+              step="1"
+              min="0"
+              class="input input-bordered input-sm w-14"
               :value="store.filters.train.tempsMax ?? ''"
-              @change="store.setTrainTempsMax(($event.target as HTMLSelectElement).value ? Number(($event.target as HTMLSelectElement).value) : null)"
-            >
-              <option v-for="opt in trainTempsOptions" :key="String(opt.value)" :value="opt.value ?? ''">{{ opt.label }}</option>
-            </select>
-            <div class="font-bold">Correspondances</div>
-            <select
-              class="select border-base-300 select-sm focus:outline-base-300 w-full"
-              :value="store.filters.train.correspMax ?? ''"
-              @change="store.setTrainCorrespMax(($event.target as HTMLSelectElement).value ? Number(($event.target as HTMLSelectElement).value) : null)"
-            >
-              <option v-for="opt in correspOptions" :key="String(opt.value)" :value="opt.value ?? ''">{{ opt.label }}</option>
-            </select>
-            <label class="label hover:bg-base-300 rounded-lg cursor-pointer gap-2 p-0 pr-1 justify-start">
+              @input="store.setTrainTempsMax(parseNumberInput(($event.target as HTMLInputElement).value))"
+            />
+            <div>minutes</div>
+          </label>
+          <div class="flex flex-row items-center gap-1 mt-2">
+            <div>Nb. Corresp. Max</div>
+            <div class="flex flex-row gap-2 items-center">
+              <label class="label cursor-pointer gap-1">
+                <input
+                  type="radio"
+                  name="nbCorrespMax"
+                  value="0"
+                  class="radio radio-primary radio-xs"
+                  :checked="store.filters.train.correspMax === 0"
+                  @change="store.setTrainCorrespMax(0)"
+                />
+                <span class="label-text">0</span>
+              </label>
+              <label class="label cursor-pointer gap-1">
+                <input
+                  type="radio"
+                  name="nbCorrespMax"
+                  value="1"
+                  class="radio radio-primary radio-xs"
+                  :checked="store.filters.train.correspMax === 1"
+                  @change="store.setTrainCorrespMax(1)"
+                />
+                <span class="label-text">≤1</span>
+              </label>
+              <button
+                v-if="store.filters.train.correspMax !== null"
+                type="button"
+                class="btn btn-ghost btn-xs p-0"
+                title="Réinitialiser"
+                @click="store.setTrainCorrespMax(null)"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+          <div class="divider my-1"></div>
+          <label class="form-control cursor-pointer">
+            <div class="label gap-2 p-0 justify-start">
+              <span class="label-text text-sm">TGV OK</span>
               <input
                 type="checkbox"
+                class="toggle toggle-primary toggle-sm"
                 :checked="store.filters.train.terOnly"
-                class="checkbox border-base-300 bg-base-100 [--chkbg:oklch(var(--p))] checkbox-sm"
                 @change="store.setTrainTerOnly(!store.filters.train.terOnly)"
               />
-              <span class="label-text">TER uniquement</span>
-            </label>
-          </div>
+              <span class="label-text text-sm">TER uniquement</span>
+            </div>
+          </label>
         </div>
       </div>
     </div>
@@ -287,40 +272,58 @@ function isCotChecked(id: Cotation): boolean {
         >
           Vélo 🚲
         </div>
-        <div class="dropdown-content menu bg-base-200 rounded-box z-[1] m-1 w-52 p-2 shadow-lg" tabindex="1">
-          <div class="flex flex-col gap-2">
-            <div class="font-bold">Temps de trajet</div>
-            <select
-              class="select border-base-300 select-sm focus:outline-base-300 w-full"
-              :value="store.filters.velo.tempsMax ?? ''"
-              @change="store.setVeloTempsMax(($event.target as HTMLSelectElement).value ? Number(($event.target as HTMLSelectElement).value) : null)"
-            >
-              <option v-for="opt in veloTempsOptions" :key="String(opt.value)" :value="opt.value ?? ''">{{ opt.label }}</option>
-            </select>
-            <div class="font-bold">Distance</div>
-            <select
-              class="select border-base-300 select-sm focus:outline-base-300 w-full"
-              :value="store.filters.velo.distMax ?? ''"
-              @change="store.setVeloDistMax(($event.target as HTMLSelectElement).value ? Number(($event.target as HTMLSelectElement).value) : null)"
-            >
-              <option v-for="opt in veloDistOptions" :key="String(opt.value)" :value="opt.value ?? ''">{{ opt.label }}</option>
-            </select>
-            <div class="font-bold">Dénivelé</div>
-            <select
-              class="select border-base-300 select-sm focus:outline-base-300 w-full"
-              :value="store.filters.velo.denivMax ?? ''"
-              @change="store.setVeloDenivMax(($event.target as HTMLSelectElement).value ? Number(($event.target as HTMLSelectElement).value) : null)"
-            >
-              <option v-for="opt in veloDenivOptions" :key="String(opt.value)" :value="opt.value ?? ''">{{ opt.label }}</option>
-            </select>
-            <label class="label hover:bg-base-300 rounded-lg cursor-pointer gap-2 p-0 pr-1 justify-start">
+        <div class="dropdown-content menu bg-base-200 rounded-box z-[1] m-1 w-64 p-2 shadow-lg" tabindex="1">
+          <div class="flex flex-row gap-3 items-center">
+            <div>Trajet vélo</div>
+            <div class="flex flex-col gap-1">
+              <label class="flex flex-row gap-2 flex-wrap items-center">
+                <div class="text-normal font-bold">≤</div>
+                <input
+                  type="number"
+                  step="1"
+                  min="0"
+                  class="input input-bordered input-sm w-14"
+                  :value="store.filters.velo.tempsMax ?? ''"
+                  @input="store.setVeloTempsMax(parseNumberInput(($event.target as HTMLInputElement).value))"
+                />
+                <div>minutes</div>
+              </label>
+              <label class="flex flex-row gap-2 items-center">
+                <div class="text-normal font-bold">≤</div>
+                <input
+                  type="number"
+                  step="1"
+                  min="0"
+                  class="input input-bordered input-sm w-14"
+                  :value="store.filters.velo.distMax ?? ''"
+                  @input="store.setVeloDistMax(parseNumberInput(($event.target as HTMLInputElement).value))"
+                />
+                <div>km</div>
+              </label>
+              <label class="flex flex-row gap-2 items-center">
+                <div class="text-normal font-bold">≤</div>
+                <input
+                  type="number"
+                  step="1"
+                  min="0"
+                  class="input input-bordered input-sm w-14"
+                  :value="store.filters.velo.denivMax ?? ''"
+                  @input="store.setVeloDenivMax(parseNumberInput(($event.target as HTMLInputElement).value))"
+                />
+                <div>D+</div>
+              </label>
+            </div>
+          </div>
+          <div class="flex flex-row gap-2 items-center mt-2">
+            <div class="bg-base-100 rounded-full w-6 h-6 border-2 border-base-300 flex items-center justify-center text-xs text-slate-600 font-bold">OU</div>
+            <label class="flex flex-row gap-2 items-center hover:bg-base-300 rounded-lg cursor-pointer p-0 pr-1">
               <input
                 type="checkbox"
                 :checked="store.filters.velo.apiedPossible"
-                class="checkbox border-base-300 bg-base-100 [--chkbg:oklch(var(--p))] checkbox-sm"
+                class="checkbox border-base-300 bg-base-100 [--chkbg:oklch(var(--p))]"
                 @change="store.setVeloApiedPossible(!store.filters.velo.apiedPossible)"
               />
-              <span class="label-text">Accès à pied possible</span>
+              <div>Accessible à pied</div>
             </label>
           </div>
         </div>
@@ -336,22 +339,25 @@ function isCotChecked(id: Cotation): boolean {
         >
           Marche 🥾
         </div>
-        <div class="dropdown-content menu bg-base-200 rounded-box z-[1] m-1 w-48 p-2 shadow-lg" tabindex="1">
-          <div class="flex flex-col gap-2">
-            <div class="font-bold">Temps de marche</div>
-            <select
-              class="select border-base-300 select-sm focus:outline-base-300 w-full"
+        <div class="dropdown-content menu bg-base-200 rounded-box z-[1] m-1 w-56 p-2 shadow-lg" tabindex="1">
+          <label class="flex flex-row gap-2 items-center">
+            <div class="font-bold">Approche</div>
+            <div class="text-normal font-bold">≤</div>
+            <input
+              type="number"
+              step="1"
+              min="0"
+              class="input input-bordered input-sm w-14"
               :value="store.filters.approche.tempsMax ?? ''"
-              @change="store.setApprocheTempsMax(($event.target as HTMLSelectElement).value ? Number(($event.target as HTMLSelectElement).value) : null)"
-            >
-              <option v-for="opt in approcheOptions" :key="String(opt.value)" :value="opt.value ?? ''">{{ opt.label }}</option>
-            </select>
-          </div>
+              @input="store.setApprocheTempsMax(parseNumberInput(($event.target as HTMLInputElement).value))"
+            />
+            <div>minutes</div>
+          </label>
         </div>
       </div>
 
       <!-- Total Dropdown -->
-      <div class="dropdown w-fit">
+      <div class="dropdown w-fit dropdown-end">
         <div
           tabindex="0"
           role="button"
@@ -360,24 +366,34 @@ function isCotChecked(id: Cotation): boolean {
         >
           Total ⏱️
         </div>
-        <div class="dropdown-content menu bg-base-200 rounded-box z-[1] m-1 w-52 p-2 shadow-lg" tabindex="1">
-          <div class="flex flex-col gap-2">
-            <div class="font-bold">Train + Vélo</div>
-            <select
-              class="select border-base-300 select-sm focus:outline-base-300 w-full"
-              :value="store.filters.total.tempsTV ?? ''"
-              @change="store.setTotalTempsTV(($event.target as HTMLSelectElement).value ? Number(($event.target as HTMLSelectElement).value) : null)"
-            >
-              <option v-for="opt in totalOptions" :key="String(opt.value)" :value="opt.value ?? ''">{{ opt.label }}</option>
-            </select>
-            <div class="font-bold">Train + Vélo + Approche</div>
-            <select
-              class="select border-base-300 select-sm focus:outline-base-300 w-full"
-              :value="store.filters.total.tempsTVA ?? ''"
-              @change="store.setTotalTempsTVA(($event.target as HTMLSelectElement).value ? Number(($event.target as HTMLSelectElement).value) : null)"
-            >
-              <option v-for="opt in totalOptions" :key="String(opt.value)" :value="opt.value ?? ''">{{ opt.label }}</option>
-            </select>
+        <div class="dropdown-content menu bg-base-200 rounded-box z-[1] m-1 p-2 shadow-lg" tabindex="1">
+          <div class="flex flex-col gap-2 items-end">
+            <label class="flex flex-row gap-1 items-center">
+              <div>Train+Vélo</div>
+              <div class="text-normal font-bold">≤</div>
+              <input
+                type="number"
+                step="1"
+                min="0"
+                class="input input-bordered input-sm w-14"
+                :value="store.filters.total.tempsTV ?? ''"
+                @input="store.setTotalTempsTV(parseNumberInput(($event.target as HTMLInputElement).value))"
+              />
+              <div>minutes</div>
+            </label>
+            <label class="flex flex-row gap-1 items-center">
+              <div>Train+Vélo+Approche</div>
+              <div class="text-normal font-bold">≤</div>
+              <input
+                type="number"
+                step="1"
+                min="0"
+                class="input input-bordered input-sm w-14"
+                :value="store.filters.total.tempsTVA ?? ''"
+                @input="store.setTotalTempsTVA(parseNumberInput(($event.target as HTMLInputElement).value))"
+              />
+              <div>minutes</div>
+            </label>
           </div>
         </div>
       </div>
