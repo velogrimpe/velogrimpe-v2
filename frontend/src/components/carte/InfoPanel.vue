@@ -26,6 +26,9 @@ function formatDescription(text: string | null): string {
   if (!text) return ''
   return text.replace(/\n/g, '<br>')
 }
+
+// Use runtime variable to prevent Vite from importing the SVG as a module
+const filterIconHref = '/symbols/icons.svg#ri-filter-line'
 </script>
 
 <template>
@@ -33,7 +36,7 @@ function formatDescription(text: string | null): string {
     <!-- Header: Filter stats (when nothing selected) -->
     <div v-if="!selected" class="flex gap-1 items-center justify-center font-bold text-primary border-b border-base-300 pb-1 mb-1">
       <svg class="w-4 h-4 fill-current">
-        <use href="/symbols/icons.svg#ri-filter-line"></use>
+        <use :href="filterIconHref"></use>
       </svg>
       <span v-if="hasFilters">
         {{ store.filteredFalaises }} falaises correspondent aux filtres
