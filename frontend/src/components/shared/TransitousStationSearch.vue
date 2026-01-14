@@ -1,12 +1,29 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 
+export interface TransitousStationArea {
+  name: string
+  adminLevel: number
+  matched: boolean
+  unique: boolean
+  default: boolean
+}
+
 export interface TransitousStation {
   name: string
   lat: number
   lon: number
   type: string
   id?: string
+  country?: string
+  modes?: string[]
+  areas?: TransitousStationArea[]
+}
+
+function getStationLocation(station: TransitousStation): string {
+  if (!station.areas) return ''
+  const defaultArea = station.areas.find((a) => a.default)
+  return defaultArea?.name || ''
 }
 
 const props = withDefaults(
@@ -61,8 +78,15 @@ async function fetchStations(query: string) {
     })
     if (!response.ok) throw new Error(`HTTP error: ${response.status}`)
     const data = await response.json()
+    // Filter: only train stations (with rail services) in France
+    const railModes = ['HIGHSPEED_RAIL', 'LONG_DISTANCE', 'REGIONAL_FAST_RAIL', 'REGIONAL_RAIL', 'SUBURBAN']
     stations.value = data
-      .filter((item: TransitousStation) => item.type === 'STOP')
+      .filter((item: TransitousStation) => {
+        if (item.type !== 'STOP') return false
+        if (item.country !== 'FR') return false
+        if (!item.modes?.some((m) => railModes.includes(m))) return false
+        return true
+      })
       .slice(0, 10) // Limit to 10 results
   } catch (error) {
     console.error('[TransitousStationSearch] Error fetching stations:', error)
@@ -162,7 +186,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="relative w-full">
+  <div class="relative w-full z-10">
     <div class="relative">
       <input
         ref="inputRef"
@@ -180,8 +204,8 @@ onUnmounted(() => {
       <span v-if="isLoading" class="absolute right-2 top-1/2 -translate-y-1/2">
         <span class="loading loading-spinner loading-xs"></span>
       </span>
-      <svg v-else class="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 fill-current opacity-50">
-        <use xlink:href="/symbols/icons.svg#ri-search-line"></use>
+      <svg v-else class="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 fill-current opacity-50" viewBox="0 0 24 24">
+        <path d="M18.031 16.6168L22.3137 20.8995L20.8995 22.3137L16.6168 18.031C15.0769 19.263 13.124 20 11 20C6.032 20 2 15.968 2 11C2 6.032 6.032 2 11 2C15.968 2 20 6.032 20 11C20 13.124 19.263 15.0769 18.031 16.6168ZM16.0247 15.8748C17.2475 14.6146 18 12.8956 18 11C18 7.1325 14.8675 4 11 4C7.1325 4 4 7.1325 4 11C4 14.8675 7.1325 18 11 18C12.8956 18 14.6146 17.2475 15.8748 16.0247L16.0247 15.8748Z"></path>
       </svg>
     </div>
     <ul
@@ -192,16 +216,26 @@ onUnmounted(() => {
       <li
         v-for="(station, index) in stations"
         :key="station.id || `${station.lat}-${station.lon}`"
-        class="p-2 cursor-pointer hover:bg-primary hover:text-white text-sm"
+        class="p-2 cursor-pointer hover:bg-primary hover:text-white text-sm flex items-start gap-2"
         :class="{ 'bg-primary text-white': index === currentFocus }"
         @click="selectStation(station)"
       >
-        {{ station.name }}
+        <!-- Train icon -->
+        <svg class="w-4 h-4 mt-0.5 shrink-0 opacity-60" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M17.2 20L19 22H5L6.8 20H17.2ZM12 2C16.42 2 20 3.79 20 6V15C20 16.66 18.66 18 17 18H7C5.34 18 4 16.66 4 15V6C4 3.79 7.58 2 12 2ZM12 12C9.79 12 8 12.9 8 14C8 15.1 9.79 16 12 16C14.21 16 16 15.1 16 14C16 12.9 14.21 12 12 12ZM18 6C18 5.11 15.31 4 12 4C8.69 4 6 5.11 6 6V10H18V6Z"/>
+        </svg>
+        <!-- Station info -->
+        <div class="flex-1 min-w-0">
+          <div class="font-medium truncate">{{ station.name }}</div>
+          <div v-if="getStationLocation(station)" class="text-xs opacity-70 truncate">
+            {{ getStationLocation(station) }}
+          </div>
+        </div>
       </li>
     </ul>
     <div
       v-if="isOpen && !isLoading && inputValue.length >= 2 && stations.length === 0"
-      class="absolute w-full bg-white border border-base-300 mt-1 p-2 text-sm text-base-content/60 rounded-lg"
+      class="absolute w-full bg-white border border-base-300 mt-1 p-2 text-sm text-base-content/60 rounded-lg z-50 shadow-lg"
     >
       Aucune gare trouvée
     </div>

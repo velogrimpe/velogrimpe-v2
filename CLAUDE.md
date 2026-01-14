@@ -297,7 +297,11 @@ The map bundle uses esbuild (not Vite) to output IIFE format for synchronous loa
 
 ## TODO
 
-(No pending tasks)
+- **Icon Library**: Add a shared icon library for both Vue components and PHP. Options to consider:
+  - Lucide Icons (Vue + web component, lightweight)
+  - Heroicons (official Tailwind companion)
+  - SVG sprite sheet built at compile time
+  - Goal: replace inline SVGs with consistent, reusable icons across frontend and PHP pages
 
 ## Architecture Notes (for future reference)
 
