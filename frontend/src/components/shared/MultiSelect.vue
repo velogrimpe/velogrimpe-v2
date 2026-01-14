@@ -111,38 +111,40 @@ onUnmounted(() => {
 
     <!-- Main input area -->
     <div
-      class="input input-primary input-sm flex items-center gap-1 h-auto min-h-8 cursor-text py-1"
+      class="input input-primary input-sm flex items-center h-auto min-h-8 cursor-text py-1 pr-1"
       :class="{ 'input-disabled': disabled }"
       @click="handleContainerClick"
     >
-      <!-- Selected items -->
-      <span
-        v-for="option in selectedOptions"
-        :key="option.value"
-        class="badge badge-info text-white badge-sm cursor-pointer select-none shrink-0"
-        :class="{ 'cursor-not-allowed': disabled }"
-        @click.stop="deselectOption(option)"
-      >
-        {{ option.label }}
-      </span>
+      <!-- Selected items wrapper with flex-wrap -->
+      <div class="flex flex-wrap items-center gap-1 flex-grow min-w-0">
+        <span
+          v-for="option in selectedOptions"
+          :key="option.value"
+          class="badge badge-info text-white badge-sm cursor-pointer select-none"
+          :class="{ 'cursor-not-allowed': disabled }"
+          @click.stop="deselectOption(option)"
+        >
+          {{ option.label }}
+        </span>
 
-      <!-- Search input -->
-      <input
-        ref="searchInputRef"
-        v-model="searchQuery"
-        type="text"
-        class="flex-grow min-w-[30px] border-0 outline-none bg-transparent text-sm h-5"
-        :placeholder="selectedOptions.length === 0 ? placeholder : ''"
-        :disabled="disabled"
-        @keyup="handleSearchKeyup"
-        @focus="isOpen = true"
-      />
+        <!-- Search input -->
+        <input
+          ref="searchInputRef"
+          v-model="searchQuery"
+          type="text"
+          class="flex-grow min-w-[30px] border-0 outline-none bg-transparent text-sm h-5"
+          :placeholder="selectedOptions.length === 0 ? placeholder : ''"
+          :disabled="disabled"
+          @keyup="handleSearchKeyup"
+          @focus="isOpen = true"
+        />
+      </div>
 
-      <!-- Clear button -->
+      <!-- Clear button - always visible on the right -->
       <button
         v-if="selectedOptions.length > 0"
         type="button"
-        class="btn btn-xs btn-ghost p-0 h-5 min-h-0 shrink-0"
+        class="btn btn-xs btn-ghost p-0 h-5 min-h-0 shrink-0 ml-1"
         title="Clear Selection"
         :disabled="disabled"
         @click="clearAll"
