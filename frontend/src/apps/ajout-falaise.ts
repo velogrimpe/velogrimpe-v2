@@ -1,6 +1,15 @@
-import { createApp, h, ref, watch } from 'vue'
+import { createApp, h, ref, watch, computed } from 'vue'
 import FormAutocomplete, { type FormAutocompleteItem } from '@/components/shared/FormAutocomplete.vue'
 import MultiSelect, { type MultiSelectOption } from '@/components/shared/MultiSelect.vue'
+import RoseDesVents from '@/components/shared/RoseDesVents.vue'
+
+// Shared refs for exposition values (used by both MultiSelect and RoseDesVents)
+const expo1Value = ref<string[]>([])
+const expo2Value = ref<string[]>([])
+
+// Computed strings for the rose component
+const expo1String = computed(() => expo1Value.value.join(','))
+const expo2String = computed(() => expo2Value.value.join(','))
 
 interface FalaiseItem extends FormAutocompleteItem {
   latlng?: string
@@ -201,7 +210,7 @@ function mountExpositionSelects() {
   const expo1El = document.getElementById('vue-exposhort1')
   if (expo1El) {
     const presetValue = expo1El.dataset.value || ''
-    const expo1Value = ref<string[]>(parseExpositionValue(presetValue))
+    expo1Value.value = parseExpositionValue(presetValue)
 
     const expo1App = createApp({
       setup() {
@@ -218,18 +227,13 @@ function mountExpositionSelects() {
       }
     })
     expo1App.mount(expo1El)
-
-    // Expose setter for prefill from PHP
-    ;(window as unknown as Record<string, unknown>).setExpo1Value = (value: string) => {
-      expo1Value.value = parseExpositionValue(value)
-    }
   }
 
   // Mount exposhort2 (optional)
   const expo2El = document.getElementById('vue-exposhort2')
   if (expo2El) {
     const presetValue = expo2El.dataset.value || ''
-    const expo2Value = ref<string[]>(parseExpositionValue(presetValue))
+    expo2Value.value = parseExpositionValue(presetValue)
 
     const expo2App = createApp({
       setup() {
@@ -246,10 +250,28 @@ function mountExpositionSelects() {
       }
     })
     expo2App.mount(expo2El)
+  }
 
-    // Expose setter for prefill from PHP
-    ;(window as unknown as Record<string, unknown>).setExpo2Value = (value: string) => {
-      expo2Value.value = parseExpositionValue(value)
-    }
+  // Mount rose des vents preview
+  const roseEl = document.getElementById('vue-rose-preview')
+  if (roseEl) {
+    const roseApp = createApp({
+      setup() {
+        return () => h(RoseDesVents, {
+          expo1: expo1String.value,
+          expo2: expo2String.value,
+          size: 80,
+        })
+      }
+    })
+    roseApp.mount(roseEl)
+  }
+
+  // Expose setters for prefill from PHP
+  ;(window as unknown as Record<string, unknown>).setExpo1Value = (value: string) => {
+    expo1Value.value = parseExpositionValue(value)
+  }
+  ;(window as unknown as Record<string, unknown>).setExpo2Value = (value: string) => {
+    expo2Value.value = parseExpositionValue(value)
   }
 }

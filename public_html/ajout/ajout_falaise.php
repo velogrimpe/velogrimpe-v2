@@ -506,7 +506,7 @@ if ($falaise_id) {
                 cas où il existe un petit nombre de voies avec une orientation différente des autres. </i>
             </div>
             <div class="flex-grow flex justify-center">
-              <img src="/images/pages/contribution/rosedesvents.png" alt="Rose des vents" class="max-w-[200px]">
+              <div id="vue-rose-preview" class="w-20 h-20"></div>
             </div>
           </div>
         </div>
