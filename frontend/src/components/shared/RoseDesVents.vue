@@ -105,14 +105,24 @@ const sectors = computed<SectorPath[]>(() => {
   return result;
 });
 
-function getSectorClass(direction: string, isSecondHalf: boolean): string {
+// Colors matching the original D3 implementation
+const colors = {
+  primary: "#1e5d3e",
+  primaryStroke: "#2e8b57",
+  secondary: "rgba(30, 93, 62, 0.5)",
+  secondaryStroke: "rgba(46, 139, 87, 0.5)",
+  inactive: "#eee",
+  inactiveStroke: "#bbb",
+};
+
+function getSectorFill(direction: string, isSecondHalf: boolean): string {
   const checkDir = isSecondHalf
     ? directions[(directions.indexOf(direction) + 1) % 16]
     : direction;
 
-  if (expo1Set.value.has(checkDir)) return "fill-primary";
-  if (expo2Set.value.has(checkDir)) return "fill-primary/50";
-  return "fill-base-200";
+  if (expo1Set.value.has(checkDir)) return colors.primary;
+  if (expo2Set.value.has(checkDir)) return colors.secondary;
+  return colors.inactive;
 }
 
 function getSectorStroke(direction: string, isSecondHalf: boolean): string {
@@ -120,9 +130,9 @@ function getSectorStroke(direction: string, isSecondHalf: boolean): string {
     ? directions[(directions.indexOf(direction) + 1) % 16]
     : direction;
 
-  if (expo1Set.value.has(checkDir)) return "stroke-primary";
-  if (expo2Set.value.has(checkDir)) return "stroke-primary/50";
-  return "stroke-base-300";
+  if (expo1Set.value.has(checkDir)) return colors.primaryStroke;
+  if (expo2Set.value.has(checkDir)) return colors.secondaryStroke;
+  return colors.inactiveStroke;
 }
 </script>
 
@@ -138,19 +148,21 @@ function getSectorStroke(direction: string, isSecondHalf: boolean): string {
       <!-- First half of sector -->
       <polygon
         :points="sector.path1"
-        :class="[getSectorClass(sector.direction, false), getSectorStroke(sector.direction, false)]"
+        :fill="getSectorFill(sector.direction, false)"
+        :stroke="getSectorStroke(sector.direction, false)"
         stroke-width="1"
       />
       <!-- Second half of sector -->
       <polygon
         :points="sector.path2"
-        :class="[getSectorClass(sector.direction, true), getSectorStroke(sector.direction, true)]"
+        :fill="getSectorFill(sector.direction, true)"
+        :stroke="getSectorStroke(sector.direction, true)"
         stroke-width="1"
       />
     </template>
 
     <!-- Center circle -->
-    <circle cx="0" cy="0" :r="innerRadius * 0.1" class="fill-primary" />
+    <circle cx="0" cy="0" :r="innerRadius * 0.1" :fill="colors.primaryStroke" />
   </svg>
 </template>
 
