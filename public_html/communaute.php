@@ -31,14 +31,14 @@
 <body class="min-h-screen flex flex-col">
   <?php include "./components/header.html"; ?>
   <div class="hero min-h-[400px] bg-top" style="background-image: url(/images/mw/0100b-grimpe-60.webp);">
-    <div class="hero-overlay bg-opacity-60"></div>
+    <div class="hero-overlay opacity-60"></div>
     <div class="hero-content text-center text-base-100">
       <div class="max-w-md">
         <h1 class="text-5xl font-bold">Communauté</h1>
       </div>
     </div>
   </div>
-  <main class="flex-grow w-full max-w-screen-md mx-auto flex flex-col gap-2 md:gap-4 p-4 mb-2">
+  <main class="grow w-full max-w-(--breakpoint-md) mx-auto flex flex-col gap-2 md:gap-4 p-4 mb-2">
     <h2 class="text-2xl font-bold text-center">Actualités du site et ajouts au topo</h2>
     <p class="md:text-center text-normal">Nous publions une newsletter (environ trimestrielle) pour vous tenir au
       courant des nouveautés du site et des nouvelles falaises ajoutées au topo. Si vous souhaitez la recevoir,

@@ -68,14 +68,14 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
 
 <body class="min-h-screen flex flex-col">
   <?php include $_SERVER['DOCUMENT_ROOT'] . "/components/header.html"; ?>
-  <main class="w-full flex-grow max-w-screen-md mx-auto prose p-4 prose-a:text-[oklch(var(--p)/1)]
-              prose-a:font-bold prose-a:no-underline hover:prose-a:underline
+  <main class="w-full grow max-w-(--breakpoint-md) mx-auto prose p-4 prose-a:text-[oklch(var(--p)/1)]
+              prose-a:font-bold prose-a:no-underline prose-a:hover:underline
               prose-li:mt-0 prose-li:mb-0 prose-ul:mt-0 prose-ul:mb-0
-              hover:prose-a:text-[oklch(var(--pf)/1)]">
+              prose-a:hover:text-[oklch(var(--pf)/1)]">
     <h1 class="text-4xl font-bold text-wrap text-center"> Ajouter un itinéraire train<span class="admin text-red-900">
         (version admin)</span>
     </h1>
-    <div class="rounded-lg bg-base-300 p-4 my-6 border border-base-300 shadow-sm text-base-content">
+    <div class="rounded-lg bg-base-300 p-4 my-6 border border-base-300 shadow-xs text-base-content">
       <b>Vous vous apprêtez à décrire un itinéraire Ville &rarr; Gare.</b><br> Commencez par vérifier que votre ville de
       départ est dans le menu déroulant ci-dessous. Si ce n'est pas le cas, l'ajout de données n'est pas possible :
       envoyez-nous un mail.
@@ -154,14 +154,14 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <label class="form-control" for="horaires_depart">
               <b>Gare de départ</b>
-              <input type="text" class="input input-bordered input-sm" id="horaires_depart"
+              <input type="text" class="input input-sm" id="horaires_depart"
                 placeholder="ex: Lyon Part-Dieu" autocomplete="off">
               <span class="text-xs opacity-70">Utilisé uniquement pour consulter les horaires. Non transmis lors de
                 l'envoi. Soyez précis pour éviter les erreurs de noms.</span>
             </label>
             <label class="form-control" for="horaires_arrivee">
               <b>Gare d'arrivée</b>
-              <input type="text" class="input input-bordered input-sm" id="horaires_arrivee"
+              <input type="text" class="input input-sm" id="horaires_arrivee"
                 placeholder="ex: Dijon Ville" autocomplete="off">
               <span class="text-xs opacity-70">Utilisé uniquement pour consulter les horaires. Non transmis lors de
                 l'envoi. Soyez précis pour éviter les erreurs de noms.</span>
@@ -212,12 +212,12 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
           </label>
         </div>
         <div class="grid grid-cols-1 gap-x-4 items-end flex-wrap md:grid-cols-3">
-          <label class="form-control flex-grow-0" for="train_correspmin">
+          <label class="form-control grow-0" for="train_correspmin">
             <b>Nb min de corresp.</b>
             <input type="number" class="input input-primary input-sm" id="train_correspmin" name="train_correspmin"
               placeholder="0" min="0" required>
           </label>
-          <label class="form-control flex-grow-0" for="train_correspmax">
+          <label class="form-control grow-0" for="train_correspmax">
             <b>Nb max de corresp.</b>
             <input type="number" class="input input-primary input-sm" id="train_correspmax" name="train_correspmax"
               placeholder="1" min="0" required>
@@ -236,9 +236,9 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
       </label>
       <hr class="my-4">
       <h3 class="text-center">Validation de l'ajout de données</h3>
-      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-sm">
+      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-xs">
         <div class="flex flex-col md:flex-row gap-4">
-          <div class="form-control flex-grow">
+          <div class="form-control grow">
             <b>Itinéraire ajouté par : </b>
             <label for="nom_prenom" class="input input-primary input-sm flex items-center gap-2 w-full">
               <input class="grow" type="text" id="nom_prenom" name="nom_prenom"
@@ -248,7 +248,7 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
               </svg>
             </label>
           </div>
-          <div class="form-control flex-grow">
+          <div class="form-control grow">
             <b>Mail :</b>
             <label for="email" class="input input-primary input-sm flex items-center gap-2 w-full">
               <input class="grow" type="email" id="email" name="email" required>
@@ -263,7 +263,7 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
             <b>Message <span class="text-accent opacity-50">(optionnel)</span> :</b>
             <i>(si vous voulez commenter votre ajout de données)</i>
           </span>
-          <textarea class="textarea textarea-bordered textarea-sm leading-6" id="message" name="message"
+          <textarea class="textarea textarea-sm leading-6" id="message" name="message"
             rows="4"></textarea>
         </label>
         <button type="submit" class="btn btn-primary" id="submitBtn">Ajouter l'itinéraire train</button>

@@ -39,9 +39,9 @@ if (!$admin) {
 
 <body class="min-h-screen flex flex-col">
   <?php include $_SERVER['DOCUMENT_ROOT'] . "/components/header.html"; ?>
-  <main class="w-full flex-grow max-w-screen-md mx-auto prose p-4 prose-a:text-[oklch(var(--p)/1)]
-    prose-a:font-bold prose-a:no-underline hover:prose-a:underline
-    hover:prose-a:text-[oklch(var(--pf)/1)] prose-pre:my-0
+  <main class="w-full grow max-w-(--breakpoint-md) mx-auto prose p-4 prose-a:text-[oklch(var(--p)/1)]
+    prose-a:font-bold prose-a:no-underline prose-a:hover:underline
+    prose-a:hover:text-[oklch(var(--pf)/1)] prose-pre:my-0
     prose-pre:text-center">
     <h1 class="text-4xl font-bold text-wrap text-center"> AJOUTER UNE VILLE (ADMIN) </h1>
     <form method="post" action="/api/add_ville.php" class="flex flex-col gap-4">

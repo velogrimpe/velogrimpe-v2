@@ -41,7 +41,7 @@
   <?php include "./components/header.html"; ?>
   <main class="pb-4">
     <!-- <div
-      class="bg-base-100 --bg-[#e9f5ec] --border-solid --border-l-4 --border-l-primary p-6 text-center m-5 shadow-sm rounded-md">
+      class="bg-base-100 --bg-[#e9f5ec] --border-solid --border-l-4 --border-l-primary p-6 text-center m-5 shadow-xs rounded-md">
       <span class="font-bold text-lg text-primary">VÉLOGRIMPE :</span>
       <br />
       Activité consistant à combiner train et vélo pour aller
@@ -52,7 +52,7 @@
     </div> -->
     <div class="hero min-h-[500px] md:min-h-[640px]"
       style="background-image: url(/images/mw/027-velo-aiguille-40.webp);">
-      <div class="hero-overlay bg-opacity-60"></div>
+      <div class="hero-overlay opacity-60"></div>
       <div class="hero-content text-center">
         <div class="max-w-md">
           <h1 class="text-5xl font-bold text-base-100">Vélogrimpe</h1>
@@ -87,7 +87,7 @@
     </div>
 
     <div class="hero min-h-[500px] md:min-h-[640px]" style="background-image: url(/images/mw/040-train-20.webp);">
-      <div class="hero-overlay bg-opacity-60"></div>
+      <div class="hero-overlay opacity-60"></div>
       <div class="hero-content text-center text-base-100">
         <div class="max-w-md">
           <h2 class="text-3xl font-bold">Un topo collaboratif !</h2>
@@ -115,7 +115,7 @@
     </div>
 
     <div class="hero min-h-[500px] md:min-h-[640px]" style="background-image: url(/images/mw/078-groupe-5.webp);">
-      <div class="hero-overlay bg-opacity-60"></div>
+      <div class="hero-overlay opacity-60"></div>
       <div class="hero-content text-center text-base-100">
         <div class="max-w-md">
           <h2 class="text-3xl font-bold">Une initiative open-source</h2>

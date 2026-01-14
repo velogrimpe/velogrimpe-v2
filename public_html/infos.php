@@ -32,16 +32,16 @@
 <body class="min-h-screen">
   <?php include "./components/header.html"; ?>
   <div class="hero min-h-[400px] bg-top" style="background-image: url(/images/mw/032-chaussons-10.webp);">
-    <div class="hero-overlay bg-opacity-60"></div>
+    <div class="hero-overlay opacity-60"></div>
     <div class="hero-content text-center text-base-100">
       <div class="max-w-md">
         <h1 class="text-5xl font-bold">À propos</h1>
       </div>
     </div>
   </div>
-  <div class="max-w-screen-lg mx-auto prose p-4
+  <div class="max-w-(--breakpoint-lg) mx-auto prose p-4
               prose-a:text-[oklch(var(--p)/1)] prose-a:font-bold prose-a:no-underline
-              hover:prose-a:underline hover:prose-a:text-[oklch(var(--pf)/1)]">
+              prose-a:hover:underline prose-a:hover:text-[oklch(var(--pf)/1)]">
     <p>"Tiens, c'est quoi les falaises les plus accessibles en train+vélo depuis Lyon ?".</p>
     <p>C'est par cette question que Florent a commencé le projet vélogrimpe, en mai 2024. D'un document Word perso à un
       PDF en libre accès, nous voici maintenant avec un site web dont le but est de donner envie de réaliser des sorties

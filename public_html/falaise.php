@@ -238,7 +238,7 @@ $stmtC->close();
 
 <body>
   <?php include "./components/header.html"; ?>
-  <main class="max-w-screen-lg w-full mx-auto p-4 flex flex-col items-center gap-4 bg-base-100 my-2 rounded-xl">
+  <main class="max-w-(--breakpoint-lg) w-full mx-auto p-4 flex flex-col items-center gap-4 bg-base-100 my-2 rounded-xl">
     <section class="flex flex-col items-center gap-4 w-full">
       <div class="flex justify-between items-center w-full">
         <a class="text-primary font-bold" href="/carte.php">← Retour à la carte</a>
@@ -251,7 +251,7 @@ $stmtC->close();
                 <use xlink:href="/symbols/icons.svg#ri-chat-4-line"></use>
               </svg>
             </div>
-            <div class="dropdown-content gap-1 menu bg-base-200 rounded-box z-[1] m-1 w-64 p-2 shadow-lg" tabindex="1">
+            <div class="dropdown-content gap-1 menu bg-base-200 rounded-box z-1 m-1 w-64 p-2 shadow-lg" tabindex="1">
               <button class="btn btn-primary btn-outline btn-sm py-1 h-fit" onclick="newComment()"> Raconter ma sortie
                 vélogrimpe </button>
             </div>
@@ -264,7 +264,7 @@ $stmtC->close();
                 <use xlink:href="/symbols/icons.svg#ri-pencil-line"></use>
               </svg>
             </div>
-            <div class="dropdown-content gap-1 menu bg-base-200 rounded-box z-[1] m-1 w-64 p-2 shadow-lg" tabindex="1">
+            <div class="dropdown-content gap-1 menu bg-base-200 rounded-box z-1 m-1 w-64 p-2 shadow-lg" tabindex="1">
               <a class="btn btn-primary btn-outline btn-sm py-1 h-fit"
                 href="/ajout/ajout_falaise.php?falaise_id=<?= $falaise_id ?>"> Modifier la fiche falaise </a>
               <a class="btn btn-primary btn-outline btn-sm py-1 h-fit"
@@ -307,7 +307,7 @@ $stmtC->close();
           </span>
         </button>
         <dialog id="meteoModal" class="modal modal-bottom sm:modal-middle">
-          <div class="modal-box md:w-fit max-w-screen-xl">
+          <div class="modal-box md:w-fit max-w-(--breakpoint-xl)">
             <form method="dialog">
               <button tabindex="-1" class="btn btn-circle btn-ghost absolute right-2 top-2">✕</button>
             </form>
@@ -618,7 +618,7 @@ $stmtC->close();
           </thead> -->
               <!-- // LIGNE 2 TRAIN : -->
               <tr>
-                <td class="justify-center border-t border-r border-b border-1 border-base-300">
+                <td class="justify-center border-t border-r border-b border border-base-300">
                   <div class="flex flex-col md:flex-row gap-4 items-center">
                     <img src="/images/icons/train-station_color.png" alt="Logo Train" class="h-10 w-auto">
                     <div>
@@ -648,7 +648,7 @@ $stmtC->close();
                       Acheter un billet
                     </button>
                     <dialog id="gare<?= $gare["gare_id"] ?>" class="modal">
-                      <div class="modal-box p-0 max-w-screen-lg w-full bg-transparent"
+                      <div class="modal-box p-0 max-w-(--breakpoint-lg) w-full bg-transparent"
                         id="container__booking__gare_<?= $gare["gare_id"] ?>">
                       </div>
                       <form method="dialog" class="modal-backdrop">
@@ -658,7 +658,7 @@ $stmtC->close();
                     </div>
                   </div>
                 </td>
-                <td class='border-t border-b border-1 border-base-300'>
+                <td class='border-t border-b border border-base-300'>
                   <?php if ($ville_id_get): ?>
                     <?php if (count($train_itineraires) > 0): ?>
                       <?php foreach ($train_itineraires as $t): ?>
@@ -704,7 +704,7 @@ $stmtC->close();
               <!-- // LIGNES VELO -->
               <?php foreach ($velo_itineraires as $velo): ?>
                 <tr>
-                  <td class='justify-center border-t border-r border-b border-1 border-base-300'>
+                  <td class='justify-center border-t border-r border-b border border-base-300'>
                     <div class='flex flex-col md:flex-row gap-4 items-center'>
                       <?php if (isset($velo['velo_apieduniquement']) && $velo['velo_apieduniquement'] == 1): ?>
                         <img src="/images/icons/hiking_color.png" alt="Logo À Pied" class="h-auto w-10">
@@ -724,7 +724,7 @@ $stmtC->close();
                       </div>
                     </div>
                   </td>
-                  <td class='border-t border-b border-1 border-base-300'>
+                  <td class='border-t border-b border border-base-300'>
                     <?= htmlspecialchars($velo['velo_km']) . " km, " . htmlspecialchars($velo['velo_dplus']) . " D+, " . htmlspecialchars($velo['velo_dmoins']) . " D-." ?>
                     <br>
                     <span class="vg-a-primary"><?= nl2br($velo['velo_descr']) ?></span>
@@ -808,7 +808,7 @@ $stmtC->close();
       <?php $path = "/bdd/images_falaises/" . htmlspecialchars($falaise_id) . "_" . htmlspecialchars($falaise_nomformate) . "_img1.webp"; ?>
       <?php if (file_exists($_SERVER['DOCUMENT_ROOT'] . $path)): ?>
         <div class="flex flex-col items-center gap-1">
-          <img src="<?= $path ?>" class="border-1 border-base-300 rounded-xl shadow-lg md:w-4/5">
+          <img src="<?= $path ?>" class="border border-base-300 rounded-xl shadow-lg md:w-4/5">
           <?php if (!empty($falaise_leg1)): ?>
             <div class="text-base-content"><?= nl2br($falaise_leg1) ?></div>
           <?php endif; ?>
@@ -823,7 +823,7 @@ $stmtC->close();
       <?php $path = "/bdd/images_falaises/" . htmlspecialchars($falaise_id) . "_" . htmlspecialchars($falaise_nomformate) . "_img2.webp"; ?>
       <?php if (file_exists($_SERVER['DOCUMENT_ROOT'] . $path)): ?>
         <div class="flex flex-col items-center gap-1">
-          <img src="<?= $path ?>" class="border-1 border-base-300 rounded-xl shadow-lg md:w-4/5">
+          <img src="<?= $path ?>" class="border border-base-300 rounded-xl shadow-lg md:w-4/5">
           <?php if (!empty($falaise_leg2)): ?>
             <div class="text-base-content"><?= nl2br($falaise_leg2) ?></div>
           <?php endif; ?>
@@ -839,7 +839,7 @@ $stmtC->close();
       <?php $path = "/bdd/images_falaises/" . htmlspecialchars($falaise_id) . "_" . htmlspecialchars($falaise_nomformate) . "_img3.webp"; ?>
       <?php if (file_exists($_SERVER['DOCUMENT_ROOT'] . $path)): ?>
         <div class="flex flex-col items-center gap-1">
-          <img src="<?= $path ?>" class="border-1 border-base-300 rounded-xl shadow-lg md:w-4/5">
+          <img src="<?= $path ?>" class="border border-base-300 rounded-xl shadow-lg md:w-4/5">
           <?php if (!empty($falaise_leg3)): ?>
             <div class="text-base-content"><?= nl2br($falaise_leg3) ?></div>
           <?php endif; ?>
@@ -922,7 +922,7 @@ $stmtC->close();
         </div>
       </div>
       <dialog id="commentFormModal" class="modal modal-bottom sm:modal-middle">
-        <div class="modal-box w-screen sm:max-w-screen-md">
+        <div class="modal-box w-screen sm:max-w-(--breakpoint-md)">
           <form method="dialog">
             <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
           </form>
@@ -983,7 +983,7 @@ $stmtC->close();
         </form>
       </dialog>
       <dialog id="emailPromptDialog" class="modal modal-bottom sm:modal-middle">
-        <div class="modal-box w-screen sm:max-w-screen-md">
+        <div class="modal-box w-screen sm:max-w-(--breakpoint-md)">
           <form method="dialog">
             <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
           </form>

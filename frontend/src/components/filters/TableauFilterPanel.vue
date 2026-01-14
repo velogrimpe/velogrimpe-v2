@@ -94,7 +94,7 @@ function parseNumberInput(value: string): number | null {
         >
           Voies 🧗‍♀️
         </div>
-        <div class="dropdown-content menu gap-1 bg-base-200 rounded-box z-[1] m-1 w-64 p-2 shadow-lg" tabindex="1">
+        <div class="dropdown-content menu gap-1 bg-base-200 rounded-box z-1 m-1 w-64 p-2 shadow-lg" tabindex="1">
           <div class="flex flex-col gap-2">
             <div class="flex flex-col gap-3">
               <div><span class="font-bold">Cotations</span> (ex: 5+ ET 6+)</div>
@@ -160,7 +160,7 @@ function parseNumberInput(value: string): number | null {
         >
           Exposition 🔅
         </div>
-        <div class="dropdown-content menu bg-base-200 rounded-box z-[1] m-1 w-40 p-2 shadow-lg" tabindex="1">
+        <div class="dropdown-content menu bg-base-200 rounded-box z-1 m-1 w-40 p-2 shadow-lg" tabindex="1">
           <div class="flex flex-row gap-1 items-center">
             <div class="max-w-96 flex flex-col gap-1 w-full">
               <label
@@ -194,7 +194,7 @@ function parseNumberInput(value: string): number | null {
         >
           Train 🚞
         </div>
-        <div class="dropdown-content menu bg-base-200 rounded-box z-[1] m-1 w-64 p-2 shadow-lg" tabindex="1">
+        <div class="dropdown-content menu bg-base-200 rounded-box z-1 m-1 w-64 p-2 shadow-lg" tabindex="1">
           <label class="flex flex-row gap-2 items-center">
             <div class="font-bold">Durée</div>
             <div class="text-normal font-bold">≤</div>
@@ -202,7 +202,7 @@ function parseNumberInput(value: string): number | null {
               type="number"
               step="1"
               min="0"
-              class="input input-bordered input-sm w-14"
+              class="input input-sm w-14"
               :value="store.filters.train.tempsMax ?? ''"
               @input="store.setTrainTempsMax(parseNumberInput(($event.target as HTMLInputElement).value))"
             />
@@ -272,7 +272,7 @@ function parseNumberInput(value: string): number | null {
         >
           Vélo 🚲
         </div>
-        <div class="dropdown-content menu bg-base-200 rounded-box z-[1] m-1 w-64 p-2 shadow-lg" tabindex="1">
+        <div class="dropdown-content menu bg-base-200 rounded-box z-1 m-1 w-64 p-2 shadow-lg" tabindex="1">
           <div class="flex flex-row gap-3 items-center">
             <div>Trajet vélo</div>
             <div class="flex flex-col gap-1">
@@ -282,7 +282,7 @@ function parseNumberInput(value: string): number | null {
                   type="number"
                   step="1"
                   min="0"
-                  class="input input-bordered input-sm w-14"
+                  class="input input-sm w-14"
                   :value="store.filters.velo.tempsMax ?? ''"
                   @input="store.setVeloTempsMax(parseNumberInput(($event.target as HTMLInputElement).value))"
                 />
@@ -294,7 +294,7 @@ function parseNumberInput(value: string): number | null {
                   type="number"
                   step="1"
                   min="0"
-                  class="input input-bordered input-sm w-14"
+                  class="input input-sm w-14"
                   :value="store.filters.velo.distMax ?? ''"
                   @input="store.setVeloDistMax(parseNumberInput(($event.target as HTMLInputElement).value))"
                 />
@@ -306,7 +306,7 @@ function parseNumberInput(value: string): number | null {
                   type="number"
                   step="1"
                   min="0"
-                  class="input input-bordered input-sm w-14"
+                  class="input input-sm w-14"
                   :value="store.filters.velo.denivMax ?? ''"
                   @input="store.setVeloDenivMax(parseNumberInput(($event.target as HTMLInputElement).value))"
                 />
@@ -339,7 +339,7 @@ function parseNumberInput(value: string): number | null {
         >
           Marche 🥾
         </div>
-        <div class="dropdown-content menu bg-base-200 rounded-box z-[1] m-1 w-56 p-2 shadow-lg" tabindex="1">
+        <div class="dropdown-content menu bg-base-200 rounded-box z-1 m-1 w-56 p-2 shadow-lg" tabindex="1">
           <label class="flex flex-row gap-2 items-center">
             <div class="font-bold">Approche</div>
             <div class="text-normal font-bold">≤</div>
@@ -347,7 +347,7 @@ function parseNumberInput(value: string): number | null {
               type="number"
               step="1"
               min="0"
-              class="input input-bordered input-sm w-14"
+              class="input input-sm w-14"
               :value="store.filters.approche.tempsMax ?? ''"
               @input="store.setApprocheTempsMax(parseNumberInput(($event.target as HTMLInputElement).value))"
             />
@@ -366,7 +366,7 @@ function parseNumberInput(value: string): number | null {
         >
           Total ⏱️
         </div>
-        <div class="dropdown-content menu bg-base-200 rounded-box z-[1] m-1 p-2 shadow-lg" tabindex="1">
+        <div class="dropdown-content menu bg-base-200 rounded-box z-1 m-1 p-2 shadow-lg" tabindex="1">
           <div class="flex flex-col gap-2 items-end">
             <label class="flex flex-row gap-1 items-center">
               <div>Train+Vélo</div>
@@ -375,7 +375,7 @@ function parseNumberInput(value: string): number | null {
                 type="number"
                 step="1"
                 min="0"
-                class="input input-bordered input-sm w-14"
+                class="input input-sm w-14"
                 :value="store.filters.total.tempsTV ?? ''"
                 @input="store.setTotalTempsTV(parseNumberInput(($event.target as HTMLInputElement).value))"
               />
@@ -388,7 +388,7 @@ function parseNumberInput(value: string): number | null {
                 type="number"
                 step="1"
                 min="0"
-                class="input input-bordered input-sm w-14"
+                class="input input-sm w-14"
                 :value="store.filters.total.tempsTVA ?? ''"
                 @input="store.setTotalTempsTVA(parseNumberInput(($event.target as HTMLInputElement).value))"
               />

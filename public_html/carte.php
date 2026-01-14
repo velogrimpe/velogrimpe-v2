@@ -89,7 +89,7 @@ $highlight = $_GET['h'] ?? '';
     <div class="flex flex-col gap-1">
       <div class="flex flex-row gap-4">
         <div
-          class="hidden md:flex w-[17rem] bg-base-100 rounded-lg p-4 shadow-lg text-sm flex-col gap-6 h-[calc(100dvh-115px)] overflow-y-auto">
+          class="hidden md:flex w-68 bg-base-100 rounded-lg p-4 shadow-lg text-sm flex-col gap-6 h-[calc(100dvh-115px)] overflow-y-auto">
           <div class="flex flex-col gap-2">
             <div id="searchFormPanelContainer">
               <div class="text-lg font-bold">Recherche</div>
@@ -253,7 +253,7 @@ $highlight = $_GET['h'] ?? '';
         // gare.marker?.closeTooltip();
         gare.marker?.unbindTooltip();
         gare.marker?.bindTooltip(gare.gare_nom, {
-          className: "p-[1px]",
+          className: "p-px",
           direction: "right",
           offset: [iconSize / 2, 0],
         });
@@ -264,7 +264,7 @@ $highlight = $_GET['h'] ?? '';
         // falaise.marker?.closeTooltip();
         falaise.marker?.unbindTooltip();
         falaise.marker?.bindTooltip(falaise.falaise_nom, {
-          className: "p-[1px]",
+          className: "p-px",
           direction: "right",
           offset: [iconSize / 2, 0],
         });
@@ -292,7 +292,7 @@ $highlight = $_GET['h'] ?? '';
             : ""
           ),
           {
-            className: `p-[1px] bg-[${c}] text-white border-[${c}] font-bold`,
+            className: `p-px bg-[${c}] text-white border-[${c}] font-bold`,
             permanent: true,
             direction: "center",
           });
@@ -345,7 +345,7 @@ $highlight = $_GET['h'] ?? '';
               className: "relative",
               html: `<div
                 class="absolute z-1 top-0 left-1/2 w-fit text-nowrap -translate-x-1/2
-                bg-gradient-to-r from-primary to-secondary border-2 border-white text-white text-xs p-[2px] leading-none rounded-md"
+                bg-linear-to-r from-primary to-secondary border-2 border-white text-white text-xs p-[2px] leading-none rounded-md"
                 >
               ${falaise.falaise_nom}
             </div>`,
@@ -357,7 +357,7 @@ $highlight = $_GET['h'] ?? '';
         falaise.hmarker = hmarker;
       }
       marker.bindTooltip(falaise.falaise_nom, {
-        className: "p-[1px]",
+        className: "p-px",
         direction: "right",
         offset: [iconSize / 2, -iconSize / 2],
       });
@@ -387,7 +387,7 @@ $highlight = $_GET['h'] ?? '';
               direction: "right",
               offset: [iconSize / 2, 0],
               permanent: true,
-              className: `rounded-md bg-[${c}] border-[${c}] text-white px-[1px] py-0 before:border-r-[${c}]`,
+              className: `rounded-md bg-[${c}] border-[${c}] text-white px-px py-0 before:border-r-[${c}]`,
             });
           }), 0.76 * 1000);
         } else {
@@ -398,7 +398,7 @@ $highlight = $_GET['h'] ?? '';
         }
         marker.unbindTooltip();
         marker.bindTooltip(falaise.falaise_nom, {
-          className: "p-[1px]",
+          className: "p-px",
           direction: "top",
           permanent: true,
           offset: [0, -iconSize],
@@ -421,7 +421,7 @@ $highlight = $_GET['h'] ?? '';
       falaise.marker.setIcon(falaiseIcon(size, falaise.falaise_fermee, falaise.falaise_bloc));
       falaise.marker.unbindTooltip();
       falaise.marker.bindTooltip(falaise.falaise_nom, {
-        className: "p-[1px]",
+        className: "p-px",
         direction,
         offset: direction === "right" ? [size / 4, -size / 2] : direction === "top" ? [0, -size] : [size / 2, 0],
         permanent,
@@ -533,7 +533,7 @@ $highlight = $_GET['h'] ?? '';
     ).addTo(map);
     marker.unbindTooltip();
     marker.bindTooltip(gare.gare_nom, {
-      className: "p-[1px]",
+      className: "p-px",
       direction: "right",
       offset: [iconSize / 2, 0],
     });
@@ -575,14 +575,14 @@ $highlight = $_GET['h'] ?? '';
           direction: "right",
           permanent: true,
           offset: [iconSize / 2, -iconSize / 2],
-          className: `rounded-md bg-[${c}] border-[${c}] text-white px-[1px] py-0 before:border-r-[${c}]`,
+          className: `rounded-md bg-[${c}] border-[${c}] text-white px-px py-0 before:border-r-[${c}]`,
         });
         const gpx = renderGpx(it, c);
         itinerairesLines.push(gpx);
       }), 0.76 * 1000);
       marker.unbindTooltip();
       marker.bindTooltip(gare.gare_nom, {
-        className: "p-[1px]",
+        className: "p-px",
         direction: "top",
         permanent: true,
         offset: [0, -iconSize / 2],

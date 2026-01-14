@@ -176,7 +176,7 @@ function getOptionLabel(option: AutocompleteOption): string {
       :value="inputValue"
       :placeholder="placeholder"
       :disabled="disabled"
-      class="input input-bordered input-primary w-full"
+      class="input input-primary w-full"
       autocomplete="off"
       @input="onInput"
       @keydown="onKeydown"

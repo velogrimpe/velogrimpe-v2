@@ -37,7 +37,7 @@ function handleSort(opt: SortOption) {
     <div tabindex="0" role="button" class="btn btn-sm text-nowrap focus:pointer-events-none">
       Tri
     </div>
-    <div class="dropdown-content menu bg-base-200 rounded-box z-[1] m-1 w-48 p-2 shadow-lg items-start" tabindex="1">
+    <div class="dropdown-content menu bg-base-200 rounded-box z-1 m-1 w-48 p-2 shadow-lg items-start" tabindex="1">
       <div class="font-bold">Trier par</div>
       <hr class="w-1/2 bg-base-300 mb-1 mt-2 mx-auto" />
       <ul>

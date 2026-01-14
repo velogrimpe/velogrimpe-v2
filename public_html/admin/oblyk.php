@@ -157,7 +157,7 @@ $itineraires = $mysqli->query("SELECT * FROM velo WHERE velo_public >= 1")->fetc
           falaise.latlng,
           {
             icon: L.divIcon({
-              className: "btn btn-accent btn-xs text-base-100! hover:text-base-100! p-[1px] rounded-full",
+              className: "btn btn-accent btn-xs text-base-100! hover:text-base-100! p-px rounded-full",
               iconSize: [24, 24],
               iconAnchor: [24 / 2, 0],
               html: `<div id="linkFalaises_${selected.falaise_id}_${falaise.id}"><svg class="w-3 h-3 fill-current"><use xlink:href="/symbols/icons.svg#ri-link"></use></svg></div>`,
@@ -167,7 +167,7 @@ $itineraires = $mysqli->query("SELECT * FROM velo WHERE velo_public >= 1")->fetc
           }
         ).addTo(map);
         marker.bindTooltip(falaise.name, {
-          className: "p-[1px]",
+          className: "p-px",
           direction: "left",
           offset: [-iconSize / 2, -iconSize / 2],
           permanent: true,
@@ -234,7 +234,7 @@ $itineraires = $mysqli->query("SELECT * FROM velo WHERE velo_public >= 1")->fetc
       ).addTo(map);
       falaise.marker = marker;
       marker.bindTooltip(falaise.falaise_nom, {
-        className: "p-[1px]",
+        className: "p-px",
         direction: "right",
         offset: [iconSize / 2, -iconSize / 2],
       });
@@ -307,13 +307,13 @@ $itineraires = $mysqli->query("SELECT * FROM velo WHERE velo_public >= 1")->fetc
       switch (mode) {
         case undefined:
           this.top = (
-            `<div class="flex flex-col gap-1 max-w-96 items-center border-b-1 border-b-base-300 mb-2">`
+            `<div class="flex flex-col gap-1 max-w-96 items-center border-b border-b-base-300 mb-2">`
             + `<div>Cliquez sur une falaise pour voir ses informations</div>`
             + `</div>`
           );
           break;
         case "falaise":
-          this.top = `<div class="flex flex-col gap-1 max-w-96 border-b-1 border-b-base-300 mb-2">`
+          this.top = `<div class="flex flex-col gap-1 max-w-96 border-b border-b-base-300 mb-2">`
             + '<div class="flex flex-col md:flex-row justify-between items-center gap-4">'
             + `<h3 class="text-normal text-primary font-bold">${selected.falaise_nom}</h3>`
             + `</div>`

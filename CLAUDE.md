@@ -81,7 +81,7 @@ velo-grimpe/
 - **Vue.js 3** + **Vite** for reactive UI components (filters, forms)
 - **Pinia** for state management
 - **Leaflet** for interactive maps with protomaps-leaflet for train line tiles
-- **Tailwind CSS** + **DaisyUI** (loaded via CDN)
+- **Tailwind CSS** + **DaisyUI** (built locally via Vite)
 - TypeScript for Vue components
 
 ### Authentication
@@ -227,3 +227,7 @@ See these files for working examples:
 ## Future Improvements
 
 - **Icons**: Optimize icon storage/loading and improve reuse DX (currently inline SVGs in Vue components; consider a shared icon component or sprite system)
+
+## TODO
+
+- **Filters sort position**: During the Vue filters migration, the sort control changed position. Compare with production (velogrimpe.fr) and fix the layout to match.

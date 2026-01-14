@@ -34,7 +34,7 @@ function formatCorrespondances(it: TableauItinerary): string {
         <div class="font-bold text-xl">{{ formatTime(common.temps_total) }}</div>
       </div>
       <div class="w-full flex flex-row items-center justify-between gap-2">
-        <div class="flex flex-col items-start justify-start flex-grow">
+        <div class="flex flex-col items-start justify-start grow">
           <div>
             <b>Zone</b> : {{ common.zone_nom }}
           </div>

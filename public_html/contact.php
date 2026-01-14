@@ -15,9 +15,9 @@
 
 <body class="min-h-screen flex flex-col">
   <?php include "./components/header.html"; ?>
-  <main class="w-full flex-grow max-w-screen-xl mx-auto flex flex-col gap-2 md:gap-4 p-4">
+  <main class="w-full grow max-w-(--breakpoint-xl) mx-auto flex flex-col gap-2 md:gap-4 p-4">
     <div class="hero min-h-[400px] bg-bottom" style="background-image: url(/images/mw/078-groupe-5.webp);">
-      <div class="hero-overlay bg-opacity-60"></div>
+      <div class="hero-overlay opacity-60"></div>
       <div class="hero-content text-center text-base-100">
         <div class="max-w-md">
           <h1 class="text-5xl font-bold">Nous contacter</h1>

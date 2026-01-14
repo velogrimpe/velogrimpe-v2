@@ -39,7 +39,7 @@ $falaises_topo = array_values(array_filter(
 
 <body class="flex flex-col min-h-screen">
   <?php include $_SERVER['DOCUMENT_ROOT'] . "/components/header.html"; ?>
-  <main class="w-full flex-grow max-w-screen-md mx-auto p-10 flex flex-col gap-8">
+  <main class="w-full grow max-w-(--breakpoint-md) mx-auto p-10 flex flex-col gap-8">
     <h1 class="text-4xl font-bold text-wrap text-center">
       <span class="text-red-900">PANNEAU D'ADMINISTRATION</span>
     </h1>

@@ -152,7 +152,7 @@ $stmt->close();
 <body class="w-screen min-h-screen">
   <?php include "./components/header.html"; ?>
   <div class="hero min-h-[400px] bg-center" style="background-image: url(/images/mw/005-train-2-10.webp);">
-    <div class="hero-overlay bg-opacity-60"></div>
+    <div class="hero-overlay opacity-60"></div>
     <div class="hero-content text-center text-base-100">
       <div class="max-w-md">
         <h1 class="text-5xl font-bold"> Falaises proches de <?php echo $ville['ville_nom'] ?>
@@ -160,7 +160,7 @@ $stmt->close();
       </div>
     </div>
   </div>
-  <main class="md:w-4/5 max-w-screen-xl mx-auto p-4 flex flex-col gap-4">
+  <main class="md:w-4/5 max-w-(--breakpoint-xl) mx-auto p-4 flex flex-col gap-4">
     <div class="flex flex-col justify-center gap-1 items-end w-full">
       <div class="flex justify-between w-full items-center">
         <button class="btn btn-xs w-fit" onclick="instructionsDialog.showModal()">
@@ -190,9 +190,9 @@ $stmt->close();
       </div>
       <div class="mx-auto">
         <div class="flex flex-row items-center gap-1 px-8">
-          <div class="h-[1px] my-2 bg-base-300 rounded-lg flex-grow"></div>
+          <div class="h-px my-2 bg-base-300 rounded-lg grow"></div>
           <div class="text-xs text-slate-500 rounded-lg px-3"> Filtres</div>
-          <div class="h-[1px] my-2 bg-base-300 rounded-lg flex-grow"></div>
+          <div class="h-px my-2 bg-base-300 rounded-lg grow"></div>
         </div>
         <!-- Vue Filter Panel -->
         <div id="vue-filters" class="flex flex-col md:flex-row gap-1 items-center w-full max-w-full justify-center flex-wrap"></div>

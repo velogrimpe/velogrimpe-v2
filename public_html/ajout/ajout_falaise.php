@@ -120,14 +120,14 @@ if ($falaise_id) {
 
 <body class="min-h-screen flex flex-col">
   <?php include $_SERVER['DOCUMENT_ROOT'] . "/components/header.html"; ?>
-  <main class="w-full flex-grow max-w-screen-md mx-auto prose p-4
+  <main class="w-full grow max-w-(--breakpoint-md) mx-auto prose p-4
               prose-a:text-[oklch(var(--p)/1)] prose-a:font-bold prose-a:no-underline
-              hover:prose-a:underline hover:prose-a:text-[oklch(var(--pf)/1)]
+              prose-a:hover:underline prose-a:hover:text-[oklch(var(--pf)/1)]
               prose-pre:my-0 prose-pre:text-center prose-img:my-0">
     <h1 class="text-4xl font-bold text-wrap text-center">
       <?= $falaise_id ? "Modifier" : "Ajouter" ?> une falaise<span class='text-red-900 admin'> (version admin)</span>
     </h1>
-    <div class="notadmin rounded-lg bg-base-300 p-4 my-6 border border-base-300 shadow-sm text-base-content">
+    <div class="notadmin rounded-lg bg-base-300 p-4 my-6 border border-base-300 shadow-xs text-base-content">
       <b>Il s'agit ici d'ajouter une falaise au site web.</b><br> Commencez par vérifier qu'elle n'est pas déjà sur le
       site !<br> Vous allez avoir besoin de certaines infos, les plus fiables possibles : il est donc préférable d'avoir
       un topo sous la main. Il n'est pas question de le recopier de fond en comble, <span class="text-red-700">ce site
@@ -140,16 +140,16 @@ if ($falaise_id) {
       <input type="hidden" id="admin" name="admin" value="0" />
       <!-- Partie Nom / Position / Zone (admin) -->
       <div class="relative flex items-center">
-        <hr class="my-0 flex-grow border-[#2e8b57]" />
+        <hr class="my-0 grow border-[#2e8b57]" />
         <div class="flex items-center justify-center">
           <span class="px-2 text-primary italic bg-unset rounded-full">Nom et localisation</span>
         </div>
-        <hr class="my-0 flex-grow border-[#2e8b57]" />
+        <hr class="my-0 grow border-[#2e8b57]" />
       </div>
-      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-sm">
+      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-xs">
         <div class="flex flex-col gap-1">
           <div class="flex flex-col md:flex-row gap-2 justify-center md:items-center">
-            <div class="relative not-prose z-[11000] flex-1">
+            <div class="relative not-prose z-11000 flex-1">
               <label class="form-control">
                 <b>Nom de la falaise</b>
                 <div id="vue-ajout-falaise"
@@ -170,12 +170,12 @@ if ($falaise_id) {
             </label>
           </div>
           <div class="flex flex-col md:flex-row gap-2 md:items-center admin">
-            <div class="flex-grow flex flex-row justify-between w-full gap-2">
+            <div class="grow flex flex-row justify-between w-full gap-2">
               <div class="text-sm text-gray-400">Nom formaté:</div>
               <input tabindex="-1" class="input input-disabled input-xs w-48" type="text" id="falaise_nomformate"
                 name="falaise_nomformate" readonly>
             </div>
-            <div class="flex-grow flex flex-row justify-between w-full gap-2">
+            <div class="grow flex flex-row justify-between w-full gap-2">
               <div class="text-sm text-gray-400">ID:</div>
               <input tabindex="-1" class="input input-disabled input-xs w-48" type="text" id="falaise_id"
                 name="falaise_id" readonly>
@@ -209,7 +209,7 @@ if ($falaise_id) {
           </label>
           <div id="map" class="w-full h-64 rounded-lg relative" title="Cliquez pour placer la falaise">
             <div id="mapinstructions" class="h-full w-full bg-[#3333] flex items-center justify-center
-              pointer-events-none z-[10000] absolute top-0 left-0 rounded-lg text-black text-xl">
+              pointer-events-none z-10000 absolute top-0 left-0 rounded-lg text-black text-xl">
               <span class="bg-[#fff8] rounded-lg px-2 py-1 max-w-[200px] sm:max-w-full">Cliquez pour placer la
                 falaise</span>
             </div>
@@ -394,13 +394,13 @@ if ($falaise_id) {
       </div>
       <!-- Partie Cotation / Nombre de voies -->
       <div class="relative flex items-center">
-        <hr class="my-0 flex-grow border-[#2e8b57]" />
+        <hr class="my-0 grow border-[#2e8b57]" />
         <div class="flex items-center justify-center">
           <span class="px-2 text-primary italic bg-unset rounded-full">Cotations et voies</span>
         </div>
-        <hr class="my-0 flex-grow border-[#2e8b57]" />
+        <hr class="my-0 grow border-[#2e8b57]" />
       </div>
-      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-sm">
+      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-xs">
         <div>
           <div class="flex flex-col md:flex-row gap-4">
             <label class="form-control flex-1" for="falaise_cotmin">
@@ -461,7 +461,7 @@ if ($falaise_id) {
         </div>
         <label class="form-control" for="falaise_cottxt">
           <b class="">Précisions sur les cotations <span class="text-accent opacity-50">(optionnel)</span></b>
-          <textarea class="textarea textarea-bordered textarea-sm leading-6" id="falaise_cottxt" name="falaise_cottxt"
+          <textarea class="textarea textarea-sm leading-6" id="falaise_cottxt" name="falaise_cottxt"
             rows="2"
             placeholder="ex : Falaise surtout interessante pour les voies dans le 6-7. On compte 2 voies dans le 5, 15 dans le 6, et 12 dans le 7."></textarea>
           <i class="text-slate-400 text-sm"> Texte optionnel pour préciser les cotations (ex : "Falaise surtout
@@ -479,13 +479,13 @@ if ($falaise_id) {
       </div>
       <!-- Partie Exposition -->
       <div class="relative flex items-center">
-        <hr class="my-0 flex-grow border-[#2e8b57]" />
+        <hr class="my-0 grow border-[#2e8b57]" />
         <div class="flex items-center justify-center">
           <span class="px-2 text-primary italic bg-unset rounded-full">Exposition</span>
         </div>
-        <hr class="my-0 flex-grow border-[#2e8b57]" />
+        <hr class="my-0 grow border-[#2e8b57]" />
       </div>
-      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-sm">
+      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-xs">
         <!-- Mobile: rose on top, Desktop: rose on right -->
         <div class="flex flex-col md:flex-row gap-4">
           <!-- Rose preview - first on mobile (order-first), last on desktop (md:order-last) -->
@@ -495,7 +495,7 @@ if ($falaise_id) {
           </div>
 
           <!-- Exposition selects - stacked vertically -->
-          <div class="flex flex-col gap-3 flex-grow">
+          <div class="flex flex-col gap-3 grow">
             <label class="form-control w-full relative">
               <div><b>Exposition(s) principale(s)</b></div>
               <div id="vue-exposhort1"></div>
@@ -524,19 +524,19 @@ if ($falaise_id) {
       </div>
       <!-- Partie Types de voies -->
       <div class="relative flex items-center">
-        <hr class="my-0 flex-grow border-[#2e8b57]" />
+        <hr class="my-0 grow border-[#2e8b57]" />
         <div class="flex items-center justify-center">
           <span class="px-2 text-primary italic bg-unset rounded-full">Type de grimpe</span>
         </div>
-        <hr class="my-0 flex-grow border-[#2e8b57]" />
+        <hr class="my-0 grow border-[#2e8b57]" />
       </div>
-      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-sm">
+      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-xs">
         <label class="form-control" for="falaise_gvtxt">
           <span class="flex flex-col md:flex-row justify-center md:items-center gap-2">
             <b class="">Grandes voies - Texte descriptif <span class="text-accent opacity-50">(optionnel)</span></b>
             <span class="text-red-600">champ à laisser vide s'il n'y a pas de grandes voies !</span>
           </span>
-          <textarea class="textarea textarea-bordered textarea-sm leading-6" id="falaise_gvtxt" name="falaise_gvtxt"
+          <textarea class="textarea textarea-sm leading-6" id="falaise_gvtxt" name="falaise_gvtxt"
             rows="2" placeholder="ex : 10 grandes voies, de PD+ à AD+."></textarea>
           <i class="text-slate-400 text-sm"> Indiquez s'il y a des grandes voies, et si oui, combien environ, de combien
             à combien de longueurs, jusqu'à quelle hauteur max, éventuellement donner les cotations... </i>
@@ -544,7 +544,7 @@ if ($falaise_id) {
         <label class="form-control" for="falaise_gvnb">
           <b class="">Grandes voies - Texte très court pour le tableau <span
               class="text-accent opacity-50">(optionnel)</span></b>
-          <input class="input input-bordered input-sm" type="text" id="falaise_gvnb" name="falaise_gvnb"
+          <input class="input input-sm" type="text" id="falaise_gvnb" name="falaise_gvnb"
             placeholder="ex : Plusieurs GV, 3 à 4 longueurs" maxlength="40">
           <i class="text-slate-400 text-sm">Texte très court pour le tableau "falaises proches de...".<br> Exemples :
             "Nombreuses GV - 2 à 10 longueurs" ; "GV en 2 à 3 longueurs" ; "12 GV - 4 à 9 longueurs". </i>
@@ -562,13 +562,13 @@ if ($falaise_id) {
       </div>
       <!-- Partie Marche d'approche -->
       <div class="relative flex items-center">
-        <hr class="my-0 flex-grow border-[#2e8b57]" />
+        <hr class="my-0 grow border-[#2e8b57]" />
         <div class="flex items-center justify-center">
           <span class="px-2 text-primary italic bg-unset rounded-full">Marche d'approche</span>
         </div>
-        <hr class="my-0 flex-grow border-[#2e8b57]" />
+        <hr class="my-0 grow border-[#2e8b57]" />
       </div>
-      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-sm">
+      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-xs">
         <label class="form-control" for="falaise_matxt">
           <b>Marche d'approche - Texte descriptif</b>
           <textarea class="textarea textarea-primary textarea-sm leading-6" id="falaise_matxt" name="falaise_matxt"
@@ -596,13 +596,13 @@ if ($falaise_id) {
       </div>
       <!-- Partie Infos supplémentaires -->
       <div class="relative flex items-center">
-        <hr class="my-0 flex-grow border-[#2e8b57]" />
+        <hr class="my-0 grow border-[#2e8b57]" />
         <div class="flex items-center justify-center">
           <span class="px-2 text-primary italic bg-unset rounded-full">Infos supplémentaires</span>
         </div>
-        <hr class="my-0 flex-grow border-[#2e8b57]" />
+        <hr class="my-0 grow border-[#2e8b57]" />
       </div>
-      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-sm">
+      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-xs">
         <label class="form-control" for="falaise_topo">
           <b>Topo(s)</b>
           <textarea class="textarea textarea-primary textarea-sm leading-6" id="falaise_topo" name="falaise_topo"
@@ -632,13 +632,13 @@ if ($falaise_id) {
       </div>
       <!-- Partie Remarques et images -->
       <div class="relative flex items-center">
-        <hr class="my-0 flex-grow border-[#2e8b57]" />
+        <hr class="my-0 grow border-[#2e8b57]" />
         <div class="flex items-center justify-center">
           <span class="px-2 text-primary italic bg-unset rounded-full">Images et remarques optionnelles</span>
         </div>
-        <hr class="my-0 flex-grow border-[#2e8b57]" />
+        <hr class="my-0 grow border-[#2e8b57]" />
       </div>
-      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-sm">
+      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-xs">
         <p>Ces remarques et images s'afficheront en bas des fiches falaises, dans le même ordre que les champs suivants
           (voir par exemple la fiche de <a href="/falaise.php?falaise_id=32">Cessens</a> pour avoir une idée) :</p>
         <div class="admin flex flex-col gap-4">
@@ -646,7 +646,7 @@ if ($falaise_id) {
           <label class="form-control" for="falaise_fermee">
             <b class="">Si la falaise est fermée / interdite, explication <span
                 class="text-accent opacity-50">(optionnel)</span></b>
-            <textarea class="textarea textarea-bordered textarea-sm leading-6" id="falaise_fermee" name="falaise_fermee"
+            <textarea class="textarea textarea-sm leading-6" id="falaise_fermee" name="falaise_fermee"
               rows="2" placeholder="ex : Falaise interdite, en cours de conventionnement."></textarea>
             <i class="text-slate-400 text-sm">A compléter si vous avez des informations sur la cause de l'interdiction
               ou les perspectives de réouverture.</i>
@@ -656,7 +656,7 @@ if ($falaise_id) {
             <span>
               <b class="">Remarques diverses <span class="text-accent opacity-50">(optionnel)</span></b>
               <span class="admin text-xs text-accent">[falaise_txt2]</span></span>
-            <textarea class="textarea textarea-bordered textarea-sm leading-6" id="falaise_txt2" name="falaise_txt2"
+            <textarea class="textarea textarea-sm leading-6" id="falaise_txt2" name="falaise_txt2"
               rows="3"></textarea>
             <i class="text-slate-400 text-sm">Remarques non incluses dans le tableau descriptif. Typiquement utilisé
               pour décrire les différents secteurs, les modalités de bivouac, camping.</i>
@@ -669,7 +669,7 @@ if ($falaise_id) {
               (apparaitra entre le tableau des itinéraires et celui de la falaise). <span
                 class="admin text-xs text-accent">[falaise_txt1]</span>
             </span>
-            <textarea class="textarea textarea-bordered textarea-sm leading-6" id="falaise_txt1" name="falaise_txt1"
+            <textarea class="textarea textarea-sm leading-6" id="falaise_txt1" name="falaise_txt1"
               rows="3"></textarea>
             <i class="text-slate-400 text-sm">Exemple: remarque optionnelle générale sur l’accès falaise, qui s’affiche
               quelle que soit la ville de départ</i>
@@ -680,7 +680,7 @@ champ rqvillefalaise_txt de la table rqvillefalaise).</pre>
         </div>
         <label class="form-control" for="falaise_img1">
           <b class="">Image 1 <span class="text-accent opacity-50">(optionnel)</span></b>
-          <input class="file-input file-input-bordered file-input-sm" type="file" id="falaise_img1" name="falaise_img1"
+          <input class="file-input file-file-input-sm" type="file" id="falaise_img1" name="falaise_img1"
             accept="image/*">
         </label>
         <img class="hidden w-full h-auto" id="falaise_img1_preview" src="" alt="Pas d'image 1" />
@@ -690,19 +690,19 @@ champ rqvillefalaise_txt de la table rqvillefalaise).</pre>
             <b class="">Légende image 1 <span class="text-accent opacity-50">(optionnel)</span></b>
             <span class="admin text-xs text-accent"> [falaise_leg1] </span>
           </span>
-          <textarea class="textarea textarea-bordered textarea-sm leading-6" id="falaise_leg1" name="falaise_leg1"
+          <textarea class="textarea textarea-sm leading-6" id="falaise_leg1" name="falaise_leg1"
             rows="2"></textarea>
         </label>
         <label class="form-control" for="falaise_txt3">
           <span>
             <b class="">Texte 1 <span class="text-accent opacity-50">(optionnel)</span></b>
             <span class="admin text-xs text-accent">[falaise_txt3]</span></span>
-          <textarea class="textarea textarea-bordered textarea-sm leading-6" id="falaise_txt3" name="falaise_txt3"
+          <textarea class="textarea textarea-sm leading-6" id="falaise_txt3" name="falaise_txt3"
             rows="5"></textarea>
         </label>
         <label class="form-control" for="falaise_img2">
           <b class="">Image 2 <span class="text-accent opacity-50">(optionnel)</span></b>
-          <input class="file-input file-input-bordered file-input-sm" type="file" id="falaise_img2" name="falaise_img2"
+          <input class="file-input file-file-input-sm" type="file" id="falaise_img2" name="falaise_img2"
             accept="image/*">
         </label>
         <img class="hidden w-full h-auto" id="falaise_img2_preview" src="" alt="Pas d'image 2" />
@@ -711,19 +711,19 @@ champ rqvillefalaise_txt de la table rqvillefalaise).</pre>
           <span>
             <b class="">Légende image 2 <span class="text-accent opacity-50">(optionnel)</span></b>
             <span class="admin text-xs text-accent">[falaise_leg2]</span></span>
-          <textarea class="textarea textarea-bordered textarea-sm leading-6" id="falaise_leg2" name="falaise_leg2"
+          <textarea class="textarea textarea-sm leading-6" id="falaise_leg2" name="falaise_leg2"
             rows="2"></textarea>
         </label>
         <label class="form-control" for="falaise_txt4">
           <span>
             <b class="">Texte 2 <span class="text-accent opacity-50">(optionnel)</span></b>
             <span class="admin text-xs text-accent">[falaise_txt4]</span></span>
-          <textarea class="textarea textarea-bordered textarea-sm leading-6" id="falaise_txt4" name="falaise_txt4"
+          <textarea class="textarea textarea-sm leading-6" id="falaise_txt4" name="falaise_txt4"
             rows="5"></textarea>
         </label>
         <label class="form-control" for="falaise_img3">
           <b class="">Image 3 <span class="text-accent opacity-50">(optionnel)</span></b>
-          <input class="file-input file-input-bordered file-input-sm" type="file" id="falaise_img3" name="falaise_img3"
+          <input class="file-input file-file-input-sm" type="file" id="falaise_img3" name="falaise_img3"
             accept="image/*">
         </label>
         <img class="hidden w-full h-auto" id="falaise_img3_preview" src="" alt="Pas d'image 3" />
@@ -732,7 +732,7 @@ champ rqvillefalaise_txt de la table rqvillefalaise).</pre>
           <span>
             <b class="">Légende image 3 <span class="text-accent opacity-50">(optionnel)</span></b>
             <span class="admin text-xs text-accent">[falaise_leg3]</span></span>
-          <textarea class="textarea textarea-bordered textarea-sm leading-6" id="falaise_leg3" name="falaise_leg3"
+          <textarea class="textarea textarea-sm leading-6" id="falaise_leg3" name="falaise_leg3"
             rows="2"></textarea>
         </label>
       </div>
@@ -742,9 +742,9 @@ champ rqvillefalaise_txt de la table rqvillefalaise).</pre>
       <?php else: ?>
         <h3 class="text-center">Validation de l'ajout de données</h3>
       <?php endif; ?>
-      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-sm">
+      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-xs">
         <div class="flex flex-col md:flex-row gap-4">
-          <div class="form-control flex-grow">
+          <div class="form-control grow">
             <?php if ($falaise_id): ?>
               <div><b>Modification par :</b><i class="text-sm text-slate-400">(ne figurera pas sur la fiche)</i></div>
             <?php else: ?>
@@ -758,7 +758,7 @@ champ rqvillefalaise_txt de la table rqvillefalaise).</pre>
               </svg>
             </label>
           </div>
-          <div class="form-control flex-grow">
+          <div class="form-control grow">
             <b>Mail</b>
             <label for="email" class="input input-primary input-sm flex items-center gap-2 w-full">
               <input class="grow" type="email" id="email" name="email" required>
@@ -773,7 +773,7 @@ champ rqvillefalaise_txt de la table rqvillefalaise).</pre>
             <b>Message <span class="text-accent opacity-50">(optionnel)</span></b>
             <i>(si vous voulez commenter votre ajout de données)</i>
           </span>
-          <textarea class="textarea textarea-bordered textarea-sm leading-6" id="message" name="message"
+          <textarea class="textarea textarea-sm leading-6" id="message" name="message"
             rows="4"></textarea>
         </label>
         <button type="submit" id="confirmButton" class="btn btn-primary"><?= $falaise_id ? "Modifier" : "Ajouter" ?> la

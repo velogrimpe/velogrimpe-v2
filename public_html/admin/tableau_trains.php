@@ -62,18 +62,18 @@ $falaises = array_reduce($falaises, function ($carry, $item) {
         <!-- head -->
         <thead>
           <tr class="border-top border-[black] bg-base-200 text-center">
-            <th class="border-left border-[1px] border-[black] w-48 bg-base-200 text-lg">Falaises <button
+            <th class="border-left border border-[black] w-48 bg-base-200 text-lg">Falaises <button
                 class="btn btn-ghost btn-sm px-0" title="Changer l'ordre de tri" onclick="toggleSortOrder()">
                 <svg class="inline w-4 h-4 fill-current">
                   <use xlink:href="/symbols/icons.svg#ri-sort-desc"></use>
                 </svg>
               </button>
             </th>
-            <td class="border-left border-[1px] border-[black] w-48 text-lg">Gares</td>
+            <td class="border-left border border-[black] w-48 text-lg">Gares</td>
             <?php foreach ($villes as $ville): ?>
-              <td class="border-left border-[1px] border-[black] w-48 text-lg"><?= $ville['ville_nom'] ?></td>
+              <td class="border-left border border-[black] w-48 text-lg"><?= $ville['ville_nom'] ?></td>
             <?php endforeach; ?>
-            <th class="border-left border-[1px] border-[black] w-0 p-0"></th>
+            <th class="border-left border border-[black] w-0 p-0"></th>
           </tr>
         </thead>
         <tbody>
@@ -81,11 +81,11 @@ $falaises = array_reduce($falaises, function ($carry, $item) {
           <?php foreach ($falaises as $falaise_nom => $gares): ?>
             <tr class="border-top border-[black] text-center relative" data-id="<?= $gares[0]['falaise_id'] ?>"
               data-nom="<?= $falaise_nom ?>">
-              <th class="border-left border-[1px] border-[black] w-48 z-10000">
+              <th class="border-left border border-[black] w-48 z-10000">
                 <a
                   href="/falaise.php?falaise_id=<?= $gares[0]['falaise_id'] ?>"><?= $falaise_nom ?></a><br>(<?= $gares[0]['falaise_id'] ?>)
               </th>
-              <td class="border-left border-[1px] border-[black] w-48">
+              <td class="border-left border border-[black] w-48">
                 <?= join(
                   "<br />",
                   array_map(
@@ -95,7 +95,7 @@ $falaises = array_reduce($falaises, function ($carry, $item) {
                 ) ?>
               </td>
               <?php foreach ($villes as $ville): ?>
-                <td class="border-left border-[1px] border-[black] w-48">
+                <td class="border-left border border-[black] w-48">
                   <div class="flex flex-row items-stretch justify-start gap-2">
                     <?php if (in_array($ville['ville_id'], explode(',', $gares[0]['excluded_falaise_ville_ids']))): ?>
                       <div class="flex justify-center w-full">
@@ -123,14 +123,14 @@ $falaises = array_reduce($falaises, function ($carry, $item) {
                             ): ?> - <?php else: ?>
                               <?php if (in_array($ville['ville_id'], explode(',', $gare['ville_ids']))): ?>
                                 <span
-                                  class="text-nowrap overflow-hidden text-ellipsis shrink-1 grow text-left flex items-center gap-1">
+                                  class="text-nowrap overflow-hidden text-ellipsis shrink grow text-left flex items-center gap-1">
                                   <?php if (in_array($ville['ville_id'], array_filter(explode(',', $gare['tgv_ville_ids'] ?? '')))): ?>
                                     <span class="badge badge-accent badge-xs">TGV</span>
                                   <?php endif; ?>
                                   <span><?= $gare["gare_nom"] ?></span>
                                 </span>
                               <?php else: ?>
-                                <span class="text-nowrap overflow-hidden text-ellipsis shrink-1 grow text-left text-error">
+                                <span class="text-nowrap overflow-hidden text-ellipsis shrink grow text-left text-error">
                                   <?= $gare["gare_nom"] ?>
                                 </span>
                                 <a class="badge badge-primary badge-outline text-base-100 badge-xs h-5 w-5 rounded-full text-sm shrink-0"
@@ -158,7 +158,7 @@ $falaises = array_reduce($falaises, function ($carry, $item) {
                   </div>
                 </td>
               <?php endforeach; ?>
-              <th class="border-left border-[1px] border-[black] w-0 p-0"></th>
+              <th class="border-left border border-[black] w-0 p-0"></th>
             </tr>
           <?php endforeach; ?>
         </tbody>

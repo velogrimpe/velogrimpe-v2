@@ -56,7 +56,7 @@ $logoUrl = "https://velogrimpe.fr/images/logo_velogrimpe.png";
   <?php include $_SERVER['DOCUMENT_ROOT'] . "/components/header.html"; ?>
   <main class="pb-4">
     <div class="hero min-h-[400px] bg-center" style="background-image: url(/images/mw/075-matos-5.webp);">
-      <div class="hero-overlay bg-opacity-60"></div>
+      <div class="hero-overlay opacity-60"></div>
       <div class="hero-content text-center text-base-100">
         <div class="max-w-md">
           <h1 class="text-5xl font-bold">Actualités Vélogrimpe</h1>
@@ -123,7 +123,7 @@ $logoUrl = "https://velogrimpe.fr/images/logo_velogrimpe.png";
                 <p class="text-normal text-slate-800 mb-4"><?= htmlspecialchars($article['description']) ?></p>
                 <div class="text-primary font-bold sm:text-xs text-normal">Lire la suite</div>
               </div>
-              <div class="flex-shrink-0 pt-2 sm:pt-0">
+              <div class="shrink-0 pt-2 sm:pt-0">
                 <img src="<?= htmlspecialchars($article['image']) ?>" alt="<?= $title ?>"
                   class="w-auto h-48 sm:w-36 sm:h-36 rounded-md object-contain" />
               </div>

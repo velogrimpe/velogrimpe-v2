@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return () =>
         h('div', { class: 'flex flex-col md:flex-row gap-4 md:items-center flex-1' }, [
           // Gare field
-          h('div', { class: 'flex flex-col gap-1 flex-grow' }, [
+          h('div', { class: 'flex flex-col gap-1 grow' }, [
             h('div', { class: 'relative not-prose' }, [
               h('label', { class: 'form-control', for: 'gare_nom' }, [
                 h('b', null, 'Gare de départ de l\'itinéraire vélo :'),
@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ]),
           ]),
           // Falaise field
-          h('div', { class: 'flex flex-col gap-1 flex-grow' }, [
+          h('div', { class: 'flex flex-col gap-1 grow' }, [
             h('div', { class: 'relative not-prose' }, [
               h('label', { class: 'form-control', for: 'falaise_nom' }, [
                 h('b', null, 'Falaise d\'arrivée de l\'itinéraire vélo :'),

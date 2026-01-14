@@ -127,14 +127,14 @@ $stmtIt->close();
       </select>
       <a class="btn btn-sm" href="/falaise.php?falaise_id=<?php echo $falaise['falaise_id']; ?>">Voir la falaise</a>
       <input type="file" hidden accept=".geojson" id="uploadGeoJSONInput"
-        class="file-input file-input-sm file-input-bordered w-24" />
+        class="file-input file-input-sm file-w-24" />
       <button class="btn btn-sm" id="uploadGeoJSONButton"
         title="Importer un fichier GeoJSON et remplacer la carte actuelle par le contenu du fichier.">
         <svg class="w-5 h-5 fill-current">
           <use xlink:href="/symbols/icons.svg#ri-file-upload-line"></use>
         </svg> Import</button>
       <input type="file" hidden accept=".geojson" id="uploadAddGeoJSONInput"
-        class="file-input file-input-sm file-input-bordered w-24" />
+        class="file-input file-input-sm file-w-24" />
       <button class="btn btn-sm" id="uploadAddGeoJSONButton"
         title="Importer un fichier GeoJSON et ajouter son contenu à la carte actuelle.">
         <svg class="w-5 h-5 fill-current">
@@ -147,8 +147,8 @@ $stmtIt->close();
     </div>
     <div class="flex relative flex-col gap-1">
       <div id="map" class="w-full h-[calc(100vh-180px)]"></div>
-      <div class="absolute bottom-3 left-3 z-[10000] flex gap-1">
-        <input class="input input-sm input-bordered rounded-none" type="text" id="falaise_latlng" name="falaise_latlng"
+      <div class="absolute bottom-3 left-3 z-10000 flex gap-1">
+        <input class="input input-sm rounded-none" type="text" id="falaise_latlng" name="falaise_latlng"
           placeholder="ex: 45.1234,6.2355" required>
         <button class="btn btn-sm btn-primary px-1" id="setFalaiseLatLng"><svg class="w-5 h-5 fill-current">
             <use xlink:href="/symbols/icons.svg#ri-arrow-right-line"></use>
@@ -1023,7 +1023,7 @@ $stmtIt->close();
             <input
               type="text"
               name="${key}"
-              class="input-${feature._element_id} input input-xs input-bordered"
+              class="input-${feature._element_id} input input-xs"
               value="${(feature.layer.properties[key] || '').replace(/"/g, "&quot;")}"
             />
           `

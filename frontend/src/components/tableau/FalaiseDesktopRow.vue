@@ -89,7 +89,7 @@ function getVeloReturnTime(it: TableauItinerary): string {
 
   <!-- Falaise info column -->
   <div class="bg-base-100 px-2 py-1 self-stretch flex flex-row items-center justify-end gap-2">
-    <div class="flex flex-col items-center justify-center gap-1 flex-grow">
+    <div class="flex flex-col items-center justify-center gap-1 grow">
       <div>
         <span title="Marche d'approche">Marche d'approche</span> :
         <span class="font-bold">

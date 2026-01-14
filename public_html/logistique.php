@@ -32,16 +32,16 @@
 <body class="min-h-screen">
   <?php include "./components/header.html"; ?>
   <div class="hero min-h-[400px] bg-center" style="background-image: url(/images/mw/075-matos-5.webp);">
-    <div class="hero-overlay bg-opacity-60"></div>
+    <div class="hero-overlay opacity-60"></div>
     <div class="hero-content text-center text-base-100">
       <div class="max-w-md">
         <h1 class="text-5xl font-bold">Aspects Pratiques</h1>
       </div>
     </div>
   </div>
-  <main class="max-w-screen-lg mx-auto prose p-4
+  <main class="max-w-(--breakpoint-lg) mx-auto prose p-4
               prose-a:text-[oklch(var(--p)/1)] prose-a:font-bold prose-a:no-underline
-              hover:prose-a:underline hover:prose-a:text-[oklch(var(--pf)/1)]">
+              prose-a:hover:underline prose-a:hover:text-[oklch(var(--pf)/1)]">
     <p>
       <i> Le but de cette section est d’essayer de répondre aux questions que vous pourriez vous poser à propos du
         vélogrimpe : train, matériel, logistique, etc. </i>

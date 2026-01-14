@@ -100,11 +100,11 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
 <body class="min-h-screen flex flex-col">
   <?php include $_SERVER['DOCUMENT_ROOT'] . "/components/header.html"; ?>
   <main
-    class="w-full flex-grow max-w-screen-md mx-auto prose p-4 prose-a:text-[oklch(var(--p)/1)] prose-a:font-bold prose-a:no-underline hover:prose-a:underline hover:prose-a:text-[oklch(var(--pf)/1)]">
+    class="w-full grow max-w-(--breakpoint-md) mx-auto prose p-4 prose-a:text-[oklch(var(--p)/1)] prose-a:font-bold prose-a:no-underline prose-a:hover:underline prose-a:hover:text-[oklch(var(--pf)/1)]">
     <h1 class="text-4xl font-bold text-wrap text-center"> Ajouter un itinéraire vélo<span class="admin text-red-900">
         (version admin)</span>
     </h1>
-    <div class="rounded-lg bg-base-300 p-4 my-6 border border-base-300 shadow-sm text-base-content">
+    <div class="rounded-lg bg-base-300 p-4 my-6 border border-base-300 shadow-xs text-base-content">
       <b>Vous vous apprêtez à décrire un itinéraire Gare &rarr; Falaise, en vélo ou à pied.</b><br>
       <i>Les champs obligatoires sont en noir, les optionnels en gris.</i>
     </div>
@@ -113,13 +113,13 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
       <input class="input input-primary input-sm" type="hidden" id="admin" name="admin" value="0">
       <!-- Partie Départ / Arrivées -->
       <div class="relative flex items-center">
-        <hr class="my-0 flex-grow border-[#2e8b57]" />
+        <hr class="my-0 grow border-[#2e8b57]" />
         <div class="flex items-center justify-center">
           <span class="px-2 text-primary italic bg-unset rounded-full">Gare et Falaise</span>
         </div>
-        <hr class="my-0 flex-grow border-[#2e8b57]" />
+        <hr class="my-0 grow border-[#2e8b57]" />
       </div>
-      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-sm">
+      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-xs">
         <div id="vue-ajout-velo"
           data-gares='<?= json_encode(array_values($gares)) ?>'
           data-falaises='<?= json_encode(array_values($falaises)) ?>'
@@ -145,13 +145,13 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
       </div>
       <!-- Partie Indicateurs -->
       <div class="relative flex items-center">
-        <hr class="my-0 flex-grow border-[#2e8b57]" />
+        <hr class="my-0 grow border-[#2e8b57]" />
         <div class="flex items-center justify-center">
           <span class="px-2 text-primary italic bg-unset rounded-full">Indicateurs</span>
         </div>
-        <hr class="my-0 flex-grow border-[#2e8b57]" />
+        <hr class="my-0 grow border-[#2e8b57]" />
       </div>
-      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-sm">
+      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-xs">
         <div class="flex flex-col md:flex-row gap-4">
           <label class="form-control w-full md:w-1/3" for="velo_km">
             <b>Longueur de l'itinéraire (km) :</b>
@@ -174,13 +174,13 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
       </div>
       <!-- Partie GPX -->
       <div class="relative flex items-center">
-        <hr class="my-0 flex-grow border-[#2e8b57]" />
+        <hr class="my-0 grow border-[#2e8b57]" />
         <div class="flex items-center justify-center">
           <span class="px-2 text-primary italic bg-unset rounded-full">Trace GPS</span>
         </div>
-        <hr class="my-0 flex-grow border-[#2e8b57]" />
+        <hr class="my-0 grow border-[#2e8b57]" />
       </div>
-      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-sm">
+      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-xs">
         <label class="form-control" for="gpx_file">
           <b>Trace GPS :</b>
           <input class="file-input file-input-primary file-input-sm" type="file" id="gpx_file" name="gpx_file"
@@ -189,30 +189,30 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
         </label>
         <label class="form-control" for="velo_variante">
           <b class="">Nom de la variante <span class="text-accent opacity-50">(optionnel)</span> :</b>
-          <input class="input input-bordered input-sm" type="text" id="velo_variante" name="velo_variante"
+          <input class="input input-sm" type="text" id="velo_variante" name="velo_variante"
             oninput="formatVariante()">
           <i class=""> Dans le cas où il existe plusieurs itinéraires reliant une même gare à une même falaise, donner
             un nom aux différentes possibilités. Ex : "Option par le Nord" et "Option par le Sud".</i>
         </label>
         <label class="form-control" for="velo_varianteformate" style="display: none;">
           <b class="">Nom de la variante (formatée) <span class="text-accent opacity-50">(optionnel)</span> :</b>
-          <input class="input input-bordered input-sm" type="text" id="velo_varianteformate" name="velo_varianteformate"
+          <input class="input input-sm" type="text" id="velo_varianteformate" name="velo_varianteformate"
             readonly style="display: none;">
         </label>
       </div>
       <!-- Partie Remarques -->
       <div class="relative flex items-center">
-        <hr class="my-0 flex-grow border-[#2e8b57]" />
+        <hr class="my-0 grow border-[#2e8b57]" />
         <div class="flex items-center justify-center">
           <span class="px-2 text-primary italic bg-unset rounded-full">Description</span>
         </div>
-        <hr class="my-0 flex-grow border-[#2e8b57]" />
+        <hr class="my-0 grow border-[#2e8b57]" />
       </div>
-      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-sm">
+      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-xs">
         <label class="form-control" for="velo_descr">
           <b class="">Description de l'itinéraire, remarques <span class="text-accent opacity-50">(optionnel)</span>
             :</b>
-          <textarea class="textarea textarea-bordered textarea-sm leading-6" id="velo_descr" name="velo_descr" rows="5"
+          <textarea class="textarea textarea-sm leading-6" id="velo_descr" name="velo_descr" rows="5"
             cols="100"></textarea>
           <i class=""> On peut y détailler la surface (goudron ? Piste ?), le trafic (beaucoup de voitures ?), s'il y a
             des montées raides, si le parcours suit une voie verte, s'il y a des alternatives au tracé proposé... </i>
@@ -220,20 +220,20 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
       </div>
       <label class="form-control admin" for="velo_openrunner">
         <b class="text-gray-400 opactity-70">Lien Openrunner pour affichage profil en iframe :</b>
-        <textarea type="text" class="textarea textarea-bordered textarea-sm leading-6" id="velo_openrunner" rows="3"
+        <textarea type="text" class="textarea textarea-sm leading-6" id="velo_openrunner" rows="3"
           name="velo_openrunner"></textarea>
       </label>
       <!-- Partie Piéton -->
       <div class="relative flex items-center">
-        <hr class="my-0 flex-grow border-[#2e8b57]" />
+        <hr class="my-0 grow border-[#2e8b57]" />
         <div class="flex items-center justify-center">
           <span class="px-2 text-primary italic bg-unset rounded-full">Accessibilité Piéton</span>
         </div>
-        <hr class="my-0 flex-grow border-[#2e8b57]" />
+        <hr class="my-0 grow border-[#2e8b57]" />
       </div>
-      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-sm">
+      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-xs">
         <div class="flex flex-col md:flex-row gap-4">
-          <label class="form-control flex-grow" for="velo_apieduniquement">
+          <label class="form-control grow" for="velo_apieduniquement">
             <div class="flex items-center gap-4">
               <input class="checkbox checkbox-primary checkbox" type="checkbox" id="velo_apieduniquement"
                 name="velo_apieduniquement">
@@ -241,7 +241,7 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
             </div>
             <i class=""> Cocher si l'itinéraire peut se faire à pied, mais pas à vélo. </i>
           </label>
-          <label class="form-control flex-grow" for="velo_apiedpossible">
+          <label class="form-control grow" for="velo_apiedpossible">
             <div class="flex items-center gap-4">
               <input class="checkbox checkbox-primary checkbox" type="checkbox" id="velo_apiedpossible"
                 name="velo_apiedpossible">
@@ -254,9 +254,9 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
       </div>
       <hr class="my-4">
       <h3 class="text-center">Validation de l'ajout de données</h3>
-      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-sm">
+      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-xs">
         <div class="flex flex-col md:flex-row gap-4">
-          <div class="form-control flex-grow">
+          <div class="form-control grow">
             <b>Itinéraire ajouté par : </b>
             <label for="nom_prenom" class="input input-primary input-sm flex items-center gap-2 w-full">
               <input class="grow" type="text" id="nom_prenom" name="nom_prenom"
@@ -266,7 +266,7 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
               </svg>
             </label>
           </div>
-          <div class="form-control flex-grow">
+          <div class="form-control grow">
             <b>Mail :</b>
             <label for="email" class="input input-primary input-sm flex items-center gap-2 w-full">
               <input class="grow" type="email" id="email" name="email" required>
@@ -281,7 +281,7 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
             <b>Message <span class="text-accent opacity-50">(optionnel)</span> :</b>
             <i>(si vous voulez commenter votre ajout de données)</i>
           </span>
-          <textarea class="textarea textarea-bordered textarea-sm leading-6" id="message" name="message"
+          <textarea class="textarea textarea-sm leading-6" id="message" name="message"
             rows="4"></textarea>
         </label>
         <button type="submit" class="btn btn-primary">Ajouter l'itinéraire vélo</button>

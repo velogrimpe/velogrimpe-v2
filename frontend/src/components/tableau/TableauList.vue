@@ -41,7 +41,7 @@ const hasResults = computed(() => filteredCount.value > 0)
 
     <!-- Desktop Grid -->
     <div
-      class="hidden md:grid grid-cols-[1.5fr_60px_1fr_2fr_2fr] gap-[1px] bg-base-300 shadow-xl rounded-lg overflow-hidden text-center items-center text-sm"
+      class="hidden md:grid grid-cols-[1.5fr_60px_1fr_2fr_2fr] gap-px bg-base-300 shadow-xl rounded-lg overflow-hidden text-center items-center text-sm"
     >
       <!-- Header row -->
       <div class="bg-base-100 px-2 py-1 self-stretch flex items-center justify-center vg-desktop-header"></div>

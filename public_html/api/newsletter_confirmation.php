@@ -42,9 +42,9 @@ if ($stmt->num_rows === 0) {
 
 <body class="min-h-screen flex flex-col">
   <?php include $_SERVER['DOCUMENT_ROOT'] . "/components/header.html"; ?>
-  <div class="flex-grow flex justify-center items-center">
+  <div class="grow flex justify-center items-center">
     <?php if ($ret): ?>
-      <div class="max-w-screen-lg alert alert-success text-base-100" role="alert">
+      <div class="max-w-(--breakpoint-lg) alert alert-success text-base-100" role="alert">
         <span>
           <svg class="w-4 h-4 fill-current">
             <use xlink:href="/symbols/icons.svg#ri-checkbox-circle-fill"></use>
@@ -54,7 +54,7 @@ if ($stmt->num_rows === 0) {
         <a class="btn btn-sm btn-primary" href="/">Retour à l'accueil</a>
       </div>
     <?php else: ?>
-      <div class="max-w-screen-lg alert alert-error text-base-100" role="alert">
+      <div class="max-w-(--breakpoint-lg) alert alert-error text-base-100" role="alert">
         <span>
           <svg class="w-4 h-4 fill-current">
             <use xlink:href="/symbols/icons.svg#ri-error-warning-fill"></use>

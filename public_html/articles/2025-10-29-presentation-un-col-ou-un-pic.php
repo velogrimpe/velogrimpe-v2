@@ -41,13 +41,13 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/vite.php';
   <main class="pb-4">
     <div class="hero min-h-[400px] bg-bottom"
       style="background-image: url(/images/articles/2025-10-29-presentation-un-col-ou-un-pic/hero.webp);">
-      <div class="hero-overlay bg-opacity-60"></div>
+      <div class="hero-overlay opacity-60"></div>
       <div class="hero-content text-center text-base-100">
         <div class="text-5xl font-bold">Présentation : Un Col ou un Pic</div>
       </div>
     </div>
     <div class="bg-base-100 p-8 max-w-2xl mx-auto prose prose-a:text-[oklch(var(--p)/1)] prose-a:font-bold prose-a:no-underline
-              hover:prose-a:underline hover:prose-a:text-[oklch(var(--pf)/1)]
+              prose-a:hover:underline prose-a:hover:text-[oklch(var(--pf)/1)]
               ">
       <img src="/images/articles/2025-10-29-presentation-un-col-ou-un-pic/logo-uncolouunpic.webp"
         alt="Logo Un Col ou un Pic" class="mx-auto mb-4 h-48 rounded-lg border shadow-lg" />

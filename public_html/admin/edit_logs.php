@@ -59,7 +59,7 @@ $formatter = new IntlDateFormatter(
 
 <body class="flex flex-col min-h-screen">
   <?php include $_SERVER['DOCUMENT_ROOT'] . "/components/header.html"; ?>
-  <main class="w-full flex-grow max-w-screen-2xl mx-auto p-10 flex flex-col gap-8">
+  <main class="w-full grow max-w-(--breakpoint-2xl) mx-auto p-10 flex flex-col gap-8">
     <h1 class="text-4xl font-bold text-wrap text-center">
       <span class="text-red-900">Historique des changements</span>
     </h1>

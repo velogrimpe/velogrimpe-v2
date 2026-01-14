@@ -124,7 +124,7 @@ onUnmounted(() => {
       @click="handleContainerClick"
     >
       <!-- Selected items wrapper - no wrap, single line -->
-      <div class="flex items-center gap-1 flex-grow min-w-0 overflow-hidden">
+      <div class="flex items-center gap-1 grow min-w-0 overflow-hidden">
         <span
           v-for="option in selectedOptions"
           :key="option.value"
@@ -140,7 +140,7 @@ onUnmounted(() => {
           ref="searchInputRef"
           v-model="searchQuery"
           type="text"
-          class="flex-grow min-w-[8px] border-0 outline-none bg-transparent text-sm h-5"
+          class="grow min-w-[8px] border-0 outline-hidden bg-transparent text-sm h-5"
           :placeholder="selectedOptions.length === 0 ? placeholder : ''"
           :disabled="disabled"
           @keyup="handleSearchKeyup"

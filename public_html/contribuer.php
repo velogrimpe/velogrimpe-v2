@@ -35,16 +35,16 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/vite.php';
 <body class="min-h-screen">
   <?php include "./components/header.html"; ?>
   <div class="hero min-h-[400px] bg-bottom" style="background-image: url(/images/mw/078-groupe-5.webp);">
-    <div class="hero-overlay bg-opacity-60"></div>
+    <div class="hero-overlay opacity-60"></div>
     <div class="hero-content text-center text-base-100">
       <div class="max-w-md">
         <h1 class="text-5xl font-bold">Contribuer</h1>
       </div>
     </div>
   </div>
-  <div class="max-w-screen-lg mx-auto prose p-4
+  <div class="max-w-(--breakpoint-lg) mx-auto prose p-4
               prose-a:text-[oklch(var(--p)/1)] prose-a:font-bold prose-a:no-underline
-              hover:prose-a:underline hover:prose-a:text-[oklch(var(--pf)/1)]">
+              prose-a:hover:underline prose-a:hover:text-[oklch(var(--pf)/1)]">
     <p> Comme vous l'imaginez, ce projet de site Vélogrimpe nécessite du temps et de l'énergie : si vous voulez nous
       aider, vous êtes les bienvenus ! </p>
     <h2>AJOUTER DES DONNÉES</h2>
