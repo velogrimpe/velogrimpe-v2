@@ -32,7 +32,7 @@ const filterIconHref = '/symbols/icons.svg#ri-filter-line'
 </script>
 
 <template>
-  <div class="info-panel bg-base-100 rounded-lg shadow-lg p-3 text-sm max-h-[300px] overflow-y-auto">
+  <div>
     <!-- Header: Filter stats (when nothing selected) -->
     <div v-if="!selected" class="flex gap-1 items-center justify-center font-bold text-primary border-b border-base-300 pb-1 mb-1">
       <svg class="w-4 h-4 fill-current">
