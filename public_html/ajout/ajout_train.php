@@ -121,7 +121,7 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
               <div class="input input-primary input-sm flex items-center gap-2 w-full">
                 <input class="grow" type="text" id="train_depart" name="train_depart" required autocomplete="off" />
                 <svg class="w-4 h-4 fill-current">
-                  <use xlink:href="/symbols/icons.svg#ri-search-line"></use>
+                  <use xlink:href="/symbols/icons.svg#search"></use>
                 </svg>
               </div>
             </label>
@@ -142,7 +142,7 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
       </label>
       <div id="itineraireExistsAlert" class="hidden bg-red-200 border border-red-900 text-red-900 p-2 rounded-lg">
         <svg class="w-4 h-4 mb-1 fill-current inline-block">
-          <use xlink:href="/symbols/icons.svg#ri-error-warning-fill"></use>
+          <use xlink:href="/symbols/icons.svg#error-warning-fill"></use>
         </svg> Un itinéraire <span id="itineraireExistsType">train</span> existe déjà entre cette ville et cette gare.
         Si vous avez besoin de modifier les informations, contactez nous par mail à l'addresse <a
           href="mailto:contact@velogrimpe.fr">contact@velogrimpe.fr</a>.
@@ -240,7 +240,7 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
               <input class="grow" type="text" id="nom_prenom" name="nom_prenom"
                 placeholder="Prénom (et/ou nom, surnom...)" required>
               <svg class="w-4 h-4 fill-current">
-                <use xlink:href="/symbols/icons.svg#ri-user-line"></use>
+                <use xlink:href="/symbols/icons.svg#user"></use>
               </svg>
             </label>
           </div>
@@ -249,7 +249,7 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
             <label for="email" class="input input-primary input-sm flex items-center gap-2 w-full">
               <input class="grow" type="email" id="email" name="email" required>
               <svg class="w-4 h-4 fill-current">
-                <use xlink:href="/symbols/icons.svg#ri-mail-line"></use>
+                <use xlink:href="/symbols/icons.svg#mail"></use>
               </svg>
             </label>
           </div>

@@ -113,7 +113,7 @@ $highlight = $_GET['h'] ?? '';
     <div class="flex flex-row gap-1 justify-end md:hidden" id="searchAndFilter">
       <button class="btn btn-sm border-2 border-solid border-[rgba(0,0,0,.2)] rounded-md"
         onclick="searchModal.showModal()"> Chercher <svg class="w-4 h-4 fill-current">
-          <use xlink:href="/symbols/icons.svg#ri-search-line"></use>
+          <use xlink:href="/symbols/icons.svg#search"></use>
         </svg>
       </button>
       <dialog id="searchModal" class="modal modal-bottom sm:modal-middle">
@@ -129,7 +129,7 @@ $highlight = $_GET['h'] ?? '';
       </dialog>
       <button class="btn btn-sm border-2 border-solid border-[rgba(0,0,0,.2)] rounded-md"
         onclick="document.getElementById('filtersModal').showModal()"> Filtrer <svg class="w-4 h-4 fill-current">
-          <use xlink:href="/symbols/icons.svg#ri-filter-line"></use>
+          <use xlink:href="/symbols/icons.svg#filter"></use>
         </svg>
       </button>
       <dialog id="filtersModal" class="modal modal-bottom sm:modal-middle">
@@ -280,7 +280,7 @@ $highlight = $_GET['h'] ?? '';
         e.target.bindTooltip(
           format_time(calculate_time(it))
           + (it.velo_apieduniquement === "1"
-            ? '<svg class="w-4 h-4 fill-current inline"><use xlink:href="/symbols/icons.svg#ri-footprint-fill"></use></svg>'
+            ? '<svg class="w-4 h-4 fill-current inline"><use xlink:href="/symbols/icons.svg#footprint"></use></svg>'
             : ""
           ),
           {

@@ -165,7 +165,7 @@ $stmt->close();
       <div class="flex justify-between w-full items-center">
         <button class="btn btn-xs w-fit" onclick="instructionsDialog.showModal()">
           <svg class="w-4 h-4 fill-current">
-            <use xlink:href="/symbols/icons.svg#ri-information-line"></use>
+            <use xlink:href="/symbols/icons.svg#information"></use>
           </svg> Comment lire ce tableau ?</button>
         <dialog id="instructionsDialog" class="modal">
           <div class="modal-box">

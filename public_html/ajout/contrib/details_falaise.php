@@ -125,14 +125,14 @@ $stmtIt->close();
       <button class="btn btn-sm" id="uploadGeoJSONButton"
         title="Importer un fichier GeoJSON et remplacer la carte actuelle par le contenu du fichier.">
         <svg class="w-5 h-5 fill-current">
-          <use xlink:href="/symbols/icons.svg#ri-file-upload-line"></use>
+          <use xlink:href="/symbols/icons.svg#file-upload"></use>
         </svg> Import</button>
       <input type="file" hidden accept=".geojson" id="uploadAddGeoJSONInput"
         class="file-input file-input-sm file-w-24" />
       <button class="btn btn-sm" id="uploadAddGeoJSONButton"
         title="Importer un fichier GeoJSON et ajouter son contenu à la carte actuelle.">
         <svg class="w-5 h-5 fill-current">
-          <use xlink:href="/symbols/icons.svg#ri-file-upload-line"></use>
+          <use xlink:href="/symbols/icons.svg#file-upload"></use>
         </svg> Ajouter</button>
       <button class="btn btn-sm" id="downloadGeoJSON">Télécharger le GeoJSON</button>
       <div class="tooltip tooltip-left" data-tip="Cmd/Ctrl + S">
@@ -145,7 +145,7 @@ $stmtIt->close();
         <input class="input input-sm rounded-none" type="text" id="falaise_latlng" name="falaise_latlng"
           placeholder="ex: 45.1234,6.2355" required>
         <button class="btn btn-sm btn-primary px-1" id="setFalaiseLatLng"><svg class="w-5 h-5 fill-current">
-            <use xlink:href="/symbols/icons.svg#ri-arrow-right-line"></use>
+            <use xlink:href="/symbols/icons.svg#arrow-right"></use>
           </svg></button>
       </div>
       <dialog id="tableau_modal" class="modal modal-bottom">
@@ -232,7 +232,7 @@ $stmtIt->close();
         <div class="leaflet-control-zoom leaflet-bar">
           <a onclick="showTableau()" class="p-1" title="Tableau récapitulatif des éléments">
             <svg class="w-5 h-5 fill-current">
-              <use xlink:href="/symbols/icons.svg#ri-table-line"></use>
+              <use xlink:href="/symbols/icons.svg#table"></use>
             </svg>
           </a>
         </div>
@@ -1112,7 +1112,7 @@ $stmtIt->close();
               ${field("type", "Type")}
               <button class="btn btn-xs btn-primary" onclick="updateLayer(${feature._element_id})">
                 <svg class="w-5 h-5 fill-current">
-                  <use xlink:href="/symbols/icons.svg#ri-save-3-fill"></use>
+                  <use xlink:href="/symbols/icons.svg#save"></use>
                 </svg>
               </button>
             </div>
@@ -1128,7 +1128,7 @@ $stmtIt->close();
               ${field("type", "Type")}
               <button class="btn btn-xs btn-primary" onclick="updateLayer(${feature._element_id})">
                 <svg class="w-5 h-5 fill-current">
-                  <use xlink:href="/symbols/icons.svg#ri-save-3-fill"></use>
+                  <use xlink:href="/symbols/icons.svg#save"></use>
                 </svg>
               </button>
             </div>
@@ -1143,7 +1143,7 @@ $stmtIt->close();
               ${field("type", "Type")}
               <button class="btn btn-xs btn-primary" onclick="updateLayer(${feature._element_id})">
                 <svg class="w-5 h-5 fill-current">
-                  <use xlink:href="/symbols/icons.svg#ri-save-3-fill"></use>
+                  <use xlink:href="/symbols/icons.svg#save"></use>
                 </svg>
               </button>
             </div>
@@ -1157,7 +1157,7 @@ $stmtIt->close();
               ${field("type", "Type")}
               <button class="btn btn-xs btn-primary" onclick="updateLayer(${feature._element_id})">
                 <svg class="w-5 h-5 fill-current">
-                  <use xlink:href="/symbols/icons.svg#ri-save-3-fill"></use>
+                  <use xlink:href="/symbols/icons.svg#save"></use>
                 </svg>
               </button>
             </div>
@@ -1171,7 +1171,7 @@ $stmtIt->close();
               ${field("type", "Type")}
               <button class="btn btn-xs btn-primary" onclick="updateLayer(${feature._element_id})">
                 <svg class="w-5 h-5 fill-current">
-                  <use xlink:href="/symbols/icons.svg#ri-save-3-fill"></use>
+                  <use xlink:href="/symbols/icons.svg#save"></use>
                 </svg>
               </button>
             </div>
@@ -1186,7 +1186,7 @@ $stmtIt->close();
               ${field("type", "Type")}
               <button class="btn btn-xs btn-primary" onclick="updateLayer(${feature._element_id})">
                 <svg class="w-5 h-5 fill-current">
-                  <use xlink:href="/symbols/icons.svg#ri-save-3-fill"></use>
+                  <use xlink:href="/symbols/icons.svg#save"></use>
                 </svg>
               </button>
             </div>

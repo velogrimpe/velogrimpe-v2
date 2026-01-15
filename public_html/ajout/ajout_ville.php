@@ -57,7 +57,7 @@ if (!$admin) {
       </label>
       <div id="villeExistsAlert" class="hidden bg-red-200 border border-red-900 text-red-900 p-2 rounded-lg">
         <svg class="w-4 h-4 mb-1 fill-current inline-block">
-          <use xlink:href="/symbols/icons.svg#ri-error-warning-fill"></use>
+          <use xlink:href="/symbols/icons.svg#error-warning-fill"></use>
         </svg> Une ville avec ce nom existe déjà dans la base de données. Vérifiez que vous ne faites pas de doublon.
       </div>
       <button class="btn btn-primary" type="submit">AJOUTER LA VILLE</button>

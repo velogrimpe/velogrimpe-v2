@@ -54,7 +54,7 @@ $ret = sendMail($data);
             <div class="max-w-(--breakpoint-lg) alert alert-success text-base-100" role="alert">
                 <span>
                     <svg class="w-4 h-4 fill-current">
-                        <use xlink:href="/symbols/icons.svg#ri-checkbox-circle-fill"></use>
+                        <use xlink:href="/symbols/icons.svg#checkbox-circle-fill"></use>
                     </svg>
                 </span>
                 <span>Votre message a bien été envoyé.</span>
@@ -64,7 +64,7 @@ $ret = sendMail($data);
             <div class="max-w-(--breakpoint-lg) alert alert-error text-base-100" role="alert">
                 <span>
                     <svg class="w-4 h-4 fill-current">
-                        <use xlink:href="/symbols/icons.svg#ri-error-warning-fill"></use>
+                        <use xlink:href="/symbols/icons.svg#error-warning-fill"></use>
                     </svg>
                 </span>
                 <span>Une erreur est survenue lors de l'envoi de votre message. Veuillez réessayer.</span>

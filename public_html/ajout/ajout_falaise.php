@@ -177,19 +177,19 @@ if ($falaise_id) {
         </div>
         <div id="falaiseExistsAlert" class="hidden bg-red-200 border border-red-900 text-red-900 p-2 rounded-lg">
           <svg class="w-4 h-4 mb-1 fill-current inline-block">
-            <use xlink:href="/symbols/icons.svg#ri-error-warning-fill"></use>
+            <use xlink:href="/symbols/icons.svg#error-warning-fill"></use>
           </svg> Une falaise avec ce nom existe déjà (<a id="linkSelectedFalaise" class="inline-flex items-center gap-1"
             target="_blank">
             <span> consulter la page de cette falaise </span>
             <svg class="w-4 h-4 fill-current">
-              <use xlink:href="/symbols/icons.svg#ri-external-link-line"></use>
+              <use xlink:href="/symbols/icons.svg#external-link"></use>
             </svg></a>) dans la base de données et a été vérouillée pour éviter la dégradation du topo. Si vous vous
           souhaitez modifier les données de la fiche falaise, merci de <a href="mailto:contact@velogrimpe.fr">contacter
             l'équipe velogrimpe</a> qui pourra vous ouvrir l'accès à la modification.
         </div>
         <div id="falaiseEditInfo" class="hidden bg-blue-100 border border-blue-900 text-blue-900 p-2 rounded-lg">
           <svg class="w-4 h-4 mb-1 fill-current inline-block">
-            <use xlink:href="/symbols/icons.svg#ri-error-warning-fill"></use>
+            <use xlink:href="/symbols/icons.svg#error-warning-fill"></use>
           </svg> Une falaise avec ce nom existe déjà. Les données connues sont pré-remplies ci-dessous, libre à vous de
           les modifier / compléter. Attention toutefois aux homonymes, vérifiez sa localisation. En cas d'erreur,
           recharger la page pour éviter de remplacer la falaise existante.
@@ -747,7 +747,7 @@ champ rqvillefalaise_txt de la table rqvillefalaise).</pre>
               <input class="grow" type="text" id="nom_prenom" name="nom_prenom"
                 placeholder="Prénom (et/ou nom, surnom...)" required>
               <svg class="w-4 h-4 fill-current">
-                <use xlink:href="/symbols/icons.svg#ri-user-line"></use>
+                <use xlink:href="/symbols/icons.svg#user"></use>
               </svg>
             </label>
           </div>
@@ -756,7 +756,7 @@ champ rqvillefalaise_txt de la table rqvillefalaise).</pre>
             <label for="email" class="input input-primary input-sm flex items-center gap-2 w-full">
               <input class="grow" type="email" id="email" name="email" required>
               <svg class="w-4 h-4 fill-current">
-                <use xlink:href="/symbols/icons.svg#ri-mail-line"></use>
+                <use xlink:href="/symbols/icons.svg#mail"></use>
               </svg>
             </label>
           </div>

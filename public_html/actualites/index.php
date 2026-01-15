@@ -114,7 +114,7 @@ $logoUrl = "https://velogrimpe.fr/images/logo_velogrimpe.png";
                 <h3 class="text-xl font-bold mb-1">
                   <?php if ($article['type'] === 'actualites'): ?>
                     <svg class="w-5 h-5 fill-current inline pb-1">
-                      <use xlink:href="/symbols/icons.svg#ri-mail-fill"></use>
+                      <use xlink:href="/symbols/icons.svg#mail-fill"></use>
                     </svg>
                   <?php endif; ?>
                   <?= $title ?>

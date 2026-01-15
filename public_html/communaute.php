@@ -71,7 +71,7 @@
           <label class="input input-primary flex items-center gap-2 w-full">
             <input class="grow" type="email" id="email" name="email" required />
             <svg class="w-4 h-4 fill-current">
-              <use xlink:href="/symbols/icons.svg#ri-mail-line"></use>
+              <use xlink:href="/symbols/icons.svg#mail"></use>
             </svg>
           </label>
         </div>
@@ -82,7 +82,7 @@
           <label class="input input-primary flex items-center gap-2 w-full">
             <input class="grow" type="tel" id="phone" name="phone" />
             <svg class="w-4 h-4 fill-current">
-              <use xlink:href="/symbols/icons.svg#ri-phone-line"></use>
+              <use xlink:href="/symbols/icons.svg#phone"></use>
             </svg>
           </label>
         </div>

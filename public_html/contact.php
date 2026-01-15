@@ -34,7 +34,7 @@
           <label class="input input-primary flex items-center gap-2 w-full">
             <input class="grow" type="text" id="name" name="name" required />
             <svg class="w-4 h-4 fill-current">
-              <use xlink:href="/symbols/icons.svg#ri-user-line"></use>
+              <use xlink:href="/symbols/icons.svg#user"></use>
             </svg>
           </label>
         </div>
@@ -45,7 +45,7 @@
           <label class="input input-primary flex items-center gap-2 w-full">
             <input class="grow" type="email" id="email" name="email" required />
             <svg class="w-4 h-4 fill-current">
-              <use xlink:href="/symbols/icons.svg#ri-mail-line"></use>
+              <use xlink:href="/symbols/icons.svg#mail"></use>
             </svg>
           </label>
         </div>

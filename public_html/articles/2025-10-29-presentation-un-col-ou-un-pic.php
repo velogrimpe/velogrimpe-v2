@@ -65,7 +65,7 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/vite.php';
       <div class="w-full text-center mb-8">
         <a href="https://www.uncolouunpic.com/" class="mx-auto not-prose btn btn-primary mt-4 shadow-xl"
           target="_blank"> Découvrir Un Col ou un Pic <svg class="w-4 h-4 fill-current">
-            <use xlink:href="/symbols/icons.svg#ri-external-link-line"></use>
+            <use xlink:href="/symbols/icons.svg#external-link"></use>
           </svg>
         </a>
       </div>

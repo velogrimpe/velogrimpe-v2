@@ -65,7 +65,7 @@ $falaises = array_reduce($falaises, function ($carry, $item) {
             <th class="border-left border border-[black] w-48 bg-base-200 text-lg">Falaises <button
                 class="btn btn-ghost btn-sm px-0" title="Changer l'ordre de tri" onclick="toggleSortOrder()">
                 <svg class="inline w-4 h-4 fill-current">
-                  <use xlink:href="/symbols/icons.svg#ri-sort-desc"></use>
+                  <use xlink:href="/symbols/icons.svg#sort-desc"></use>
                 </svg>
               </button>
             </th>
@@ -100,7 +100,7 @@ $falaises = array_reduce($falaises, function ($carry, $item) {
                     <?php if (in_array($ville['ville_id'], explode(',', $gares[0]['excluded_falaise_ville_ids']))): ?>
                       <div class="flex justify-center w-full">
                         <span><svg class="inline w-5 h-5 fill-current">
-                            <use xlink:href="/symbols/icons.svg#ri-close-line"></use>
+                            <use xlink:href="/symbols/icons.svg#close"></use>
                           </svg></span>
                       </div>
                     <?php else: ?>
@@ -109,7 +109,7 @@ $falaises = array_reduce($falaises, function ($carry, $item) {
                           onclick="excludeVilleFalaise(<?= $ville['ville_id'] ?>, <?= $gare['falaise_id'] ?>, this)">
                           <!-- onclick="excludeTriplet(<?= $ville['ville_id'] ?>, <?= $gare['gare_id'] ?>, <?= $gare['falaise_id'] ?>, this)"> -->
                           <span><svg class="inline w-3 h-3 fill-current">
-                              <use xlink:href="/symbols/icons.svg#ri-close-line"></use>
+                              <use xlink:href="/symbols/icons.svg#close"></use>
                             </svg></span>
                         </button>
                       </div>
@@ -200,7 +200,7 @@ $falaises = array_reduce($falaises, function ($carry, $item) {
       .then(response => response.json())
       .then(data => {
         if (data === true) {
-          thisElement.closest('td').innerHTML = '<svg class="inline w-5 h-5 fill-current"><use xlink:href="/symbols/icons.svg#ri-close-line"></use></svg>';
+          thisElement.closest('td').innerHTML = '<svg class="inline w-5 h-5 fill-current"><use xlink:href="/symbols/icons.svg#close"></use></svg>';
         } else {
           alert("Erreur lors de l'exclusion de la falaise.");
         }

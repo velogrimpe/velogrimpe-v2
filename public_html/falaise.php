@@ -235,7 +235,7 @@ $stmtC->close();
               class="btn btn-sm md:btn-md btn-circle btn-outline btn-primary focus:pointer-events-none"
               title="J'y ai été">
               <svg class="w-4 md:w-6 h-4 md:h-6 fill-current">
-                <use xlink:href="/symbols/icons.svg#ri-chat-4-line"></use>
+                <use xlink:href="/symbols/icons.svg#chat"></use>
               </svg>
             </div>
             <div class="dropdown-content gap-1 menu bg-base-200 rounded-box z-1 m-1 w-64 p-2 shadow-lg" tabindex="1">
@@ -248,7 +248,7 @@ $stmtC->close();
               class="btn btn-sm md:btn-md btn-circle btn-outline focus:pointer-events-none"
               title="Proposer des modifications">
               <svg class="w-4 md:w-6 h-4 md:h-6 fill-current">
-                <use xlink:href="/symbols/icons.svg#ri-pencil-line"></use>
+                <use xlink:href="/symbols/icons.svg#pencil"></use>
               </svg>
             </div>
             <div class="dropdown-content gap-1 menu bg-base-200 rounded-box z-1 m-1 w-64 p-2 shadow-lg" tabindex="1">
@@ -285,11 +285,11 @@ $stmtC->close();
         <button class="drawer-button btn btn-neutral btn-sm rounded-full btn-outline" onclick="meteoModal.showModal()">
           Météo <span class="flex items-center gap-1">
             <svg class="w-4 h-4 fill-[gold]">
-              <use xlink:href="/symbols/icons.svg#ri-sun-foggy-fill"></use>
+              <use xlink:href="/symbols/icons.svg#sun-foggy"></use>
             </svg>
             <span class="font-normal">/</span>
             <svg class="w-4 h-4 fill-[LightSlateGray]">
-              <use xlink:href="/symbols/icons.svg#ri-sun-cloudy-fill"></use>
+              <use xlink:href="/symbols/icons.svg#sun-cloudy"></use>
             </svg>
           </span>
         </button>
@@ -360,7 +360,7 @@ $stmtC->close();
                         <a target="_blank" href="<?= htmlspecialchars($lien['url']) ?>"
                           class="text-primary font-bold hover:underline cursor-pointer">
                           <span><?= htmlspecialchars($lien['name']) ?></span>&nbsp;<svg class="w-3 h-3 fill-current inline">
-                            <use xlink:href="/symbols/icons.svg#ri-external-link-line"></use>
+                            <use xlink:href="/symbols/icons.svg#external-link"></use>
                           </svg>
                         </a>
                       <?php endforeach; ?>
@@ -630,7 +630,7 @@ $stmtC->close();
                       <?php endif ?>
                       <!-- <button class="btn btn-xs btn-outline btn-accent" onclick="gare<?= $gare["gare_id"] ?>.showModal()">
                       <svg class="w-3 md:w-4 h-3 md:h-4 fill-current">
-                        <use xlink:href="/symbols/icons.svg#ri-ticket-line"></use>
+                        <use xlink:href="/symbols/icons.svg#ticket"></use>
                       </svg>
                       Acheter un billet
                     </button>
@@ -861,7 +861,7 @@ $stmtC->close();
                 <button title="Modifier le commentaire" class="btn btn-xs btn-ghost btn-circle"
                   onclick="editComment(<?= $comment['id'] ?>)">
                   <svg class="w-3 md:w-4 h-3 md:h-4 fill-current">
-                    <use xlink:href="/symbols/icons.svg#ri-pencil-line"></use>
+                    <use xlink:href="/symbols/icons.svg#pencil"></use>
                   </svg>
                 </button>
               </div>
@@ -870,28 +870,28 @@ $stmtC->close();
                   <?php if (!empty($comment['ville_nom'])): ?>
                     <div class="flex gap-1 items-center">
                       <svg class="w-4 h-4 fill-current">
-                        <use xlink:href="/symbols/icons.svg#ri-building-2-line"></use>
+                        <use xlink:href="/symbols/icons.svg#building"></use>
                       </svg> <?= htmlspecialchars($comment['ville_nom']) ?>
                     </div>
                   <?php endif; ?>
                   <?php if (!empty($comment['gare_depart'])): ?>
                     <div class="flex gap-1 items-center">
                       <svg class="w-4 h-4 fill-current">
-                        <use xlink:href="/symbols/icons.svg#ri-logout-circle-r-line"></use>
+                        <use xlink:href="/symbols/icons.svg#logout"></use>
                       </svg> <?= htmlspecialchars($comment['gare_depart']) ?>
                     </div>
                   <?php endif; ?>
                   <?php if (!empty($comment['gare_arrivee'])): ?>
                     <div class="flex gap-1 items-center">
                       <svg class="w-4 h-4 fill-current">
-                        <use xlink:href="/symbols/icons.svg#ri-login-circle-line"></use>
+                        <use xlink:href="/symbols/icons.svg#login"></use>
                       </svg> <?= htmlspecialchars($comment['gare_arrivee']) ?>
                     </div>
                   <?php endif; ?>
                   <?php if (!empty($comment['velo_id']) || $comment['velo_id'] === 0): ?>
                     <div class="flex gap-1 items-center">
                       <svg class="w-4 h-4 fill-current">
-                        <use xlink:href="/symbols/icons.svg#ri-riding-line"></use>
+                        <use xlink:href="/symbols/icons.svg#riding"></use>
                       </svg>
                       <?= $comment['velo_id'] === 0 ? 'Autre' : str_replace(" ()", "", htmlspecialchars($comment['velo_nom'])) ?>
                     </div>
