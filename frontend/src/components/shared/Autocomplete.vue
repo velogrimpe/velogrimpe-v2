@@ -9,11 +9,15 @@ const props = withDefaults(
     placeholder?: string
     acceptNewValue?: boolean
     disabled?: boolean
+    name?: string
+    required?: boolean
   }>(),
   {
     placeholder: '',
     acceptNewValue: false,
     disabled: false,
+    name: undefined,
+    required: false,
   }
 )
 
@@ -170,6 +174,14 @@ function getOptionLabel(option: AutocompleteOption): string {
 
 <template>
   <div class="relative w-full">
+    <!-- Hidden input for form submission -->
+    <input
+      v-if="name"
+      type="hidden"
+      :name="name"
+      :value="inputValue"
+      :required="required"
+    />
     <input
       ref="inputRef"
       type="search"

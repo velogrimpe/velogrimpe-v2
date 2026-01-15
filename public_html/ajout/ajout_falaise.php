@@ -781,6 +781,8 @@ champ rqvillefalaise_txt de la table rqvillefalaise).</pre>
     fetch(`/api/fetch_falaise.php?falaise_id=${id}`)
       .then(response => response.json())
       .then(falaise => {
+        console.log('[prefill] falaise data:', falaise);
+        console.log('[prefill] cotmin value:', falaise.falaise_cotmin);
         // Prefill zone and department when editing an existing falaise
         const zHidden = document.getElementById("falaise_zonename");
         if (zHidden) zHidden.value = falaise.falaise_zonename || '';
@@ -823,7 +825,8 @@ champ rqvillefalaise_txt de la table rqvillefalaise).</pre>
         document.getElementById("falaise_latlng").value = falaise.falaise_latlng;
         document.getElementById("falaise_nomformate").value = falaise.falaise_nomformate;
         document.getElementById("falaise_id").value = falaise.falaise_id;
-        document.getElementById("falaise_nom").value = falaise.falaise_nom;
+        // Use Vue setter for falaise name
+        if (window.setFalaiseNom) window.setFalaiseNom(falaise.falaise_nom);
         document.getElementById("confirmButton").textContent = "Modifier la falaise";
         updateMarker();
       });

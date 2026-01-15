@@ -946,6 +946,18 @@ export function initFalaiseDetailsEditor(containerId) {
 
   container.querySelector(".save-geojson-btn")?.addEventListener("click", save);
 
+  // Save and navigate to next step
+  const saveAndNextBtn = container.querySelector(".save-and-next-btn");
+  saveAndNextBtn?.addEventListener("click", async () => {
+    const nextUrl = saveAndNextBtn.dataset.nextUrl;
+    if (!nextUrl) return;
+
+    const success = await save();
+    if (success) {
+      window.location.href = nextUrl;
+    }
+  });
+
   // Keyboard shortcut
   document.addEventListener("keydown", (event) => {
     if (event.key === "s" && (event.ctrlKey || event.metaKey)) {

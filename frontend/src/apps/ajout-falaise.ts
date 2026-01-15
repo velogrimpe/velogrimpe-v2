@@ -7,6 +7,9 @@ import RoseDesVents from '@/components/shared/RoseDesVents.vue'
 const expo1Value = ref<string[]>([])
 const expo2Value = ref<string[]>([])
 
+// Shared ref for falaise name (used by autocomplete)
+const falaiseNameValue = ref<string>('')
+
 // Computed strings for the rose component
 const expo1String = computed(() => expo1Value.value.join(','))
 const expo2String = computed(() => expo2Value.value.join(','))
@@ -83,7 +86,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Create Vue app
   const app = createApp({
     setup() {
-      const falaiseValue = ref('')
       const isDisabled = ref(presetFalaiseId !== null)
 
       // If editing an existing falaise, pre-fill the value
@@ -159,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       // Watch for changes to update the formatted name
-      watch(falaiseValue, (newVal) => {
+      watch(falaiseNameValue, (newVal) => {
         // Only update nomformate if it's a new falaise (no existing match)
         const existing = falaises.find(
           (f) => f.nom.toLowerCase() === newVal.toLowerCase()
@@ -174,9 +176,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       return () =>
         h(FormAutocomplete, {
-          modelValue: falaiseValue.value,
+          modelValue: falaiseNameValue.value,
           'onUpdate:modelValue': (v: string) => {
-            falaiseValue.value = v
+            falaiseNameValue.value = v
           },
           items: falaises.map((f) => ({
             ...f,
@@ -186,6 +188,8 @@ document.addEventListener('DOMContentLoaded', () => {
           acceptNewValue: true,
           disabled: isDisabled.value,
           onSelect: onFalaiseSelect,
+          name: 'falaise_nom',
+          required: true,
         })
     },
   })
@@ -193,6 +197,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Mount the app
   app.mount(mountEl)
   console.log('[velogrimpe] Vue ajout-falaise autocomplete mounted')
+
+  // Expose setter for prefill from PHP
+  ;(window as unknown as Record<string, unknown>).setFalaiseNom = (value: string) => {
+    falaiseNameValue.value = value
+  }
 
   // Mount exposition multi-selects
   mountExpositionSelects()

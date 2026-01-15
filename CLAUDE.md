@@ -40,18 +40,18 @@ velo-grimpe/
 
 ## Tech Stack
 
-| Category | Technology | Version |
-|----------|------------|---------|
-| Backend | PHP | 8.3+ |
-| Database | MySQL/MariaDB | MySQLi |
-| Frontend | Vue 3 | ^3.4.0 |
-| Build | Vite | ^5.0.0 |
-| Types | TypeScript | ^5.3.0 |
-| State | Pinia | ^2.1.0 |
-| CSS | Tailwind CSS | ^4.1.18 |
-| UI | DaisyUI | ^5.5.14 |
-| Maps | Leaflet | ^1.9.4 |
-| Package Manager | Bun | latest |
+| Category        | Technology    | Version |
+| --------------- | ------------- | ------- |
+| Backend         | PHP           | 8.3+    |
+| Database        | MySQL/MariaDB | MySQLi  |
+| Frontend        | Vue 3         | ^3.4.0  |
+| Build           | Vite          | ^5.0.0  |
+| Types           | TypeScript    | ^5.3.0  |
+| State           | Pinia         | ^2.1.0  |
+| CSS             | Tailwind CSS  | ^4.1.18 |
+| UI              | DaisyUI       | ^5.5.14 |
+| Maps            | Leaflet       | ^1.9.4  |
+| Package Manager | Bun           | latest  |
 
 ## Development
 
@@ -77,15 +77,17 @@ git config core.hooksPath .githooks
 ## Architecture
 
 **Databases:**
+
 - `velogrimpe` - Main DB (falaises, velo, gares, villes, train)
-- `sncf` - Train schedules data
 
 **Auth:** Bearer tokens in `config.php`
+
 - `admin_token` - Full admin access
 - `contrib_token` - Contributor access
 - `oblyk_token` - Oblyk API integration
 
 **Vue-PHP Integration:**
+
 1. PHP renders page with `data-*` attributes for Vue mount points
 2. Vue enhances UI with reactive components
 3. Vue emits `velogrimpe:*` custom events
@@ -93,6 +95,7 @@ git config core.hooksPath .githooks
 5. PHP loads assets via `vite_js()` / `vite_css()` helpers
 
 **Key PHP Pages:**
+
 - `carte.php` - Interactive map with filters
 - `falaise.php` - Crag detail page
 - `tableau.php` - Table view of routes
@@ -109,12 +112,22 @@ git config core.hooksPath .githooks
 - Prefer comment blocks above functions
 - Reuse existing functions from `lib/`
 
+# TODO list
+
+- [ ] Afficher un warning sur falaise.php quand la falaise n'est reliée à aucune gare (pas visible sur la carte ni dans les tableaux)
+- [ ] Ajouter un système de watcher pour build auto à chaque changement du front end
+- [ ] Amélioration SEO (meta tags dynamiques)
+- [ ] Tests automatisés (PHPUnit, Vitest)
+
+# TODO someday (ne pas commencer)
+
+- [ ] Optimisation bundle map.js (actuellement 479KB)
+
 ## Additional Documentation
 
-| File | Description |
-|------|-------------|
-| [CLAUDE/tasks.md](CLAUDE/tasks.md) | **Tâches en cours** - icônes, migration Vue, éditeur falaise |
-| [CLAUDE/database-schema.md](CLAUDE/database-schema.md) | Tables, relationships, common queries |
-| [CLAUDE/vue-components.md](CLAUDE/vue-components.md) | Adding Vue components and autocomplete fields |
-| [CLAUDE/leaflet-plugins.md](CLAUDE/leaflet-plugins.md) | Adding Leaflet plugins, map bundling |
-| [CLAUDE/architecture-notes.md](CLAUDE/architecture-notes.md) | Notes d'architecture, travaux futurs |
+| File                                                         | Description                                   |
+| ------------------------------------------------------------ | --------------------------------------------- |
+| [CLAUDE/database-schema.md](CLAUDE/database-schema.md)       | Tables, relationships, common queries         |
+| [CLAUDE/vue-components.md](CLAUDE/vue-components.md)         | Adding Vue components and autocomplete fields |
+| [CLAUDE/leaflet-plugins.md](CLAUDE/leaflet-plugins.md)       | Adding Leaflet plugins, map bundling          |
+| [CLAUDE/architecture-notes.md](CLAUDE/architecture-notes.md) | Notes d'architecture, travaux futurs          |

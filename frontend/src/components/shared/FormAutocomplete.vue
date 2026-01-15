@@ -16,12 +16,16 @@ const props = withDefaults(
     acceptNewValue?: boolean
     disabled?: boolean
     inputClass?: string
+    name?: string
+    required?: boolean
   }>(),
   {
     placeholder: '',
     acceptNewValue: false,
     disabled: false,
     inputClass: '',
+    name: undefined,
+    required: false,
   }
 )
 
@@ -52,6 +56,8 @@ function onSelect(option: AutocompleteOption) {
     :placeholder="placeholder"
     :accept-new-value="acceptNewValue"
     :disabled="disabled"
+    :name="name"
+    :required="required"
     @select="onSelect"
   />
 </template>

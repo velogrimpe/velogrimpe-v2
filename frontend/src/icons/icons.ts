@@ -50,6 +50,8 @@ export const icons: IconDefinition[] = [
   { name: 'chevron-up', paths: ['M12 10.8284L7.05026 15.7782L5.63605 14.364L12 7.99995L18.364 14.364L16.9497 15.7782L12 10.8284Z'] },
   { name: 'plus', paths: ['M11 11V5H13V11H19V13H13V19H11V13H5V11H11Z'] },
   { name: 'minus', paths: ['M5 11V13H19V11H5Z'] },
+  { name: 'arrow-left', paths: ['M7.82843 10.9999H20V12.9999H7.82843L13.1924 18.3638L11.7782 19.778L4 11.9999L11.7782 4.22168L13.1924 5.63589L7.82843 10.9999Z'] },
+
 ]
 
 // Map old ri-* names to new names for migration
