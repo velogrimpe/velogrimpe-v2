@@ -140,7 +140,7 @@ onUnmounted(() => {
           ref="searchInputRef"
           v-model="searchQuery"
           type="text"
-          class="grow min-w-[8px] border-0 outline-hidden bg-transparent text-sm h-5"
+          class="grow min-w-2 border-0 outline-hidden bg-transparent text-sm h-5"
           :placeholder="selectedOptions.length === 0 ? placeholder : ''"
           :disabled="disabled"
           @keyup="handleSearchKeyup"
