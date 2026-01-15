@@ -66,7 +66,7 @@ const buildIcon = (name, id) =>
     html: `<div
             id="${id}"
             class="absolute z-1 top-0 left-1/2 w-fit text-nowrap -translate-x-1/2
-                    text-black bg-white text-xs p-[1px] leading-none rounded-md opacity-80">
+                    text-black bg-white text-xs p-px leading-none rounded-md opacity-80">
               ${name}
             </div>`,
   });
