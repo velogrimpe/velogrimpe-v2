@@ -1,12 +1,8 @@
 # Architecture Notes
 
-Notes and analysis for future development work.
+Notes techniques et analyse pour le développement.
 
-## TODO
-
-- **Icon Library**: Add a shared icon library for both Vue components and PHP
-  - Options: Lucide Icons, Heroicons, SVG sprite sheet
-  - Goal: replace inline SVGs with consistent, reusable icons
+> **Note:** Les tâches actives sont dans [tasks.md](tasks.md)
 
 ## Completed Work
 
