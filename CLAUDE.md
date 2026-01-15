@@ -96,7 +96,11 @@ git config core.hooksPath .githooks
 - `carte.php` - Interactive map with filters
 - `falaise.php` - Crag detail page
 - `tableau.php` - Table view of routes
-- `admin/oblyk.php` - Oblyk data management
+- `ajout/ajout_falaise.php` - Add new crag form
+- `ajout/ajout_velo.php` - Add bike route form
+- `ajout/ajout_train.php` - Add train connection form
+- `admin/index.php` - Admin dashboard
+- `admin/tableau_trains.php` - Train data management
 
 ## Coding Guidelines
 
