@@ -3,7 +3,7 @@
 ## 1. Système d'icônes unifié
 
 **Priorité:** Haute
-**Statut:** ✅ Infrastructure en place, migration en cours
+**Statut:** ✅ Terminé
 
 **Objectif:** Permettre l'utilisation d'icônes à la fois dans Vue et dans les templates PHP, de manière cohérente et maintenable.
 
@@ -19,6 +19,7 @@
 
 - `frontend/src/icons/icons.ts` - Définitions des icônes (paths SVG)
 - `frontend/build-icons.ts` - Script de génération du sprite
+- `frontend/add-icon.ts` - Script interactif pour ajouter une icône
 - `frontend/src/components/shared/Icon.vue` - Composant Vue
 - `public_html/lib/icons.php` - Helper PHP
 
@@ -43,13 +44,21 @@ import Icon from '@/components/shared/Icon.vue'
 ```
 
 **Ajouter une icône:**
-1. Ajouter la définition dans `frontend/src/icons/icons.ts`
-2. Exécuter `bun run build:icons`
+```bash
+cd frontend
+bun run add-icon
+```
 
-### Migration restante
+Le script interactif demande:
+1. Le nom de l'icône (vérifie les doublons)
+2. Le SVG à coller (copié depuis heroicons, remix-icons, etc.)
 
-- [ ] Migrer les templates PHP (remplacer `ri-*` par nouveaux noms)
-- [ ] Migrer les composants Vue (remplacer SVG inline par `<Icon>`)
+Il extrait automatiquement les paths et le viewBox, puis régénère le sprite.
+
+### Migration
+
+- [x] Migrer les templates PHP (28 fichiers, `ri-*` → nouveaux noms)
+- [x] Migrer les composants Vue (3 fichiers, SVG inline → `<Icon>`)
 
 ---
 
