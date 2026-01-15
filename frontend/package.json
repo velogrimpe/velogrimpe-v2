@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build && bun run build:map",
     "build:map": "bun run build-map.ts",
+    "build:icons": "bun run build-icons.ts",
     "preview": "vite preview",
     "typecheck": "vue-tsc --noEmit"
   },

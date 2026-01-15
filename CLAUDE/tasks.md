@@ -3,43 +3,53 @@
 ## 1. Système d'icônes unifié
 
 **Priorité:** Haute
+**Statut:** ✅ Infrastructure en place, migration en cours
 
 **Objectif:** Permettre l'utilisation d'icônes à la fois dans Vue et dans les templates PHP, de manière cohérente et maintenable.
 
-### État des lieux actuel
+### Solution implémentée
 
-**PHP (templates):**
-- Utilise un sprite SVG : `/symbols/icons.svg` (898 KB - set Remix Icons complet)
-- Syntaxe : `<svg><use xlink:href="/symbols/icons.svg#ri-search-line"></use></svg>`
-- Fichiers concernés : `carte.php`, `falaise.php`, `tableau.php`, `contact.php`, `communaute.php`, `components/newsletter-form.php`
+**Sprite SVG optimisé** généré à partir d'une liste d'icônes TypeScript.
 
-**Vue (composants):**
-- Utilise des SVG inline (chemins copiés-collés dans chaque composant)
-- Pas de système centralisé
-- Composants concernés : `FilterPanel.vue`, `TableauFilterPanel.vue`, `InfoPanel.vue`, `TransitousStationSearch.vue`, `RoseDesVents.vue`, `MultiSelect.vue`
+| Avant | Après |
+|-------|-------|
+| 898 KB (2271 icônes Remix Icons) | 17 KB (36 icônes utilisées) |
 
-**Problèmes actuels:**
-- Sprite SVG trop volumineux (898 KB pour quelques icônes utilisées)
-- Duplication des SVG dans les composants Vue
-- Pas de cohérence entre PHP et Vue
-- Maintenance difficile (changement d'icône = modifier plusieurs fichiers)
+### Fichiers créés
 
-### Solutions possibles
+- `frontend/src/icons/icons.ts` - Définitions des icônes (paths SVG)
+- `frontend/build-icons.ts` - Script de génération du sprite
+- `frontend/src/components/shared/Icon.vue` - Composant Vue
+- `public_html/lib/icons.php` - Helper PHP
 
-| Solution | PHP | Vue | Avantages | Inconvénients |
-|----------|-----|-----|-----------|---------------|
-| **Sprite SVG optimisé** | `<use xlink:href>` | `<use xlink:href>` | Simple, même syntaxe partout | Requiert build step pour générer sprite |
-| **Composant Vue + helper PHP** | `<?= icon('search') ?>` | `<Icon name="search" />` | API unifiée, tree-shaking possible | Plus complexe à mettre en place |
-| **Lucide Icons** | Web components ou helper | Package Vue officiel | Moderne, léger, bien maintenu | Dépendance externe |
-| **Iconify** | Runtime ou helper | Package Vue | Énorme choix d'icônes | Dépendance externe, potentiellement lourd |
+### Utilisation
 
-### Plan d'action proposé
+**PHP:**
+```php
+<?php require_once 'lib/icons.php'; ?>
+<?= icon('search') ?>
+<?= icon('filter', 'w-6 h-6 text-primary') ?>
+```
 
-1. Lister toutes les icônes utilisées dans le projet
-2. Choisir une solution (recommandé : sprite optimisé ou Lucide)
-3. Créer un composant Vue `<Icon>`
-4. Créer un helper PHP `icon($name, $class = '')`
-5. Migrer progressivement les fichiers existants
+**Vue:**
+```vue
+<script setup>
+import Icon from '@/components/shared/Icon.vue'
+</script>
+<template>
+  <Icon name="search" />
+  <Icon name="filter" class="w-6 h-6 text-primary" />
+</template>
+```
+
+**Ajouter une icône:**
+1. Ajouter la définition dans `frontend/src/icons/icons.ts`
+2. Exécuter `bun run build:icons`
+
+### Migration restante
+
+- [ ] Migrer les templates PHP (remplacer `ri-*` par nouveaux noms)
+- [ ] Migrer les composants Vue (remplacer SVG inline par `<Icon>`)
 
 ---
 
