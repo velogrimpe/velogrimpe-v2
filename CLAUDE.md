@@ -69,6 +69,7 @@ git config core.hooksPath .githooks
 
 | File | Description |
 |------|-------------|
+| [CLAUDE/database-schema.md](CLAUDE/database-schema.md) | Database tables, relationships, common queries |
 | [CLAUDE/vue-components.md](CLAUDE/vue-components.md) | Adding Vue components and autocomplete fields |
 | [CLAUDE/leaflet-plugins.md](CLAUDE/leaflet-plugins.md) | Adding Leaflet plugins, map bundling config |
 | [CLAUDE/architecture-notes.md](CLAUDE/architecture-notes.md) | TODOs, migration plans, future work |
