@@ -45,6 +45,7 @@
 
 @source '../../../public_html/**/*.php';
 @source '../../../public_html/**/*.html';
+@source '../../../public_html/js/**/*.js';
 
 /*
   The default border color has changed to `currentcolor` in Tailwind CSS v4,

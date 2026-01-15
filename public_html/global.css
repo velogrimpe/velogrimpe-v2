@@ -89,36 +89,80 @@ a:not(.navbar a):not(.menu a):not(.btn):hover {
   background-size: 22px 22px !important;
 }
 
-/* Links styling */
-#map a:not(.link):not(.btn):not(.leaflet-pm-action) {
+/* Links styling for maps */
+#map a:not(.link):not(.btn):not(.leaflet-pm-action),
+.editor-map a:not(.link):not(.btn):not(.leaflet-pm-action) {
   margin-top: unset;
   text-decoration: unset;
   color: unset;
 }
-#map a:not(.link):not(.btn):not(.leaflet-pm-action):hover {
+#map a:not(.link):not(.btn):not(.leaflet-pm-action):hover,
+.editor-map a:not(.link):not(.btn):not(.leaflet-pm-action):hover {
   color: unset;
   text-decoration: unset;
 }
-#map a.link {
+#map a.link,
+.editor-map a.link {
   display: inline-block;
   color: #2e8b57;
   text-decoration: none;
   font-weight: bold;
 }
-#map a.link:hover {
+#map a.link:hover,
+.editor-map a.link:hover {
   /* color: #1e5d3e; */
   text-decoration: underline;
 }
 
-#map a.btn {
+#map a.btn,
+.editor-map a.btn {
   color: oklch(var(--b1));
   text-decoration: none;
   font-weight: bold;
 }
-#map a.btn:hover {
+#map a.btn:hover,
+.editor-map a.btn:hover {
   /* color: #1e5d3e; */
   text-decoration: underline;
 }
+
+/* Secteur label highlight (used dynamically by JS) */
+.secteur-label-highlight {
+  background-color: darkred !important;
+  color: white !important;
+}
+
+/* Map marker icons (used dynamically by JS) */
+.vg-parking-icon {
+  background-color: #2563eb; /* blue-600 */
+  color: white;
+  border-radius: 9999px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  border: 1px solid white;
+  text-transform: uppercase;
+}
+
+/* Velo tooltip colors (used dynamically by JS) */
+.vg-velo-tooltip {
+  padding: 1px;
+  color: white;
+  font-weight: bold;
+}
+.vg-velo-tooltip-indianRed { background-color: indianRed; border-color: indianRed; }
+.vg-velo-tooltip-tomato { background-color: tomato; border-color: tomato; }
+.vg-velo-tooltip-teal { background-color: teal; border-color: teal; }
+.vg-velo-tooltip-paleVioletRed { background-color: paleVioletRed; border-color: paleVioletRed; }
+.vg-velo-tooltip-mediumSlateBlue { background-color: mediumSlateBlue; border-color: mediumSlateBlue; }
+.vg-velo-tooltip-lightSalmon { background-color: lightSalmon; border-color: lightSalmon; }
+.vg-velo-tooltip-fireBrick { background-color: fireBrick; border-color: fireBrick; }
+.vg-velo-tooltip-crimson { background-color: crimson; border-color: crimson; }
+.vg-velo-tooltip-purple { background-color: purple; border-color: purple; }
+.vg-velo-tooltip-hotPink { background-color: hotPink; border-color: hotPink; }
+.vg-velo-tooltip-mediumOrchid { background-color: mediumOrchid; border-color: mediumOrchid; }
+.vg-velo-tooltip-black { background-color: black; border-color: black; }
 
 /* Remove input type number default up/down arrows */
 input[type="number"]::-webkit-inner-spin-button,
