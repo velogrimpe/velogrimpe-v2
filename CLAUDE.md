@@ -65,7 +65,8 @@ docker run --platform linux/x86_64 --name myXampp -p 4001:22 -p 4000:80 -d \
 # Frontend
 cd frontend
 bun install          # Install dependencies
-bun run dev          # Vite dev server with HMR
+bun run watch:php    # Dev mode (PHP)
+bun run dev          # Vite dev server only (HMR Vue)
 bun run build        # Production build to dist/
 bun run build:map    # Rebuild map bundle only
 bun run typecheck    # TypeScript validation
@@ -114,8 +115,7 @@ git config core.hooksPath .githooks
 
 # TODO list
 
-- [ ] Afficher un warning sur falaise.php quand la falaise n'est reliée à aucune gare (pas visible sur la carte ni dans les tableaux)
-- [ ] Ajouter un système de watcher pour build auto à chaque changement du front end
+- [x] Ajouter un système de watcher pour build auto à chaque changement du front end
 - [ ] Amélioration SEO (meta tags dynamiques)
 - [ ] Tests automatisés (PHPUnit, Vitest)
 

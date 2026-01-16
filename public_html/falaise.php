@@ -274,6 +274,16 @@ $stmtC->close();
           </div>
         </div>
       <?php endif; ?>
+      <!-- Message si la falaise n'est reliée à aucune gare (pas visible sur la carte ni dans les tableaux) -->
+      <?php if (count($itineraires) === 0): ?>
+        <div class="alert alert-warning alert-soft text-center flex flex-col items-center">
+          <div class="font-bold text-lg">Falaise non reliée au réseau</div>
+          <div> Cette falaise n'a pas encore d'itinéraire vélo depuis une gare. Elle n'apparaît donc pas sur la carte ni
+            dans les tableaux. </div>
+          <a class="btn btn-primary btn-sm mt-2" href="/ajout/ajout_velo.php?falaise_id=<?= $falaise_id ?>">Proposer un
+            accès vélo</a>
+        </div>
+      <?php endif; ?>
       <div class="flex flex-col items-center mb-10 gap-4">
         <h1 class="inline-flex flex-col text-[48px] font-bold text-center leading-none text-primary">
           <?= htmlspecialchars($falaise_nom) ?>
@@ -388,12 +398,8 @@ $stmtC->close();
                 <div class=""><?= nl2br($falaise_rq) ?></div>
               <?php endif; ?>
               <!-- Rose des vents (Vue component) -->
-              <div
-                id="vue-rose-des-vents"
-                data-expo1="<?= htmlspecialchars($falaise_exposhort1) ?>"
-                data-expo2="<?= htmlspecialchars($falaise_exposhort2) ?>"
-                data-size="60"
-              ></div>
+              <div id="vue-rose-des-vents" data-expo1="<?= htmlspecialchars($falaise_exposhort1) ?>"
+                data-expo2="<?= htmlspecialchars($falaise_exposhort2) ?>" data-size="60"></div>
               <div class=" flex flex-row gap-2 items-center">
                 <?= nl2br($falaise_expotxt) ?>
               </div>
@@ -574,8 +580,8 @@ $stmtC->close();
                   <?php foreach ($train_itineraires as $t): ?>
                     <div> 🚆 - <?= format_time($t['train_temps']) ?> (<?= ($t['train_correspmin'] ?? 0) > 0
                          ? (($t['train_correspmin'] === $t['train_correspmax'])
-                           ? $t['train_correspmin'] . ' Corresp.'
-                           : 'de ' . $t['train_correspmin'] . ' à ' . $t['train_correspmax'] . ' Corresp.')
+                         ? $t['train_correspmin'] . ' Corresp.'
+                         : 'de ' . $t['train_correspmin'] . ' à ' . $t['train_correspmax'] . ' Corresp.')
                          : 'Direct' ?>)<?php if (!empty($t['train_tgv'])): ?>
                         <span class="badge badge-accent badge-sm" title="Trajet empruntant un segment TGV"> TGV </span>
                       <?php endif; ?>
@@ -619,8 +625,8 @@ $stmtC->close();
                             <div class="text-sm">
                               <span class="text-lg font-bold ml-1"><?= format_time($t['train_temps']) ?></span> (<?= ($t['train_correspmin'] ?? 0) > 0
                                   ? (($t['train_correspmin'] === $t['train_correspmax'])
-                                    ? $t['train_correspmin'] . ' Corresp.'
-                                    : 'de ' . $t['train_correspmin'] . ' à ' . $t['train_correspmax'] . ' Corresp.')
+                                  ? $t['train_correspmin'] . ' Corresp.'
+                                  : 'de ' . $t['train_correspmin'] . ' à ' . $t['train_correspmax'] . ' Corresp.')
                                   : 'Direct' ?>) <?php if (!empty($t['train_tgv'])): ?>
                                 <span class="badge badge-accent badge-sm" title="Trajet empruntant un segment TGV">TGV</span>
                               <?php endif; ?>
@@ -930,9 +936,11 @@ $stmtC->close();
               </label>
               <input type="email" id="email" name="email" class="input input-primary w-full" required>
             </div>
-            <div id="vue-falaise-comment"
-              data-villes='<?= htmlspecialchars(json_encode(array_map(function($v) { return ["id" => $v["ville_nom"], "nom" => $v["ville_nom"]]; }, $allVilles)), ENT_QUOTES, 'UTF-8') ?>'
-              data-gares='<?= htmlspecialchars(json_encode(array_map(function($g) { return ["id" => $g["gare_id"], "nom" => $g["gare_nom"]]; }, $allGares)), ENT_QUOTES, 'UTF-8') ?>'>
+            <div id="vue-falaise-comment" data-villes='<?= htmlspecialchars(json_encode(array_map(function ($v) {
+              return ["id" => $v["ville_nom"], "nom" => $v["ville_nom"]];
+            }, $allVilles)), ENT_QUOTES, 'UTF-8') ?>' data-gares='<?= htmlspecialchars(json_encode(array_map(function ($g) {
+                  return ["id" => $g["gare_id"], "nom" => $g["gare_nom"]];
+                }, $allGares)), ENT_QUOTES, 'UTF-8') ?>'>
             </div>
             <div class="form-control w-full">
               <label class="label" for="velo_id">
