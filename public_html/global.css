@@ -164,6 +164,37 @@ a:not(.navbar a):not(.menu a):not(.btn):hover {
 .vg-velo-tooltip-mediumOrchid { background-color: mediumOrchid; border-color: mediumOrchid; }
 .vg-velo-tooltip-black { background-color: black; border-color: black; }
 
+/* Station/Falaise tooltip styles (with border-radius) */
+.vg-station-tooltip {
+  padding: 1px 2px;
+  color: white;
+  border-radius: 0.375rem;
+}
+.vg-station-tooltip-indianRed { background-color: indianRed; border-color: indianRed; }
+.vg-station-tooltip-indianRed::before { border-right-color: indianRed; }
+.vg-station-tooltip-tomato { background-color: tomato; border-color: tomato; }
+.vg-station-tooltip-tomato::before { border-right-color: tomato; }
+.vg-station-tooltip-teal { background-color: teal; border-color: teal; }
+.vg-station-tooltip-teal::before { border-right-color: teal; }
+.vg-station-tooltip-paleVioletRed { background-color: paleVioletRed; border-color: paleVioletRed; }
+.vg-station-tooltip-paleVioletRed::before { border-right-color: paleVioletRed; }
+.vg-station-tooltip-mediumSlateBlue { background-color: mediumSlateBlue; border-color: mediumSlateBlue; }
+.vg-station-tooltip-mediumSlateBlue::before { border-right-color: mediumSlateBlue; }
+.vg-station-tooltip-lightSalmon { background-color: lightSalmon; border-color: lightSalmon; }
+.vg-station-tooltip-lightSalmon::before { border-right-color: lightSalmon; }
+.vg-station-tooltip-fireBrick { background-color: fireBrick; border-color: fireBrick; }
+.vg-station-tooltip-fireBrick::before { border-right-color: fireBrick; }
+.vg-station-tooltip-crimson { background-color: crimson; border-color: crimson; }
+.vg-station-tooltip-crimson::before { border-right-color: crimson; }
+.vg-station-tooltip-purple { background-color: purple; border-color: purple; }
+.vg-station-tooltip-purple::before { border-right-color: purple; }
+.vg-station-tooltip-hotPink { background-color: hotPink; border-color: hotPink; }
+.vg-station-tooltip-hotPink::before { border-right-color: hotPink; }
+.vg-station-tooltip-mediumOrchid { background-color: mediumOrchid; border-color: mediumOrchid; }
+.vg-station-tooltip-mediumOrchid::before { border-right-color: mediumOrchid; }
+.vg-station-tooltip-black { background-color: black; border-color: black; }
+.vg-station-tooltip-black::before { border-right-color: black; }
+
 /* Remove input type number default up/down arrows */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {

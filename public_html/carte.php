@@ -284,7 +284,7 @@ $highlight = $_GET['h'] ?? '';
             : ""
           ),
           {
-            className: `p-px bg-[${c}] text-white border-[${c}] font-bold`,
+            className: `vg-velo-tooltip vg-velo-tooltip-${c}`,
             permanent: true,
             direction: "center",
           });
@@ -379,7 +379,7 @@ $highlight = $_GET['h'] ?? '';
               direction: "right",
               offset: [iconSize / 2, 0],
               permanent: true,
-              className: `rounded-md bg-[${c}] border-[${c}] text-white px-px py-0 before:border-r-[${c}]`,
+              className: `vg-station-tooltip vg-station-tooltip-${c}`,
             });
           }), 0.76 * 1000);
         } else {
@@ -567,7 +567,7 @@ $highlight = $_GET['h'] ?? '';
           direction: "right",
           permanent: true,
           offset: [iconSize / 2, -iconSize / 2],
-          className: `rounded-md bg-[${c}] border-[${c}] text-white px-px py-0 before:border-r-[${c}]`,
+          className: `vg-station-tooltip vg-station-tooltip-${c}`,
         });
         const gpx = renderGpx(it, c);
         itinerairesLines.push(gpx);
