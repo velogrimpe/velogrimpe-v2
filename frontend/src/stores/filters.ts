@@ -1,15 +1,15 @@
-import { defineStore } from 'pinia'
-import { ref, computed, watch } from 'vue'
-import type { FilterState, Exposition, Cotation } from '@/types'
-import { defaultFilters } from '@/types'
+import { defineStore } from "pinia";
+import { ref, computed, watch } from "vue";
+import type { FilterState, Exposition, Cotation } from "@/types";
+import { defaultFilters } from "@/types";
 
-export const useFiltersStore = defineStore('filters', () => {
-  // State
-  const filters = ref<FilterState>({ ...defaultFilters })
+export const useFiltersStore = defineStore("filters", () => {
+  // State - deep copy to avoid mutating defaultFilters
+  const filters = ref<FilterState>(JSON.parse(JSON.stringify(defaultFilters)));
 
   // Getters
   const hasActiveFilters = computed(() => {
-    const f = filters.value
+    const f = filters.value;
     return (
       f.exposition.length > 0 ||
       f.cotations.length > 0 ||
@@ -24,97 +24,98 @@ export const useFiltersStore = defineStore('filters', () => {
       f.velo.denivMax !== null ||
       f.velo.apiedPossible ||
       f.approche.tempsMax !== null
-    )
-  })
+    );
+  });
 
-  const hasVilleSelected = computed(() => filters.value.villeId !== null)
+  const hasVilleSelected = computed(() => filters.value.villeId !== null);
 
   // Actions
   function setExposition(expositions: Exposition[]) {
-    filters.value.exposition = expositions
+    filters.value.exposition = expositions;
   }
 
   function toggleExposition(expo: Exposition) {
-    const idx = filters.value.exposition.indexOf(expo)
+    const idx = filters.value.exposition.indexOf(expo);
     if (idx === -1) {
-      filters.value.exposition.push(expo)
+      filters.value.exposition.push(expo);
     } else {
-      filters.value.exposition.splice(idx, 1)
+      filters.value.exposition.splice(idx, 1);
     }
   }
 
   function setCotations(cotations: Cotation[]) {
-    filters.value.cotations = cotations
+    filters.value.cotations = cotations;
   }
 
   function toggleCotation(cot: Cotation) {
-    const idx = filters.value.cotations.indexOf(cot)
+    const idx = filters.value.cotations.indexOf(cot);
     if (idx === -1) {
-      filters.value.cotations.push(cot)
+      filters.value.cotations.push(cot);
     } else {
-      filters.value.cotations.splice(idx, 1)
+      filters.value.cotations.splice(idx, 1);
     }
   }
 
-  function setTypeVoie(type: keyof FilterState['typeVoies'], value: boolean) {
-    filters.value.typeVoies[type] = value
+  function setTypeVoie(type: keyof FilterState["typeVoies"], value: boolean) {
+    filters.value.typeVoies[type] = value;
   }
 
   function setNbVoiesMin(value: number) {
-    filters.value.nbVoiesMin = value
+    filters.value.nbVoiesMin = value;
   }
 
   function setVilleId(villeId: string | null) {
-    filters.value.villeId = villeId
+    filters.value.villeId = villeId;
     // Reset train/total filters when no ville selected
     if (villeId === null) {
-      filters.value.train = { ...defaultFilters.train }
-      filters.value.total = { ...defaultFilters.total }
+      filters.value.train = { ...defaultFilters.train };
+      filters.value.total = { ...defaultFilters.total };
     }
   }
 
   function setTrainTempsMax(value: number | null) {
-    filters.value.train.tempsMax = value
+    filters.value.train.tempsMax = value;
   }
 
   function setTrainCorrespMax(value: number | null) {
-    filters.value.train.correspMax = value
+    filters.value.train.correspMax = value;
   }
 
   function setTrainTerOnly(value: boolean) {
-    filters.value.train.terOnly = value
+    filters.value.train.terOnly = value;
   }
 
   function setVeloTempsMax(value: number | null) {
-    filters.value.velo.tempsMax = value
+    filters.value.velo.tempsMax = value;
   }
 
   function setVeloDistMax(value: number | null) {
-    filters.value.velo.distMax = value
+    filters.value.velo.distMax = value;
   }
 
   function setVeloDenivMax(value: number | null) {
-    filters.value.velo.denivMax = value
+    filters.value.velo.denivMax = value;
   }
 
   function setVeloApiedPossible(value: boolean) {
-    filters.value.velo.apiedPossible = value
+    filters.value.velo.apiedPossible = value;
   }
 
   function setApprocheTempsMax(value: number | null) {
-    filters.value.approche.tempsMax = value
+    filters.value.approche.tempsMax = value;
   }
 
   function setTotalTempsTV(value: number | null) {
-    filters.value.total.tempsTV = value
+    filters.value.total.tempsTV = value;
   }
 
   function setTotalTempsTVA(value: number | null) {
-    filters.value.total.tempsTVA = value
+    filters.value.total.tempsTVA = value;
   }
 
   function resetFilters() {
-    filters.value = { ...defaultFilters }
+    // Deep copy to avoid mutating defaultFilters
+    filters.value = JSON.parse(JSON.stringify(defaultFilters));
   }
 
   // Emit changes to non-Vue code via custom event
@@ -122,13 +123,13 @@ export const useFiltersStore = defineStore('filters', () => {
     filters,
     (newFilters) => {
       window.dispatchEvent(
-        new CustomEvent('velogrimpe:filters', {
+        new CustomEvent("velogrimpe:filters", {
           detail: JSON.parse(JSON.stringify(newFilters)),
-        })
-      )
+        }),
+      );
     },
-    { deep: true }
-  )
+    { deep: true },
+  );
 
   return {
     // State
@@ -155,5 +156,5 @@ export const useFiltersStore = defineStore('filters', () => {
     setTotalTempsTV,
     setTotalTempsTVA,
     resetFilters,
-  }
-})
+  };
+});
