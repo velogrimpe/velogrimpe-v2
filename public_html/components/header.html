@@ -23,20 +23,18 @@
           <div class="flex-1 hidden lg:flex justify-center">
             <ul class="menu menu-horizontal text-lg">
               <li><a class="text-base-100" href="/carte.php">Carte</a></li>
-              <li>
-                <details>
-                  <summary class="text-base-100">Falaises proches de...</summary>
-                  <ul class="bg-base-100 rounded-box z-[1] w-52 p-2 shadow-xl">
-                    <li><a class="text-primary" href="/tableau.php?ville_id=13">Annecy</a></li>
-                    <li><a class="text-primary" href="/tableau.php?ville_id=7">Chambéry</a></li>
-                    <li><a class="text-primary" href="/tableau.php?ville_id=11">Grenoble</a></li>
-                    <li><a class="text-primary" href="/tableau.php?ville_id=6">Lyon</a></li>
-                    <li><a class="text-primary" href="/tableau.php?ville_id=15">Marseille</a></li>
-                    <li><a class="text-primary" href="/tableau.php?ville_id=19">Montpellier</a></li>
-                    <li><a class="text-primary" href="/tableau.php?ville_id=18">Paris</a></li>
-                    <li><a class="text-primary" href="/tableau.php?ville_id=12">Valence</a></li>
-                  </ul>
-                </details>
+              <li class="dropdown dropdown-bottom">
+                <a class="text-base-100" tabindex="0" role="button">Falaises proches de...</a>
+                <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow-xl">
+                  <li><a class="text-primary" href="/tableau.php?ville_id=13">Annecy</a></li>
+                  <li><a class="text-primary" href="/tableau.php?ville_id=7">Chambéry</a></li>
+                  <li><a class="text-primary" href="/tableau.php?ville_id=11">Grenoble</a></li>
+                  <li><a class="text-primary" href="/tableau.php?ville_id=6">Lyon</a></li>
+                  <li><a class="text-primary" href="/tableau.php?ville_id=15">Marseille</a></li>
+                  <li><a class="text-primary" href="/tableau.php?ville_id=19">Montpellier</a></li>
+                  <li><a class="text-primary" href="/tableau.php?ville_id=18">Paris</a></li>
+                  <li><a class="text-primary" href="/tableau.php?ville_id=12">Valence</a></li>
+                </ul>
               </li>
               <li><a class="text-base-100" href="/logistique.php">Logistique</a></li>
             </ul>
