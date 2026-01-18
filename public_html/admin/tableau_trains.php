@@ -129,6 +129,15 @@ $falaises = array_reduce($falaises, function ($carry, $item) {
                                   <?php endif; ?>
                                   <span><?= $gare["gare_nom"] ?></span>
                                 </span>
+                                <button
+                                  class="badge badge-error badge-outline text-base-100 badge-xs h-5 w-5 rounded-full text-sm shrink-0"
+                                  title="Exclure ce triplet Gare - Ville - Falaise"
+                                  onclick="excludeTriplet(<?= $ville['ville_id'] ?>, <?= $gare['gare_id'] ?>, <?= $gare['falaise_id'] ?>, this)">
+                                  - </button>
+                                <button
+                                  class="badge badge-error badge-outline text-base-100 badge-xs h-5 w-5 rounded-full text-sm shrink-0"
+                                  title="Toujours exclure ce couple Gare - Ville"
+                                  onclick="excludeVilleGare(<?= $ville['ville_id'] ?>, <?= $gare['gare_id'] ?>, this)"> -- </button>
                               <?php else: ?>
                                 <span class="text-nowrap overflow-hidden text-ellipsis shrink grow text-left text-error">
                                   <?= $gare["gare_nom"] ?>
