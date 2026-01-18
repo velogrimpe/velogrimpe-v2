@@ -21,12 +21,16 @@ document.addEventListener('DOMContentLoaded', () => {
   let gares: GareItem[] = []
   let falaises: FalaiseItem[] = []
   let presetFalaiseId: number | null = null
+  let presetGareId: number | null = null
 
   try {
     gares = JSON.parse(mountEl.dataset.gares || '[]')
     falaises = JSON.parse(mountEl.dataset.falaises || '[]')
     presetFalaiseId = mountEl.dataset.presetFalaiseId
       ? parseInt(mountEl.dataset.presetFalaiseId, 10)
+      : null
+    presetGareId = mountEl.dataset.presetGareId
+      ? parseInt(mountEl.dataset.presetGareId, 10)
       : null
   } catch (e) {
     console.error('[velogrimpe] Failed to parse ajout-velo data:', e)
@@ -57,8 +61,25 @@ document.addEventListener('DOMContentLoaded', () => {
   const app = createApp({
     setup() {
       const gareValue = ref('')
+      const gareDisabled = ref(false)
       const falaiseValue = ref('')
       const falaiseDisabled = ref(false)
+
+      // Handle preset gare
+      if (presetGareId) {
+        const preset = gares.find((g) => g.id === presetGareId)
+        if (preset) {
+          gareValue.value = preset.nom
+          gareDisabled.value = true
+          // Also set hidden fields
+          setTimeout(() => {
+            const gareIdEl = document.getElementById('gare_id') as HTMLInputElement
+            const veloDepartEl = document.getElementById('velo_depart') as HTMLInputElement
+            if (gareIdEl) gareIdEl.value = String(preset.id)
+            if (veloDepartEl) veloDepartEl.value = preset.nomformate
+          }, 0)
+        }
+      }
 
       // Handle preset falaise
       if (presetFalaiseId) {
@@ -121,6 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     gareValue.value = v
                   },
                   items: gares,
+                  disabled: gareDisabled.value,
                   onSelect: onGareSelect,
                 }),
               ]),

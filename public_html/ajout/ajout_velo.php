@@ -10,7 +10,7 @@ $result_gares = $mysqli->query("SELECT gare_id, gare_nom, gare_nomformate FROM g
 $gares = [];
 while ($row = $result_gares->fetch_assoc()) {
   $gares[$row['gare_id']] = [
-    'id' => $row['gare_id'],
+    'id' => (int) $row['gare_id'],
     'nom' => $row['gare_nom'],
     'nomformate' => $row['gare_nomformate']
   ];
@@ -21,7 +21,7 @@ $result_falaises = $mysqli->query("SELECT falaise_id, falaise_nom, falaise_nomfo
 $falaises = [];
 while ($row = $result_falaises->fetch_assoc()) {
   $falaises[$row['falaise_id']] = [
-    'id' => $row['falaise_id'],
+    'id' => (int) $row['falaise_id'],
     'nom' => $row['falaise_nom'],
     'nomformate' => $row['falaise_nomformate']
   ];
@@ -29,6 +29,9 @@ while ($row = $result_falaises->fetch_assoc()) {
 
 $falaise_id = isset($_GET['falaise_id']) ? $_GET['falaise_id'] : null;
 $falaisePreset = $falaises[$falaise_id] ?? null;
+
+$gare_id = isset($_GET['gare_id']) ? $_GET['gare_id'] : null;
+$garePreset = $gares[$gare_id] ?? null;
 
 // Read the admin search parameter
 $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
@@ -123,7 +126,8 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
         <div id="vue-ajout-velo"
           data-gares='<?= htmlspecialchars(json_encode(array_values($gares)), ENT_QUOTES, 'UTF-8') ?>'
           data-falaises='<?= htmlspecialchars(json_encode(array_values($falaises)), ENT_QUOTES, 'UTF-8') ?>'
-          <?php if ($falaisePreset): ?>data-preset-falaise-id="<?= $falaisePreset['id'] ?>"<?php endif; ?>>
+          <?php if ($falaisePreset): ?>data-preset-falaise-id="<?= $falaisePreset['id'] ?>"<?php endif; ?>
+          <?php if ($garePreset): ?>data-preset-gare-id="<?= $garePreset['id'] ?>"<?php endif; ?>>
         </div>
         <!-- Hidden fields for form submission -->
         <div class="admin flex flex-row gap-4">
