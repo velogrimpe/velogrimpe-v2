@@ -117,7 +117,7 @@ git config core.hooksPath .githooks
 
 **NOTE** : Tâches à réaliser, une par une, avec confirmation utilisateur avant commit :
 
-- [?] dans ajout_falaise.php il y a des règles flex qui ont sauté, par exemple dans Précisions sur les cotations le titre, le champ et la précision sont en flex-row alors qu'ils devraient être en flex-col. Vérifie aussi les autres formulaires d'ajout pour ce problème. De même, j'ai l'impression qu'avant les champs étaient en w-full par défaut et maintenant ils ne le sont plus.
+- [ ] dans ajout_falaise.php les champs teaxtarea ne sont pas en full width
 - [ ] Suite à l'ajout d'un itinéraire vélo, rajouter un écran de confirmation comme pour les falaise qui propose différents choix tels que consulter la falaise concernée, ajouter un autre itinéraire vélo pour la même falaise etc.
 - [ ] Sur la page actus, au hover sur les cartes d'actu, il y a un underline qui se rajoute, enlève le
 - [ ] Dans l'admin Supprime le bouton de création de zone, c'est obsolète.
