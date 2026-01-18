@@ -92,24 +92,18 @@ $gare_nom = $gare ? htmlspecialchars($gare['gare_nom']) : 'Gare';
           <a href="/" class="btn btn-outline btn-sm">
             Accueil
           </a>
-          <?php if ($admin): ?>
-            <a href="/admin/" class="btn btn-outline btn-sm">
-              Admin
-            </a>
-          <?php endif; ?>
-        </div>
-
-        <!-- Autres contributions -->
-        <div class="flex flex-wrap justify-center gap-2 mt-4">
           <a href="/ajout/ajout_falaise.php<?= $admin ? '?admin=' . $config["admin_token"] : '' ?>" class="btn btn-outline btn-sm">
             + Falaise
           </a>
           <a href="/ajout/ajout_velo.php<?= $admin ? '?admin=' . $config["admin_token"] : '' ?>" class="btn btn-outline btn-sm">
-            + Itinéraire vélo
+            + Vélo
           </a>
           <?php if ($admin): ?>
             <a href="/ajout/ajout_train.php?admin=<?= $config["admin_token"] ?>" class="btn btn-outline btn-sm">
-              + Itinéraire train
+              + Train
+            </a>
+            <a href="/admin/" class="btn btn-outline btn-sm">
+              Admin
             </a>
           <?php endif; ?>
         </div>
