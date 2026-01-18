@@ -18,13 +18,13 @@ body {
   padding: 0;
 }
 
-/* Links styling - exclude navbar and menu links */
-a:not(.navbar a):not(.menu a):not(.btn):not(#map a):not(.editor-map a) {
+/* Links styling - exclude navbar, menu, card links */
+a:not(.navbar a):not(.menu a):not(.btn):not(#map a):not(.editor-map a):not(.card-link) {
   color: #2e8b57;
   text-decoration: none;
   font-weight: bold;
 }
-a:not(.navbar a):not(.menu a):not(.btn):not(#map a):not(.editor-map a):hover {
+a:not(.navbar a):not(.menu a):not(.btn):not(#map a):not(.editor-map a):not(.card-link):hover {
   /* color: #1e5d3e; */
   text-decoration: underline;
 }
