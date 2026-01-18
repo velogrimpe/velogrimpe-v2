@@ -60,7 +60,7 @@ $falaises_topo = array_values(array_filter(
     </div>
     <h2 class="text-4xl font-bold text-wrap text-center">Modifier des données</h2>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <label class="flex flex-col gap-1 items-center bg-base-100 p-2 rounded-lg bg-primary" for="selectFalaise1">
+      <label class="flex flex-col gap-1 items-center p-2 rounded-lg bg-primary" for="selectFalaise1">
         <b class="text-base-100 text-lg">⚠️ Falaises à vérifier</b>
         <?php if (count($falaises_contrib) === 0): ?>
           <p class="text-base-100 text-lg">Aucune falaise à vérifier 💪</p>
@@ -74,7 +74,7 @@ $falaises_topo = array_values(array_filter(
           </select>
         <?php endif; ?>
       </label>
-      <label class="flex flex-col gap-1 items-center bg-base-100 p-2 rounded-lg bg-primary" for="selectFalaise3">
+      <label class="flex flex-col gap-1 items-center p-2 rounded-lg bg-primary" for="selectFalaise3">
         <b class="text-base-100 text-lg">✅ Falaises du Topo</b>
         <select id="selectFalaise3" name="selectFalaise3" class="select select-primary select-sm"
           onchange="window.location.href = '/ajout/ajout_falaise.php?admin=<?= $token ?>&falaise_id=' + this.value">
@@ -84,7 +84,7 @@ $falaises_topo = array_values(array_filter(
           <?php endforeach; ?>
         </select>
       </label>
-      <label class="flex flex-col gap-1 items-center bg-base-100 p-2 rounded-lg bg-primary" for="selectFalaise2">
+      <label class="flex flex-col gap-1 items-center p-2 rounded-lg bg-primary" for="selectFalaise2">
         <b class="text-base-100 text-lg">❌ Falaises Hors Topo</b>
         <select id="selectFalaise2" name="selectFalaise2" class="select select-primary select-sm"
           onchange="window.location.href = '/ajout/ajout_falaise.php?admin=<?= $token ?>&falaise_id=' + this.value">

@@ -34,8 +34,8 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/vite.php';
 
 <body class="min-h-screen">
   <?php include "./components/header.html"; ?>
-  <div class="hero min-h-[400px] bg-bottom" style="background-image: url(/images/mw/078-groupe-5.webp);">
-    <div class="hero-overlay opacity-60"></div>
+  <div class="hero min-h-100 bg-bottom" style="background-image: url(/images/mw/078-groupe-5.webp);">
+    <div class="hero-overlay bg-slate-600/70"></div>
     <div class="hero-content text-center text-base-100">
       <div class="max-w-md">
         <h1 class="text-5xl font-bold">Contribuer</h1>

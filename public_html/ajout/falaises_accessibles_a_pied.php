@@ -62,7 +62,7 @@ $falaisesVG = $mysqli->query("SELECT * FROM falaises WHERE falaise_public >= 1")
   <main class="">
     <div class="hero min-h-[100px] bg-bottom"
       style="background-image: url(/images/mw/078-groupe-5.webp); background-position-y: 200px;">
-      <div class="hero-overlay opacity-60"></div>
+      <div class="hero-overlay bg-slate-600/70"></div>
       <div class="hero-content text-center text-base-100">
         <div class="">
           <h1 class="text-5xl font-bold">Falaises prioritaires Vélogrimpe</h1>

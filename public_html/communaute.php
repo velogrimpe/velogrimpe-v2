@@ -30,8 +30,8 @@
 
 <body class="min-h-screen flex flex-col">
   <?php include "./components/header.html"; ?>
-  <div class="hero min-h-[400px] bg-top" style="background-image: url(/images/mw/0100b-grimpe-60.webp);">
-    <div class="hero-overlay opacity-60"></div>
+  <div class="hero min-h-100 bg-top" style="background-image: url(/images/mw/0100b-grimpe-60.webp);">
+    <div class="hero-overlay bg-slate-600/70"></div>
     <div class="hero-content text-center text-base-100">
       <div class="max-w-md">
         <h1 class="text-5xl font-bold">Communauté</h1>

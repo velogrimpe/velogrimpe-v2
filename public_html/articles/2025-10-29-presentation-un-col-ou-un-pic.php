@@ -39,9 +39,9 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/vite.php';
 <body>
   <?php include "../components/header.html"; ?>
   <main class="pb-4">
-    <div class="hero min-h-[400px] bg-bottom"
+    <div class="hero min-h-100 bg-bottom"
       style="background-image: url(/images/articles/2025-10-29-presentation-un-col-ou-un-pic/hero.webp);">
-      <div class="hero-overlay opacity-60"></div>
+      <div class="hero-overlay bg-slate-600/70"></div>
       <div class="hero-content text-center text-base-100">
         <div class="text-5xl font-bold">Présentation : Un Col ou un Pic</div>
       </div>
@@ -70,7 +70,7 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/vite.php';
         </a>
       </div>
       <hr class="mt-2 mb-2" />
-      <p class="italic leading-1 text-sm text-slate-600"><b>Note de l'équipe Velogrimpe.fr :</b> Velogrimpe.fr est un
+      <p class="italic leading-4 text-sm text-slate-400"><b>Note de l'équipe Velogrimpe.fr :</b> Velogrimpe.fr est un
         site communautaire permettant de référencer les sites accessible en train + vélo. Avec velogrimpe.fr, nous
         souhaitons vous donner toutes les clés pour partir en autonomie, mais un site n'est pas toujours suffisant ou
         suffisamment rassurant. Pour les grimpeurs qui voudraient se faire accompagner dans leurs sorties velo-grimpe,

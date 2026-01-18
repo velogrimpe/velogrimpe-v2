@@ -55,8 +55,8 @@ $logoUrl = "https://velogrimpe.fr/images/logo_velogrimpe.png";
 <body>
   <?php include $_SERVER['DOCUMENT_ROOT'] . "/components/header.html"; ?>
   <main class="pb-4">
-    <div class="hero min-h-[400px] bg-center" style="background-image: url(/images/mw/075-matos-5.webp);">
-      <div class="hero-overlay opacity-60"></div>
+    <div class="hero min-h-100 bg-center" style="background-image: url(/images/mw/075-matos-5.webp);">
+      <div class="hero-overlay bg-slate-600/70"></div>
       <div class="hero-content text-center text-base-100">
         <div class="max-w-md">
           <h1 class="text-5xl font-bold">Actualités Vélogrimpe</h1>
@@ -101,34 +101,34 @@ $logoUrl = "https://velogrimpe.fr/images/logo_velogrimpe.png";
         });
         ?>
         <?php foreach ($articles as $article): ?>
-          <?php
-          $title = htmlspecialchars($article['title']);
-          $url = htmlspecialchars($article['url']);
-          $typeLabel = $article['type'] === 'actualites' ? 'Actualité' : 'Article';
-          $dateFormatted = $article['type'] === "actualites" ? ucfirst($newsletterDateFormatter->format($article['date'])) : $articleDateFormatter->format($article['date']);
-          ?>
-          <a href="<?= $url ?>" class="block hover:no-underline font-normal">
-            <div
-              class="flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-2 shadow-xl hover:shadow-lg hover:bg-base-200 rounded-md transition border p-2">
-              <div class="text-center sm:text-left">
-                <h3 class="text-xl font-bold mb-1">
-                  <?php if ($article['type'] === 'actualites'): ?>
-                    <svg class="w-5 h-5 fill-current inline pb-1">
-                      <use xlink:href="/symbols/icons.svg#mail-fill"></use>
-                    </svg>
-                  <?php endif; ?>
-                  <?= $title ?>
-                </h3>
-                <p class="text-sm text-slate-600 mb-2"><?= $dateFormatted ?></p>
-                <p class="text-normal text-slate-800 mb-4"><?= htmlspecialchars($article['description']) ?></p>
-                <div class="text-primary font-bold sm:text-xs text-normal">Lire la suite</div>
-              </div>
-              <div class="shrink-0 pt-2 sm:pt-0">
-                <img src="<?= htmlspecialchars($article['image']) ?>" alt="<?= $title ?>"
-                  class="w-auto h-48 sm:w-36 sm:h-36 rounded-md object-contain" />
-              </div>
-            </div>
-          </a>
+              <?php
+              $title = htmlspecialchars($article['title']);
+              $url = htmlspecialchars($article['url']);
+              $typeLabel = $article['type'] === 'actualites' ? 'Actualité' : 'Article';
+              $dateFormatted = $article['type'] === "actualites" ? ucfirst($newsletterDateFormatter->format($article['date'])) : $articleDateFormatter->format($article['date']);
+              ?>
+              <a href="<?= $url ?>" class="block hover:no-underline font-normal">
+                <div
+                  class="flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-2 shadow-xl hover:shadow-lg hover:bg-base-200 rounded-md transition border p-2">
+                  <div class="text-center sm:text-left">
+                    <h3 class="text-xl font-bold mb-1">
+                      <?php if ($article['type'] === 'actualites'): ?>
+                            <svg class="w-5 h-5 fill-current inline pb-1">
+                              <use xlink:href="/symbols/icons.svg#mail-fill"></use>
+                            </svg>
+                      <?php endif; ?>
+                      <?= $title ?>
+                    </h3>
+                    <p class="text-sm text-slate-600 mb-2"><?= $dateFormatted ?></p>
+                    <p class="text-normal text-slate-800 mb-4"><?= htmlspecialchars($article['description']) ?></p>
+                    <div class="text-primary font-bold sm:text-xs text-normal">Lire la suite</div>
+                  </div>
+                  <div class="shrink-0 pt-2 sm:pt-0">
+                    <img src="<?= htmlspecialchars($article['image']) ?>" alt="<?= $title ?>"
+                      class="w-auto h-48 sm:w-36 sm:h-36 rounded-md object-contain" />
+                  </div>
+                </div>
+              </a>
         <?php endforeach; ?>
       </div>
       <hr class="mt-8 mb-2" />

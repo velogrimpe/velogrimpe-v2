@@ -151,8 +151,8 @@ $stmt->close();
 
 <body class="w-screen min-h-screen">
   <?php include "./components/header.html"; ?>
-  <div class="hero min-h-[400px] bg-center" style="background-image: url(/images/mw/005-train-2-10.webp);">
-    <div class="hero-overlay opacity-60"></div>
+  <div class="hero min-h-100 bg-center" style="background-image: url(/images/mw/005-train-2-10.webp);">
+    <div class="hero-overlay bg-slate-600/70"></div>
     <div class="hero-content text-center text-base-100">
       <div class="max-w-md">
         <h1 class="text-5xl font-bold"> Falaises proches de <?php echo $ville['ville_nom'] ?>
@@ -195,7 +195,8 @@ $stmt->close();
           <div class="h-px my-2 bg-base-300 rounded-lg grow"></div>
         </div>
         <!-- Vue Filter Panel -->
-        <div id="vue-filters" class="flex flex-col md:flex-row gap-1 items-center w-full max-w-full justify-center flex-wrap"></div>
+        <div id="vue-filters"
+          class="flex flex-col md:flex-row gap-1 items-center w-full max-w-full justify-center flex-wrap"></div>
       </div>
     </div>
     <!-- Vue Tableau List -->
@@ -210,7 +211,6 @@ $stmt->close();
     villeId: <?php echo $ville_id; ?>
   };
 </script>
-
 <!-- Vue.js Tableau App -->
 <script type="module" src="/dist/tableau.js"></script>
 

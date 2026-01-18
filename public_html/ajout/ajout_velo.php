@@ -154,17 +154,17 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
       <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-xs">
         <div class="flex flex-col md:flex-row gap-4">
           <label class="form-control w-full md:w-1/3" for="velo_km">
-            <b>Longueur de l'itinéraire (km) :</b>
+            <b>Longueur de l'itinéraire (km)</b>
             <input class="input input-primary input-sm" type="number" id="velo_km" name="velo_km" placeholder="12.5"
               step="0.01" min="0" required>
           </label>
           <label class="form-control w-full md:w-1/3" for="velo_dplus">
-            <b>Dénivelé positif (mètres) :</b>
+            <b>Dénivelé positif (mètres)</b>
             <input class="input input-primary input-sm" type="number" id="velo_dplus" name="velo_dplus"
               placeholder="650" min="0" required>
           </label>
           <label class="form-control w-full md:w-1/3" for="velo_dmoins">
-            <b>Dénivelé négatif (mètres) :</b>
+            <b>Dénivelé négatif (mètres)</b>
             <input class="input input-primary input-sm" type="number" id="velo_dmoins" name="velo_dmoins"
               placeholder="650" min="0" required>
           </label>
