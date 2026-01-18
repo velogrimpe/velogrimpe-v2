@@ -106,13 +106,23 @@ function onKeydown(event: KeyboardEvent) {
   const hasNewValueOption = props.acceptNewValue && inputValue.value && !items.some((o) => o.value === inputValue.value)
   const totalItems = items.length + (hasNewValueOption ? 1 : 0)
 
+  if (totalItems === 0) return
+
   if (event.key === 'ArrowDown') {
     event.preventDefault()
-    currentFocus.value = (currentFocus.value + 1) % totalItems
+    if (currentFocus.value < totalItems - 1) {
+      currentFocus.value++
+    } else {
+      currentFocus.value = 0
+    }
     ensureVisible()
   } else if (event.key === 'ArrowUp') {
     event.preventDefault()
-    currentFocus.value = currentFocus.value <= 0 ? totalItems - 1 : currentFocus.value - 1
+    if (currentFocus.value > 0) {
+      currentFocus.value--
+    } else {
+      currentFocus.value = totalItems - 1
+    }
     ensureVisible()
   } else if (event.key === 'Enter') {
     event.preventDefault()
