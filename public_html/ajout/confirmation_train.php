@@ -89,9 +89,6 @@ $gare_nom = $gare ? htmlspecialchars($gare['gare_nom']) : 'Gare';
 
         <!-- Boutons secondaires -->
         <div class="flex flex-wrap justify-center gap-2">
-          <a href="/contribuer.php" class="btn btn-outline btn-sm">
-            Contribuer
-          </a>
           <a href="/" class="btn btn-outline btn-sm">
             Accueil
           </a>
@@ -103,8 +100,7 @@ $gare_nom = $gare ? htmlspecialchars($gare['gare_nom']) : 'Gare';
         </div>
 
         <!-- Autres contributions -->
-        <div class="divider my-2">Autres contributions</div>
-        <div class="flex flex-wrap justify-center gap-2">
+        <div class="flex flex-wrap justify-center gap-2 mt-4">
           <a href="/ajout/ajout_falaise.php<?= $admin ? '?admin=' . $config["admin_token"] : '' ?>" class="btn btn-outline btn-sm">
             + Falaise
           </a>
