@@ -81,21 +81,22 @@
 
 /*
  * DaisyUI v5 compatibility - form-control was removed in v5
- * Re-implemented as a Tailwind component for backward compatibility
+ * Re-implemented for backward compatibility (outside @layer to override DaisyUI)
  */
-@layer components {
-  .form-control {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-  }
-  /* Form elements inside form-control take full width (v5 gives them 20rem default) */
-  .form-control > input,
-  .form-control > textarea,
-  .form-control > select,
-  .form-control > .input,
-  .form-control > .textarea,
-  .form-control > .select {
-    width: 100%;
-  }
+.form-control {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+/* Form elements inside form-control take full width (v5 gives them 20rem default) */
+.form-control > input,
+.form-control > textarea,
+.form-control > select,
+.form-control > .input,
+.form-control > .textarea,
+.form-control > .select,
+.form-control > textarea.textarea,
+.form-control > input.input,
+.form-control > select.select {
+  width: 100%;
 }
