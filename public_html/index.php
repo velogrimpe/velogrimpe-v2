@@ -46,8 +46,7 @@
       <br />
       Synonyme : escaladopédalage.
     </div> -->
-    <div class="hero min-h-[500px] md:min-h-[640px]"
-      style="background-image: url(/images/mw/027-velo-aiguille-40.webp);">
+    <div class="hero min-h-125 md:min-h-160" style="background-image: url(/images/mw/027-velo-aiguille-40.webp);">
       <div class="hero-overlay bg-slate-600/70"></div>
       <div class="hero-content text-center">
         <div class="max-w-md">
@@ -59,10 +58,10 @@
         </div>
       </div>
     </div>
-    <div class="hero bg-base-200 min-h-[500px]">
+    <div class="hero bg-base-200 min-h-125">
       <div class="hero-content flex-col sm:flex-row-reverse text-center sm:text-left">
-        <a class="flex max-w-[240px] rounded-lg shadow-2xl" href="/carte.php">
-          <img class="max-w-[240px] rounded-lg shadow-2xl" src="/images/captures/saou-vert-60.webp" />
+        <a class="flex max-w-60 rounded-lg shadow-2xl" href="/carte.php">
+          <img class="max-w-60 rounded-lg shadow-2xl" src="/images/captures/saou-vert-60.webp" />
         </a>
         <div class="max-w-xl">
           <h2 class="text-3xl font-bold">Carte des sites d'escalade accessibles en train & vélo</h2>
@@ -75,7 +74,7 @@
         </div>
       </div>
     </div>
-    <div class="hero min-h-[500px] md:min-h-[640px]" style="background-image: url(/images/mw/040-train-20.webp);">
+    <div class="hero min-h-125 md:min-h-160" style="background-image: url(/images/mw/040-train-20.webp);">
       <div class="hero-overlay bg-slate-600/70"></div>
       <div class="hero-content text-center text-base-100">
         <div class="max-w-md">
@@ -86,9 +85,9 @@
         </div>
       </div>
     </div>
-    <div class="hero bg-base-200 min-h-[500px]">
+    <div class="hero bg-base-200 min-h-125">
       <div class="hero-content flex-col sm:flex-row text-center sm:text-left">
-        <img src="/images/captures/signal-2-40.webp" class="max-w-[240px] rounded-lg shadow-2xl" />
+        <img src="/images/captures/signal-2-40.webp" class="max-w-60 rounded-lg shadow-2xl" />
         <div class="max-w-xl">
           <h2 class="text-3xl font-bold">Une communauté pour partager l'expérience vélogrimpe</h2>
           <p class="py-6"> Tu cherches des partenaires pour aller vélogrimper à plusieurs ? Nous avons un groupe sur
@@ -97,7 +96,7 @@
         </div>
       </div>
     </div>
-    <div class="hero min-h-[500px] md:min-h-[640px]" style="background-image: url(/images/mw/078-groupe-5.webp);">
+    <div class="hero min-h-125 md:min-h-160" style="background-image: url(/images/mw/078-groupe-5.webp);">
       <div class="hero-overlay bg-slate-600/70"></div>
       <div class="hero-content text-center text-base-100">
         <div class="max-w-md">

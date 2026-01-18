@@ -120,7 +120,7 @@ $highlight = $_GET['h'] ?? '';
           <form method="dialog">
             <button tabindex="-1" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
           </form>
-          <div id="searchFormDialogContainer" class="min-h-[200px] mt-4"></div>
+          <div id="searchFormDialogContainer" class="min-h-50 mt-4"></div>
         </div>
         <form method="dialog" class="modal-backdrop">
           <button>close</button>

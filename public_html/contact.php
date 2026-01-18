@@ -53,8 +53,8 @@
           <div class="label">
             <span class="label-text"> Votre message </span>
           </div>
-          <textarea class="textarea textarea-primary leading-6 w-full leading-[18px]" id="message" name="message"
-            rows="10" minlength="30" required placeholder="Votre message, 30 caractères minimum."></textarea>
+          <textarea class="textarea textarea-primary leading-6 w-full" id="message" name="message" rows="10"
+            minlength="30" required placeholder="Votre message, 30 caractères minimum."></textarea>
         </div>
         <div class="mt-2 w-full">
           <button class="btn btn-primary w-full" type="submit">Envoyer</button>

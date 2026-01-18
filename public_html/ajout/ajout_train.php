@@ -170,7 +170,7 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
                 class="hidden loading loading-spinner"></div>
             </button>
           </div>
-          <div class="border rounded-lg border-slate-400 hidden p-4 shadow-lg bg-base-100 max-h-[400px] overflow-y-auto"
+          <div class="border rounded-lg border-slate-400 hidden p-4 shadow-lg bg-base-100 max-h-100 overflow-y-auto"
             id="tableTrains">
             <table class="table table-xs table-zebra table-nowrap my-0">
               <thead>

@@ -308,7 +308,7 @@ $stmtC->close();
             <form method="dialog">
               <button tabindex="-1" class="btn btn-circle btn-ghost absolute right-2 top-2">✕</button>
             </form>
-            <div class="p-4 w-[240px] font-bold mx-auto">
+            <div class="p-4 w-60 font-bold mx-auto">
               <span class="text-lg font-bold"> Météo par <a class="text-primary font-bold"
                   href="https://www.meteoblue.com/fr/meteo/semaine/<?= $lat ?>N<?= $lng ?>E391_Europe%2FParis?utm_source=daily_widget&utm_medium=linkus&utm_content=daily&utm_campaign=Weather%2BWidget"
                   target="_blank" rel="noopener">meteoblue </a>
@@ -327,7 +327,7 @@ $stmtC->close();
       </div>
       <div class="flex flex-col items-center gap-4 w-full md:flex-row md:items-start">
         <!-- TABLEAU STATIQUE DESCRIPTION FALAISE -->
-        <div class="vg-a-primary flex flex-col gap-4 md:gap-10 w-full items-center md:my-auto max-w-[600px] mx-auto">
+        <div class="vg-a-primary flex flex-col gap-4 md:gap-10 w-full items-center md:my-auto max-w-150 mx-auto">
           <div class="flex flex-row gap-2 items-start justify-around w-full">
             <div class="flex flex-col items-center justify-start gap-2">
               <img src="/images/icons/abacus_color.png" alt=" Logo Nb voies" class="h-12 w-12 mx-auto" />
@@ -364,7 +364,7 @@ $stmtC->close();
                         class="badge badge-sm badge-primary"><?= count($liensOblyk) ?></span>
                     </a>
                     <div
-                      class="dropdown-content menu bg-base-200 rounded-box z-10 m-1 p-2 shadow-lg w-60 max-h-[250px] flex-nowrap overflow-auto"
+                      class="dropdown-content menu bg-base-200 rounded-box z-10 m-1 p-2 shadow-lg w-60 max-h-62.5 flex-nowrap overflow-auto"
                       tabindex="1">
                       <?php foreach ($liensOblyk as $lien): ?>
                         <a target="_blank" href="<?= htmlspecialchars($lien['url']) ?>"
@@ -580,8 +580,8 @@ $stmtC->close();
                   <?php foreach ($train_itineraires as $t): ?>
                     <div> 🚆 - <?= format_time($t['train_temps']) ?> (<?= ($t['train_correspmin'] ?? 0) > 0
                          ? (($t['train_correspmin'] === $t['train_correspmax'])
-                         ? $t['train_correspmin'] . ' Corresp.'
-                         : 'de ' . $t['train_correspmin'] . ' à ' . $t['train_correspmax'] . ' Corresp.')
+                           ? $t['train_correspmin'] . ' Corresp.'
+                           : 'de ' . $t['train_correspmin'] . ' à ' . $t['train_correspmax'] . ' Corresp.')
                          : 'Direct' ?>)<?php if (!empty($t['train_tgv'])): ?>
                         <span class="badge badge-accent badge-sm" title="Trajet empruntant un segment TGV"> TGV </span>
                       <?php endif; ?>
@@ -625,8 +625,8 @@ $stmtC->close();
                             <div class="text-sm">
                               <span class="text-lg font-bold ml-1"><?= format_time($t['train_temps']) ?></span> (<?= ($t['train_correspmin'] ?? 0) > 0
                                   ? (($t['train_correspmin'] === $t['train_correspmax'])
-                                  ? $t['train_correspmin'] . ' Corresp.'
-                                  : 'de ' . $t['train_correspmin'] . ' à ' . $t['train_correspmax'] . ' Corresp.')
+                                    ? $t['train_correspmin'] . ' Corresp.'
+                                    : 'de ' . $t['train_correspmin'] . ' à ' . $t['train_correspmax'] . ' Corresp.')
                                   : 'Direct' ?>) <?php if (!empty($t['train_tgv'])): ?>
                                 <span class="badge badge-accent badge-sm" title="Trajet empruntant un segment TGV">TGV</span>
                               <?php endif; ?>
@@ -795,7 +795,7 @@ $stmtC->close();
         <?php endif; ?>
       <?php endif; ?>
       <div class="flex flex-col items-center gap-2 w-full mb-4">
-        <div id="map" class="h-[600px] w-full bg-black rounded-lg"></div>
+        <div id="map" class="h-150 w-full bg-black rounded-lg"></div>
       </div>
       <!-- Image optionnelle 1 -->
       <?php $path = "/bdd/images_falaises/" . htmlspecialchars($falaise_id) . "_" . htmlspecialchars($falaise_nomformate) . "_img1.webp"; ?>

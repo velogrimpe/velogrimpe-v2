@@ -147,8 +147,7 @@ if ($falaise_id) {
                 <b>Nom de la falaise</b>
                 <div id="vue-ajout-falaise"
                   data-falaises="<?= htmlspecialchars(json_encode($falaises), ENT_QUOTES, 'UTF-8') ?>"
-                  data-admin="<?= $admin ? 'true' : 'false' ?>"
-                  <?php if ($falaise_id): ?>data-preset-falaise-id="<?= $falaise_id ?>"<?php endif; ?>>
+                  data-admin="<?= $admin ? 'true' : 'false' ?>" <?php if ($falaise_id): ?>data-preset-falaise-id="<?= $falaise_id ?>" <?php endif; ?>>
                 </div>
               </label>
             </div>
@@ -203,8 +202,7 @@ if ($falaise_id) {
           <div id="map" class="w-full h-64 rounded-lg relative" title="Cliquez pour placer la falaise">
             <div id="mapinstructions" class="h-full w-full bg-[#3333] flex items-center justify-center
               pointer-events-none z-10000 absolute top-0 left-0 rounded-lg text-black text-xl">
-              <span class="bg-[#fff8] rounded-lg px-2 py-1 max-w-[200px] sm:max-w-full">Cliquez pour placer la
-                falaise</span>
+              <span class="bg-[#fff8] rounded-lg px-2 py-1 max-w-50 sm:max-w-full">Cliquez pour placer la falaise</span>
             </div>
           </div>
           <i class="text-slate-400 text-sm"> Cliquez sur la carte pour placer la position. Les coordonnées doivent être
@@ -454,8 +452,7 @@ if ($falaise_id) {
         </div>
         <label class="form-control" for="falaise_cottxt">
           <b class="">Précisions sur les cotations <span class="text-accent opacity-50">(optionnel)</span></b>
-          <textarea class="textarea textarea-sm leading-6" id="falaise_cottxt" name="falaise_cottxt"
-            rows="2"
+          <textarea class="textarea textarea-sm leading-6" id="falaise_cottxt" name="falaise_cottxt" rows="2"
             placeholder="ex : Falaise surtout interessante pour les voies dans le 6-7. On compte 2 voies dans le 5, 15 dans le 6, et 12 dans le 7."></textarea>
           <i class="text-slate-400 text-sm"> Texte optionnel pour préciser les cotations (ex : "Falaise surtout
             interessante pour les voies dans le 6-7. On compte 2 voies dans le 5, 15 dans le 6, et 12 dans le 7").</i>
@@ -486,7 +483,6 @@ if ($falaise_id) {
             <div class="text-sm text-slate-500">Aperçu</div>
             <div id="vue-rose-preview"></div>
           </div>
-
           <!-- Exposition selects - stacked vertically -->
           <div class="flex flex-col gap-3 grow">
             <label class="form-control w-full relative">
@@ -499,20 +495,16 @@ if ($falaise_id) {
             </label>
           </div>
         </div>
-
-        <i class="text-slate-400 text-sm">
-          Ces deux champs apparaitront dans la rose des vents sur la fiche falaise, et sont utilisés pour les filtres.
-          Le champ "exposition(s) secondaire(s)" est prévu pour le cas où il existe un petit nombre de voies avec une orientation différente.
-        </i>
-
+        <i class="text-slate-400 text-sm"> Ces deux champs apparaitront dans la rose des vents sur la fiche falaise, et
+          sont utilisés pour les filtres. Le champ "exposition(s) secondaire(s)" est prévu pour le cas où il existe un
+          petit nombre de voies avec une orientation différente. </i>
         <!-- Text description -->
         <label class="form-control" for="falaise_expotxt">
           <b>Précisions sur l'exposition</b>
           <textarea class="textarea textarea-primary textarea-sm leading-6" id="falaise_expotxt" name="falaise_expotxt"
             rows="1" placeholder="ex : majoritairement orienté Sud, quelques faces à l'Ouest" required></textarea>
-          <i class="text-slate-400 text-sm">
-            Ecrivez un court texte décrivant l'exposition. Ex : "falaise orientée Sud à Sud-Est", "la plupart des voies orientées Ouest, quelques voies orientées Nord".
-          </i>
+          <i class="text-slate-400 text-sm"> Ecrivez un court texte décrivant l'exposition. Ex : "falaise orientée Sud à
+            Sud-Est", "la plupart des voies orientées Ouest, quelques voies orientées Nord". </i>
         </label>
       </div>
       <!-- Partie Types de voies -->
@@ -529,8 +521,8 @@ if ($falaise_id) {
             <b class="">Grandes voies - Texte descriptif <span class="text-accent opacity-50">(optionnel)</span></b>
             <span class="text-red-600">champ à laisser vide s'il n'y a pas de grandes voies !</span>
           </span>
-          <textarea class="textarea textarea-sm leading-6" id="falaise_gvtxt" name="falaise_gvtxt"
-            rows="2" placeholder="ex : 10 grandes voies, de PD+ à AD+."></textarea>
+          <textarea class="textarea textarea-sm leading-6" id="falaise_gvtxt" name="falaise_gvtxt" rows="2"
+            placeholder="ex : 10 grandes voies, de PD+ à AD+."></textarea>
           <i class="text-slate-400 text-sm"> Indiquez s'il y a des grandes voies, et si oui, combien environ, de combien
             à combien de longueurs, jusqu'à quelle hauteur max, éventuellement donner les cotations... </i>
         </label>
@@ -639,8 +631,8 @@ if ($falaise_id) {
           <label class="form-control" for="falaise_fermee">
             <b class="">Si la falaise est fermée / interdite, explication <span
                 class="text-accent opacity-50">(optionnel)</span></b>
-            <textarea class="textarea textarea-sm leading-6" id="falaise_fermee" name="falaise_fermee"
-              rows="2" placeholder="ex : Falaise interdite, en cours de conventionnement."></textarea>
+            <textarea class="textarea textarea-sm leading-6" id="falaise_fermee" name="falaise_fermee" rows="2"
+              placeholder="ex : Falaise interdite, en cours de conventionnement."></textarea>
             <i class="text-slate-400 text-sm">A compléter si vous avez des informations sur la cause de l'interdiction
               ou les perspectives de réouverture.</i>
           </label>
@@ -649,8 +641,7 @@ if ($falaise_id) {
             <span>
               <b class="">Remarques diverses <span class="text-accent opacity-50">(optionnel)</span></b>
               <span class="admin text-xs text-accent">[falaise_txt2]</span></span>
-            <textarea class="textarea textarea-sm leading-6" id="falaise_txt2" name="falaise_txt2"
-              rows="3"></textarea>
+            <textarea class="textarea textarea-sm leading-6" id="falaise_txt2" name="falaise_txt2" rows="3"></textarea>
             <i class="text-slate-400 text-sm">Remarques non incluses dans le tableau descriptif. Typiquement utilisé
               pour décrire les différents secteurs, les modalités de bivouac, camping.</i>
           </label>
@@ -662,8 +653,7 @@ if ($falaise_id) {
               (apparaitra entre le tableau des itinéraires et celui de la falaise). <span
                 class="admin text-xs text-accent">[falaise_txt1]</span>
             </span>
-            <textarea class="textarea textarea-sm leading-6" id="falaise_txt1" name="falaise_txt1"
-              rows="3"></textarea>
+            <textarea class="textarea textarea-sm leading-6" id="falaise_txt1" name="falaise_txt1" rows="3"></textarea>
             <i class="text-slate-400 text-sm">Exemple: remarque optionnelle générale sur l’accès falaise, qui s’affiche
               quelle que soit la ville de départ</i>
           </label>
@@ -683,15 +673,13 @@ champ rqvillefalaise_txt de la table rqvillefalaise).</pre>
             <b class="">Légende image 1 <span class="text-accent opacity-50">(optionnel)</span></b>
             <span class="admin text-xs text-accent"> [falaise_leg1] </span>
           </span>
-          <textarea class="textarea textarea-sm leading-6" id="falaise_leg1" name="falaise_leg1"
-            rows="2"></textarea>
+          <textarea class="textarea textarea-sm leading-6" id="falaise_leg1" name="falaise_leg1" rows="2"></textarea>
         </label>
         <label class="form-control" for="falaise_txt3">
           <span>
             <b class="">Texte 1 <span class="text-accent opacity-50">(optionnel)</span></b>
             <span class="admin text-xs text-accent">[falaise_txt3]</span></span>
-          <textarea class="textarea textarea-sm leading-6" id="falaise_txt3" name="falaise_txt3"
-            rows="5"></textarea>
+          <textarea class="textarea textarea-sm leading-6" id="falaise_txt3" name="falaise_txt3" rows="5"></textarea>
         </label>
         <label class="form-control" for="falaise_img2">
           <b class="">Image 2 <span class="text-accent opacity-50">(optionnel)</span></b>
@@ -704,15 +692,13 @@ champ rqvillefalaise_txt de la table rqvillefalaise).</pre>
           <span>
             <b class="">Légende image 2 <span class="text-accent opacity-50">(optionnel)</span></b>
             <span class="admin text-xs text-accent">[falaise_leg2]</span></span>
-          <textarea class="textarea textarea-sm leading-6" id="falaise_leg2" name="falaise_leg2"
-            rows="2"></textarea>
+          <textarea class="textarea textarea-sm leading-6" id="falaise_leg2" name="falaise_leg2" rows="2"></textarea>
         </label>
         <label class="form-control" for="falaise_txt4">
           <span>
             <b class="">Texte 2 <span class="text-accent opacity-50">(optionnel)</span></b>
             <span class="admin text-xs text-accent">[falaise_txt4]</span></span>
-          <textarea class="textarea textarea-sm leading-6" id="falaise_txt4" name="falaise_txt4"
-            rows="5"></textarea>
+          <textarea class="textarea textarea-sm leading-6" id="falaise_txt4" name="falaise_txt4" rows="5"></textarea>
         </label>
         <label class="form-control" for="falaise_img3">
           <b class="">Image 3 <span class="text-accent opacity-50">(optionnel)</span></b>
@@ -725,8 +711,7 @@ champ rqvillefalaise_txt de la table rqvillefalaise).</pre>
           <span>
             <b class="">Légende image 3 <span class="text-accent opacity-50">(optionnel)</span></b>
             <span class="admin text-xs text-accent">[falaise_leg3]</span></span>
-          <textarea class="textarea textarea-sm leading-6" id="falaise_leg3" name="falaise_leg3"
-            rows="2"></textarea>
+          <textarea class="textarea textarea-sm leading-6" id="falaise_leg3" name="falaise_leg3" rows="2"></textarea>
         </label>
       </div>
       <hr class="my-4">
@@ -766,8 +751,7 @@ champ rqvillefalaise_txt de la table rqvillefalaise).</pre>
             <b>Message <span class="text-accent opacity-50">(optionnel)</span></b>
             <i>(si vous voulez commenter votre ajout de données)</i>
           </span>
-          <textarea class="textarea textarea-sm leading-6" id="message" name="message"
-            rows="4"></textarea>
+          <textarea class="textarea textarea-sm leading-6" id="message" name="message" rows="4"></textarea>
         </label>
         <button type="submit" id="confirmButton" class="btn btn-primary"><?= $falaise_id ? "Modifier" : "Ajouter" ?> la
           falaise</button>

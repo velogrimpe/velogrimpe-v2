@@ -1,90 +1,107 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useFiltersStore } from '@/stores'
-import type { Exposition, Cotation } from '@/types'
-import SortDropdown from '@/components/tableau/SortDropdown.vue'
-import Icon from '@/components/shared/Icon.vue'
+import { computed } from "vue";
+import { useFiltersStore } from "@/stores";
+import type { Exposition, Cotation } from "@/types";
+import SortDropdown from "@/components/tableau/SortDropdown.vue";
+import Icon from "@/components/shared/Icon.vue";
 
-const store = useFiltersStore()
+const store = useFiltersStore();
 
 // Exposition
 const expositions: { id: Exposition; label: string; hint: string }[] = [
-  { id: 'N', label: 'Nord', hint: '(NO, N, NE)' },
-  { id: 'E', label: 'Est', hint: '(NE, E, SE)' },
-  { id: 'S', label: 'Sud', hint: '(SE, S, SO)' },
-  { id: 'O', label: 'Ouest', hint: '(SO, O, NO)' },
-]
+  { id: "N", label: "Nord", hint: "(NO, N, NE)" },
+  { id: "E", label: "Est", hint: "(NE, E, SE)" },
+  { id: "S", label: "Sud", hint: "(SE, S, SO)" },
+  { id: "O", label: "Ouest", hint: "(SO, O, NO)" },
+];
 
 // Cotations (IDs match the PHP filter IDs)
 const cotationGroups: { id: Cotation; label: string }[][] = [
-  [{ id: '40', label: '4 et -' }],
-  [{ id: '50', label: '5-' }, { id: '59', label: '5+' }],
-  [{ id: '60', label: '6-' }, { id: '69', label: '6+' }],
-  [{ id: '70', label: '7-' }, { id: '79', label: '7+' }],
-  [{ id: '80', label: '8 et +' }],
-]
+  [{ id: "40", label: "4 et -" }],
+  [
+    { id: "50", label: "5-" },
+    { id: "59", label: "5+" },
+  ],
+  [
+    { id: "60", label: "6-" },
+    { id: "69", label: "6+" },
+  ],
+  [
+    { id: "70", label: "7-" },
+    { id: "79", label: "7+" },
+  ],
+  [{ id: "80", label: "8 et +" }],
+];
 
 // Type voies
 const types = [
-  { id: 'couenne' as const, label: 'Couenne' },
-  { id: 'grandeVoie' as const, label: 'Grandes voies' },
-  { id: 'bloc' as const, label: 'Bloc' },
-  { id: 'psychobloc' as const, label: 'Psychobloc' },
-]
+  { id: "couenne" as const, label: "Couenne" },
+  { id: "grandeVoie" as const, label: "Grandes voies" },
+  { id: "bloc" as const, label: "Bloc" },
+  { id: "psychobloc" as const, label: "Psychobloc" },
+];
 
 // Nb voies options (keep as select)
 const nbVoiesOptions = [
-  { value: 0, label: 'Pas de minimum' },
-  { value: 20, label: 'Plus de 20' },
-  { value: 50, label: 'Plus de 50' },
-  { value: 100, label: 'Plus de 100' },
-  { value: 200, label: 'Plus de 200' },
-]
+  { value: 0, label: "Pas de minimum" },
+  { value: 20, label: "Plus de 20" },
+  { value: 50, label: "Plus de 50" },
+  { value: 100, label: "Plus de 100" },
+  { value: 200, label: "Plus de 200" },
+];
 
 // Active filter indicators
-const hasExpoFilter = computed(() => store.filters.exposition.length > 0)
-const hasVoiesFilter = computed(() =>
-  store.filters.cotations.length > 0 ||
-  store.filters.typeVoies.couenne ||
-  store.filters.typeVoies.grandeVoie ||
-  store.filters.typeVoies.bloc ||
-  store.filters.typeVoies.psychobloc ||
-  store.filters.nbVoiesMin > 0
-)
-const hasTrainFilter = computed(() =>
-  store.filters.train.tempsMax !== null ||
-  store.filters.train.correspMax !== null ||
-  store.filters.train.terOnly
-)
-const hasVeloFilter = computed(() =>
-  store.filters.velo.tempsMax !== null ||
-  store.filters.velo.distMax !== null ||
-  store.filters.velo.denivMax !== null ||
-  store.filters.velo.apiedPossible
-)
-const hasApprocheFilter = computed(() => store.filters.approche.tempsMax !== null)
-const hasTotalFilter = computed(() =>
-  store.filters.total.tempsTV !== null ||
-  store.filters.total.tempsTVA !== null
-)
+const hasExpoFilter = computed(() => store.filters.exposition.length > 0);
+const hasVoiesFilter = computed(
+  () =>
+    store.filters.cotations.length > 0 ||
+    store.filters.typeVoies.couenne ||
+    store.filters.typeVoies.grandeVoie ||
+    store.filters.typeVoies.bloc ||
+    store.filters.typeVoies.psychobloc ||
+    store.filters.nbVoiesMin > 0,
+);
+const hasTrainFilter = computed(
+  () =>
+    store.filters.train.tempsMax !== null ||
+    store.filters.train.correspMax !== null ||
+    store.filters.train.terOnly,
+);
+const hasVeloFilter = computed(
+  () =>
+    store.filters.velo.tempsMax !== null ||
+    store.filters.velo.distMax !== null ||
+    store.filters.velo.denivMax !== null ||
+    store.filters.velo.apiedPossible,
+);
+const hasApprocheFilter = computed(
+  () => store.filters.approche.tempsMax !== null,
+);
+const hasTotalFilter = computed(
+  () =>
+    store.filters.total.tempsTV !== null ||
+    store.filters.total.tempsTVA !== null,
+);
 
 function isExpoChecked(id: Exposition): boolean {
-  return store.filters.exposition.includes(id)
+  return store.filters.exposition.includes(id);
 }
 
 function isCotChecked(id: Cotation): boolean {
-  return store.filters.cotations.includes(id)
+  return store.filters.cotations.includes(id);
 }
 
 // Helper to parse number input (empty string -> null)
 function parseNumberInput(value: string): number | null {
-  const num = parseInt(value, 10)
-  return isNaN(num) ? null : num
+  const num = parseInt(value, 10);
+  return isNaN(num) ? null : num;
 }
 </script>
 
 <template>
-  <div class="flex flex-col md:flex-row gap-1 items-center w-full max-w-full justify-center flex-wrap">
+  <div
+    class="flex flex-col md:flex-row gap-1 items-center w-full max-w-full justify-center flex-wrap"
+  >
     <div class="flex gap-1 items-center">
       <!-- Voies Dropdown -->
       <div class="dropdown w-fit">
@@ -96,7 +113,10 @@ function parseNumberInput(value: string): number | null {
         >
           Voies 🧗‍♀️
         </div>
-        <div class="dropdown-content menu gap-1 bg-base-200 rounded-box z-1 m-1 w-64 p-2 shadow-lg" tabindex="1">
+        <div
+          class="dropdown-content menu gap-1 bg-base-200 rounded-box z-1 m-1 w-64 p-2 shadow-lg"
+          tabindex="1"
+        >
           <div class="flex flex-col gap-2">
             <div class="flex flex-col gap-3">
               <div><span class="font-bold">Cotations</span> (ex: 5+ ET 6+)</div>
@@ -112,38 +132,63 @@ function parseNumberInput(value: string): number | null {
                       <input
                         type="checkbox"
                         :checked="isCotChecked(cot.id)"
-                        class="checkbox border-base-300 bg-base-100 [--chkbg:oklch(var(--p))] checkbox-sm"
+                        class="checkbox checkbox-primary checkbox-sm"
                         @change="store.toggleCotation(cot.id)"
                       />
                       <span class="label-text">{{ cot.label }}</span>
                     </label>
                   </div>
                 </template>
-                <span class="italic text-base-300 text-sm">(5- = de 5a à 5b, 5+ = de 5b+ à 5c+)</span>
+                <span class="italic text-base-300 text-sm"
+                  >(5- = de 5a à 5b, 5+ = de 5b+ à 5c+)</span
+                >
               </div>
             </div>
           </div>
           <div class="font-bold">Nombre de voies</div>
           <div>
-            <label class="label cursor-pointer gap-2 p-0 pr-1 w-full justify-start">
+            <label
+              class="label cursor-pointer gap-2 p-0 pr-1 w-full justify-start"
+            >
               <select
                 class="select border-base-300 select-sm focus:outline-base-300"
                 :value="store.filters.nbVoiesMin"
-                @change="store.setNbVoiesMin(Number(($event.target as HTMLSelectElement).value))"
+                @change="
+                  store.setNbVoiesMin(
+                    Number(($event.target as HTMLSelectElement).value),
+                  )
+                "
               >
-                <option v-for="opt in nbVoiesOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                <option
+                  v-for="opt in nbVoiesOptions"
+                  :key="opt.value"
+                  :value="opt.value"
+                >
+                  {{ opt.label }}
+                </option>
               </select>
             </label>
           </div>
           <div class="font-bold">Types de voies</div>
           <div class="grid grid-cols-[auto_auto] gap-x-2 gap-y-1 w-full">
-            <div v-for="type in types" :key="type.id" class="flex flex-row gap-2 items-center w-full">
-              <label class="label hover:bg-base-300 rounded-lg cursor-pointer gap-2 p-0 pr-1 w-full justify-start">
+            <div
+              v-for="type in types"
+              :key="type.id"
+              class="flex flex-row gap-2 items-center w-full"
+            >
+              <label
+                class="label hover:bg-base-300 rounded-lg cursor-pointer gap-2 p-0 pr-1 w-full justify-start"
+              >
                 <input
                   type="checkbox"
                   :checked="store.filters.typeVoies[type.id]"
-                  class="checkbox border-base-300 bg-base-100 [--chkbg:oklch(var(--p))] checkbox-sm"
-                  @change="store.setTypeVoie(type.id, !store.filters.typeVoies[type.id])"
+                  class="checkbox checkbox-primary checkbox-sm"
+                  @change="
+                    store.setTypeVoie(
+                      type.id,
+                      !store.filters.typeVoies[type.id],
+                    )
+                  "
                 />
                 <span class="label-text">{{ type.label }}</span>
               </label>
@@ -162,7 +207,10 @@ function parseNumberInput(value: string): number | null {
         >
           Exposition 🔅
         </div>
-        <div class="dropdown-content menu bg-base-200 rounded-box z-1 m-1 w-40 p-2 shadow-lg" tabindex="1">
+        <div
+          class="dropdown-content menu bg-base-200 rounded-box z-1 m-1 w-40 p-2 shadow-lg"
+          tabindex="1"
+        >
           <div class="flex flex-row gap-1 items-center">
             <div class="max-w-96 flex flex-col gap-1 w-full">
               <label
@@ -173,7 +221,7 @@ function parseNumberInput(value: string): number | null {
                 <input
                   type="checkbox"
                   :checked="isExpoChecked(expo.id)"
-                  class="checkbox border-base-300 bg-base-100 [--chkbg:oklch(var(--p))] checkbox-sm"
+                  class="checkbox checkbox-primary checkbox-sm"
                   @change="store.toggleExposition(expo.id)"
                 />
                 <span class="label-text">
@@ -196,7 +244,10 @@ function parseNumberInput(value: string): number | null {
         >
           Train 🚞
         </div>
-        <div class="dropdown-content menu bg-base-200 rounded-box z-1 m-1 w-64 p-2 shadow-lg" tabindex="1">
+        <div
+          class="dropdown-content menu bg-base-200 rounded-box z-1 m-1 w-64 p-2 shadow-lg"
+          tabindex="1"
+        >
           <label class="flex flex-row gap-2 items-center">
             <div class="font-bold">Durée</div>
             <div class="text-normal font-bold">≤</div>
@@ -206,7 +257,11 @@ function parseNumberInput(value: string): number | null {
               min="0"
               class="input input-sm w-14"
               :value="store.filters.train.tempsMax ?? ''"
-              @input="store.setTrainTempsMax(parseNumberInput(($event.target as HTMLInputElement).value))"
+              @input="
+                store.setTrainTempsMax(
+                  parseNumberInput(($event.target as HTMLInputElement).value),
+                )
+              "
             />
             <div>minutes</div>
           </label>
@@ -274,7 +329,10 @@ function parseNumberInput(value: string): number | null {
         >
           Vélo 🚲
         </div>
-        <div class="dropdown-content menu bg-base-200 rounded-box z-1 m-1 w-64 p-2 shadow-lg" tabindex="1">
+        <div
+          class="dropdown-content menu bg-base-200 rounded-box z-1 m-1 w-64 p-2 shadow-lg"
+          tabindex="1"
+        >
           <div class="flex flex-row gap-3 items-center">
             <div>Trajet vélo</div>
             <div class="flex flex-col gap-1">
@@ -286,7 +344,13 @@ function parseNumberInput(value: string): number | null {
                   min="0"
                   class="input input-sm w-14"
                   :value="store.filters.velo.tempsMax ?? ''"
-                  @input="store.setVeloTempsMax(parseNumberInput(($event.target as HTMLInputElement).value))"
+                  @input="
+                    store.setVeloTempsMax(
+                      parseNumberInput(
+                        ($event.target as HTMLInputElement).value,
+                      ),
+                    )
+                  "
                 />
                 <div>minutes</div>
               </label>
@@ -298,7 +362,13 @@ function parseNumberInput(value: string): number | null {
                   min="0"
                   class="input input-sm w-14"
                   :value="store.filters.velo.distMax ?? ''"
-                  @input="store.setVeloDistMax(parseNumberInput(($event.target as HTMLInputElement).value))"
+                  @input="
+                    store.setVeloDistMax(
+                      parseNumberInput(
+                        ($event.target as HTMLInputElement).value,
+                      ),
+                    )
+                  "
                 />
                 <div>km</div>
               </label>
@@ -310,20 +380,34 @@ function parseNumberInput(value: string): number | null {
                   min="0"
                   class="input input-sm w-14"
                   :value="store.filters.velo.denivMax ?? ''"
-                  @input="store.setVeloDenivMax(parseNumberInput(($event.target as HTMLInputElement).value))"
+                  @input="
+                    store.setVeloDenivMax(
+                      parseNumberInput(
+                        ($event.target as HTMLInputElement).value,
+                      ),
+                    )
+                  "
                 />
                 <div>D+</div>
               </label>
             </div>
           </div>
           <div class="flex flex-row gap-2 items-center mt-2">
-            <div class="bg-base-100 rounded-full w-6 h-6 border-2 border-base-300 flex items-center justify-center text-xs text-slate-600 font-bold">OU</div>
-            <label class="flex flex-row gap-2 items-center hover:bg-base-300 rounded-lg cursor-pointer p-0 pr-1">
+            <div
+              class="bg-base-100 rounded-full w-6 h-6 border-2 border-base-300 flex items-center justify-center text-xs text-slate-600 font-bold"
+            >
+              OU
+            </div>
+            <label
+              class="flex flex-row gap-2 items-center hover:bg-base-300 rounded-lg cursor-pointer p-0 pr-1"
+            >
               <input
                 type="checkbox"
                 :checked="store.filters.velo.apiedPossible"
-                class="checkbox border-base-300 bg-base-100 [--chkbg:oklch(var(--p))]"
-                @change="store.setVeloApiedPossible(!store.filters.velo.apiedPossible)"
+                class="checkbox border-base-300 bg-base-100"
+                @change="
+                  store.setVeloApiedPossible(!store.filters.velo.apiedPossible)
+                "
               />
               <div>Accessible à pied</div>
             </label>
@@ -341,7 +425,10 @@ function parseNumberInput(value: string): number | null {
         >
           Marche 🥾
         </div>
-        <div class="dropdown-content menu bg-base-200 rounded-box z-1 m-1 w-56 p-2 shadow-lg" tabindex="1">
+        <div
+          class="dropdown-content menu bg-base-200 rounded-box z-1 m-1 w-56 p-2 shadow-lg"
+          tabindex="1"
+        >
           <label class="flex flex-row gap-2 items-center">
             <div class="font-bold">Approche</div>
             <div class="text-normal font-bold">≤</div>
@@ -351,7 +438,11 @@ function parseNumberInput(value: string): number | null {
               min="0"
               class="input input-sm w-14"
               :value="store.filters.approche.tempsMax ?? ''"
-              @input="store.setApprocheTempsMax(parseNumberInput(($event.target as HTMLInputElement).value))"
+              @input="
+                store.setApprocheTempsMax(
+                  parseNumberInput(($event.target as HTMLInputElement).value),
+                )
+              "
             />
             <div>minutes</div>
           </label>
@@ -368,7 +459,10 @@ function parseNumberInput(value: string): number | null {
         >
           Total ⏱️
         </div>
-        <div class="dropdown-content menu bg-base-200 rounded-box z-1 m-1 p-2 shadow-lg" tabindex="1">
+        <div
+          class="dropdown-content menu bg-base-200 rounded-box z-1 m-1 p-2 shadow-lg"
+          tabindex="1"
+        >
           <div class="flex flex-col gap-2 items-end">
             <label class="flex flex-row gap-1 items-center">
               <div>Train+Vélo</div>
@@ -379,7 +473,11 @@ function parseNumberInput(value: string): number | null {
                 min="0"
                 class="input input-sm w-14"
                 :value="store.filters.total.tempsTV ?? ''"
-                @input="store.setTotalTempsTV(parseNumberInput(($event.target as HTMLInputElement).value))"
+                @input="
+                  store.setTotalTempsTV(
+                    parseNumberInput(($event.target as HTMLInputElement).value),
+                  )
+                "
               />
               <div>minutes</div>
             </label>
@@ -392,7 +490,11 @@ function parseNumberInput(value: string): number | null {
                 min="0"
                 class="input input-sm w-14"
                 :value="store.filters.total.tempsTVA ?? ''"
-                @input="store.setTotalTempsTVA(parseNumberInput(($event.target as HTMLInputElement).value))"
+                @input="
+                  store.setTotalTempsTVA(
+                    parseNumberInput(($event.target as HTMLInputElement).value),
+                  )
+                "
               />
               <div>minutes</div>
             </label>
@@ -402,13 +504,12 @@ function parseNumberInput(value: string): number | null {
 
       <!-- Reset Button -->
       <button
-        v-if="store.hasActiveFilters"
         type="button"
         class="btn btn-sm btn-ghost text-primary"
+        :disabled="!store.hasActiveFilters"
         @click="store.resetFilters()"
       >
         <Icon name="refresh" class="w-3 h-3" />
-        Réinitialiser
       </button>
 
       <!-- Sort Dropdown -->

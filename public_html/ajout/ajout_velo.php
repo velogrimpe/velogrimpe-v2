@@ -235,7 +235,7 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
         <div class="flex flex-col md:flex-row gap-4">
           <label class="form-control grow" for="velo_apieduniquement">
             <div class="flex items-center gap-4">
-              <input class="checkbox checkbox-primary checkbox" type="checkbox" id="velo_apieduniquement"
+              <input class="checkbox-primary checkbox" type="checkbox" id="velo_apieduniquement"
                 name="velo_apieduniquement">
               <b class="">Itinéraire conçu pour la marche uniquement ?</b>
             </div>
@@ -243,7 +243,7 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
           </label>
           <label class="form-control grow" for="velo_apiedpossible">
             <div class="flex items-center gap-4">
-              <input class="checkbox checkbox-primary checkbox" type="checkbox" id="velo_apiedpossible"
+              <input class="checkbox-primary checkbox" type="checkbox" id="velo_apiedpossible"
                 name="velo_apiedpossible">
               <b class="">Itinéraire conçu pour le vélo, mais faisable à pied ?</b>
             </div>
