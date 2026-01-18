@@ -110,6 +110,7 @@ function onKeydown(event: KeyboardEvent) {
 
   if (event.key === 'ArrowDown') {
     event.preventDefault()
+    event.stopImmediatePropagation()
     if (currentFocus.value < totalItems - 1) {
       currentFocus.value++
     } else {
@@ -118,6 +119,7 @@ function onKeydown(event: KeyboardEvent) {
     ensureVisible()
   } else if (event.key === 'ArrowUp') {
     event.preventDefault()
+    event.stopImmediatePropagation()
     if (currentFocus.value > 0) {
       currentFocus.value--
     } else {
@@ -126,6 +128,7 @@ function onKeydown(event: KeyboardEvent) {
     ensureVisible()
   } else if (event.key === 'Enter') {
     event.preventDefault()
+    event.stopImmediatePropagation()
     if (currentFocus.value >= 0 && currentFocus.value < items.length) {
       selectOption(items[currentFocus.value])
     } else if (hasNewValueOption && currentFocus.value === items.length) {
@@ -194,7 +197,7 @@ function getOptionLabel(option: AutocompleteOption): string {
     />
     <input
       ref="inputRef"
-      type="search"
+      type="text"
       :value="inputValue"
       :placeholder="placeholder"
       :disabled="disabled"
