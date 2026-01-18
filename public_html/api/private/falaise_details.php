@@ -95,6 +95,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     exit;
   }
 
+  // Create backup of existing file before saving
+  if (file_exists($geojson_file)) {
+    $backup_dir = $_SERVER['DOCUMENT_ROOT'] . "/bdd/barres-historique";
+    if (!is_dir($backup_dir)) {
+      mkdir($backup_dir, 0755, true);
+    }
+    $date_suffix = date('Y-m-d-H\Hi');
+    $base_name = $falaise["falaise_id"] . "_" . $falaise["falaise_nomformate"];
+    $backup_file = $backup_dir . "/" . $base_name . "-" . $date_suffix . ".geojson";
+    copy($geojson_file, $backup_file);
+  }
+
   // Save the updated geojson content
   if (file_put_contents($geojson_file, json_encode($data, JSON_PRETTY_PRINT))) {
     echo json_encode(['success' => 'Falaise details updated successfully']);
