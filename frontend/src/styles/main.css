@@ -43,6 +43,23 @@
 @source '../../../public_html/js/**/*.js';
 
 /*
+ * Safelist pour les classes utilisées dans les composants de carte (/js/components/map/)
+ * Ces classes sont injectées dans des chaînes HTML et doivent être garanties dans le build
+ */
+@source inline("
+  btn btn-sm btn-primary
+  flex flex-row items-center gap-1
+  inline inline-block
+  w-2 w-3 w-4 h-2 h-3 h-4 fill-current
+  max-w-[260px] font-bold text-sm text-xs
+  pointer-events-none absolute
+  z-10 top-0 left-1/2
+  w-fit text-nowrap -translate-x-1/2
+  bg-accent bg-white text-white text-black
+  p-px p-[2px] leading-none rounded-md opacity-80
+");
+
+/*
   The default border color has changed to `currentcolor` in Tailwind CSS v4,
   so we've added these compatibility styles to make sure everything still
   looks the same as it did with Tailwind CSS v3.
@@ -61,3 +78,24 @@
 }
 
 /* Link styling is handled in global.css */
+
+/*
+ * DaisyUI v5 compatibility - form-control was removed in v5
+ * Re-implemented as a Tailwind component for backward compatibility
+ */
+@layer components {
+  .form-control {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+  /* Form elements inside form-control take full width (v5 gives them 20rem default) */
+  .form-control > input,
+  .form-control > textarea,
+  .form-control > select,
+  .form-control > .input,
+  .form-control > .textarea,
+  .form-control > .select {
+    width: 100%;
+  }
+}

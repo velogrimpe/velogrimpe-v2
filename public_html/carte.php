@@ -286,7 +286,7 @@ $highlight = $_GET['h'] ?? '';
             : ""
           ),
           {
-            className: `vg-velo-tooltip vg-velo-tooltip-${c}`,
+            className: `vg-velo-tooltip vg-color-${c}`,
             permanent: true,
             direction: "center",
           });
@@ -381,7 +381,7 @@ $highlight = $_GET['h'] ?? '';
               direction: "right",
               offset: [iconSize / 2, 0],
               permanent: true,
-              className: `vg-station-tooltip vg-station-tooltip-${c}`,
+              className: `vg-station-tooltip vg-color-${c}`,
             });
           }), 0.76 * 1000);
         } else {
@@ -569,7 +569,7 @@ $highlight = $_GET['h'] ?? '';
           direction: "right",
           permanent: true,
           offset: [iconSize / 2, -iconSize / 2],
-          className: `vg-station-tooltip vg-station-tooltip-${c}`,
+          className: `vg-station-tooltip vg-color-${c}`,
         });
         const gpx = renderGpx(it, c);
         itinerairesLines.push(gpx);

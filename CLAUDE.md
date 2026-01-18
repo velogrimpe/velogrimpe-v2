@@ -117,19 +117,7 @@ git config core.hooksPath .githooks
 
 **NOTE** : Tâches à réaliser, une par une, avec confirmation utilisateur avant commit :
 
-- [x] Ajouter un système de watcher pour build auto à chaque changement du front end
-- [x] sur carte.php, les étiquettes (tooltips) de durée d'itinéraire n'utilisent plus les bons styles (classes tw/daisyui ?)
-- [x] idem pour les étiquettes des gares quand on sélectionne une falaise ou une gare et vice versa (étiquettes falaises). Elles sont encore bonnes sur la page falaise.php
-- [-] page carte.php, l'autocomplete ne fonctionne pas toujours bien avec les flèches. si j'écris, puis je fais fleche du bas, le 1er est bien sélectionné, mais si je recommence, ça désélectionne, encore fleche bas et re-sélection du 1e résultat. Cela ne se produit pas systématiquement, mais par exemple sur la recherche "limas". Ex dans Image #1, le 2e et 4e résultats ne sont pas sélectionnables avec les fleches.
-- [x] Les styles de la navigation ne sont pas conformes avec le site de prod : velogrimpe.fr
-- [x] page tableau.php, le bouton réinitialiser ne fonctionne pour aucun filtre à part les voies.
-- [x] En mode mobile, sur carte.php, pendant le filtrage, ce serait bien d'afficher le nombre de falaise correspondantes dans l'interface de filtrage.
-- [x] Avec la migration à daisyUI v5, est-ce que les variables --p, --s etc. ne sont pas devenues obsolètes ? Si c'est le cas, il faut faire une nouvelle passe sur toutes les utilisations de variables. Je peux te passer l'ancienne référence des variables si besoin.
-- [ ] Les classes de la popup de falaise-voisine sont cassées. il faudrait surement repasser sur tous les composants de carte (/js/components/map) pour éviter d'utiliser des classes tailwind/daisyUI, ou trouver un autre système plus fiable pour charger les classes utilisées dans du texte html de ces composants.
-- [ ] sur l'index.php, j'aimerais que le dropdown des villes utiliser la version popover-api de daisyUI plutôt que le comportement actuel.
-- [x] Il faut reprendre le styling des liens. Il y a une règle CSS trop générale qu'il faut enlever. Que recommandes tu ?
 - [ ] dans ajout_falaise.php il y a des règles flex qui ont sauté, par exemple dans Précisions sur les cotations le titre, le champ et la précision sont en flex-row alors qu'ils devraient être en flex-col. Vérifie aussi les autres formulaires d'ajout pour ce problème. De même, j'ai l'impression qu'avant les champs étaient en w-full par défaut et maintenant ils ne le sont plus.
-- [x] Dans l'éditeur falaise (flow ajout falaise) les boutons texte geoman (quand on clique sur un des icones d'édition) sont stylisés involontairement, je voudrais qu'ils aient le style par défaut de geoman. Demande moi des capture ou des détails sur les classes qui s'appliquent.
 - [ ] Le tableau récapitulatif est tout désorganisé. La grille ne fonctionne plus ? (classes tailwind non buildées ?). Quelle approche utiliser ? composant vue ?
 - [ ] Suite à l'ajout d'un itinéraire vélo, rajouter un écran de confirmation comme pour les falaise qui propose différents choix tels que consulter la falaise concernée, ajouter un autre itinéraire vélo pour la même falaise etc.
 - [ ] Sur la page actus, au hover sur les cartes d'actu, il y a un underline qui se rajoute, enlève le

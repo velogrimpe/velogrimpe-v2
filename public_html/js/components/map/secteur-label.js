@@ -65,7 +65,7 @@ const buildIcon = (name, id) =>
     className: "relative",
     html: `<div
             id="${id}"
-            class="absolute z-1 top-0 left-1/2 w-fit text-nowrap -translate-x-1/2
+            class="absolute z-10 top-0 left-1/2 w-fit text-nowrap -translate-x-1/2
                     text-black bg-white text-xs p-px leading-none rounded-md opacity-80">
               ${name}
             </div>`,
