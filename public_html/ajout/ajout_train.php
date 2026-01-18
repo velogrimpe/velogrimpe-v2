@@ -108,6 +108,7 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
           </label>
           <input tabindex="-1" type="text" class="input input-disabled input-xs w-1/2 admin" id="gare_id" name="gare_id"
             value="<?= $preset_gare_id ?? '' ?>" readonly required>
+          <input type="hidden" id="train_arrivee" name="train_arrivee" value="<?= $preset_gare_nom ?? '' ?>">
         </div>
       </div>
       <!-- <div class="flex flex-row gap-4 items-center"> -->

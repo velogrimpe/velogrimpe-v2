@@ -90,9 +90,6 @@ $gare_nom = $gare ? htmlspecialchars($gare['gare_nom']) : 'Gare';
 
         <!-- Boutons secondaires -->
         <div class="flex flex-wrap justify-center gap-2">
-          <a href="/ajout/ajout_velo.php<?= $admin ? '?admin=' . $config["admin_token"] : '' ?>" class="btn btn-outline btn-sm">
-            + Nouvel itinéraire
-          </a>
           <a href="/contribuer.php" class="btn btn-outline btn-sm">
             Contribuer
           </a>
@@ -102,6 +99,22 @@ $gare_nom = $gare ? htmlspecialchars($gare['gare_nom']) : 'Gare';
           <?php if ($admin): ?>
             <a href="/admin/" class="btn btn-outline btn-sm">
               Admin
+            </a>
+          <?php endif; ?>
+        </div>
+
+        <!-- Autres contributions -->
+        <div class="divider my-2">Autres contributions</div>
+        <div class="flex flex-wrap justify-center gap-2">
+          <a href="/ajout/ajout_falaise.php<?= $admin ? '?admin=' . $config["admin_token"] : '' ?>" class="btn btn-outline btn-sm">
+            + Falaise
+          </a>
+          <a href="/ajout/ajout_velo.php<?= $admin ? '?admin=' . $config["admin_token"] : '' ?>" class="btn btn-outline btn-sm">
+            + Itinéraire vélo
+          </a>
+          <?php if ($admin): ?>
+            <a href="/ajout/ajout_train.php?admin=<?= $config["admin_token"] ?>" class="btn btn-outline btn-sm">
+              + Itinéraire train
             </a>
           <?php endif; ?>
         </div>

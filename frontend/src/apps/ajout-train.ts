@@ -72,12 +72,15 @@ function mountGareAutocomplete() {
 
       const onGareSelect = (item: FormAutocompleteItem | null) => {
         const gareIdEl = document.getElementById('gare_id') as HTMLInputElement
+        const trainArriveeEl = document.getElementById('train_arrivee') as HTMLInputElement
 
         if (item) {
           if (gareIdEl) gareIdEl.value = String(item.id)
+          if (trainArriveeEl) trainArriveeEl.value = item.nom
           verifierExistenceItineraire()
         } else {
           if (gareIdEl) gareIdEl.value = ''
+          if (trainArriveeEl) trainArriveeEl.value = ''
         }
       }
 
