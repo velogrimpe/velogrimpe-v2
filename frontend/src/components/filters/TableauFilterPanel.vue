@@ -505,7 +505,7 @@ function parseNumberInput(value: string): number | null {
       <!-- Reset Button -->
       <button
         type="button"
-        class="btn btn-sm btn-ghost text-primary"
+        class="btn btn-sm btn-ghost"
         :disabled="!store.hasActiveFilters"
         @click="store.resetFilters()"
       >

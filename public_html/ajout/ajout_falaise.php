@@ -114,8 +114,6 @@ if ($falaise_id) {
 <body class="min-h-screen flex flex-col">
   <?php include $_SERVER['DOCUMENT_ROOT'] . "/components/header.html"; ?>
   <main class="w-full grow max-w-(--breakpoint-md) mx-auto prose p-4
-              prose-a:text-[oklch(var(--p)/1)] prose-a:font-bold prose-a:no-underline
-              prose-a:hover:underline prose-a:hover:text-[oklch(var(--pf)/1)]
               prose-pre:my-0 prose-pre:text-center prose-img:my-0">
     <h1 class="text-4xl font-bold text-wrap text-center">
       <?= $falaise_id ? "Modifier" : "Ajouter" ?> une falaise<span class='text-red-900 admin'> (version admin)</span>

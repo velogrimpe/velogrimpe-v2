@@ -39,9 +39,7 @@
       </div>
     </div>
   </div>
-  <div class="max-w-(--breakpoint-lg) mx-auto prose p-4
-              prose-a:text-[oklch(var(--p)/1)] prose-a:font-bold prose-a:no-underline
-              prose-a:hover:underline prose-a:hover:text-[oklch(var(--pf)/1)]">
+  <div class="max-w-(--breakpoint-lg) mx-auto prose p-4">
     <p>"Tiens, c'est quoi les falaises les plus accessibles en train+vélo depuis Lyon ?".</p>
     <p>C'est par cette question que Florent a commencé le projet vélogrimpe, en mai 2024. D'un document Word perso à un
       PDF en libre accès, nous voici maintenant avec un site web dont le but est de donner envie de réaliser des sorties

@@ -39,9 +39,7 @@
       </div>
     </div>
   </div>
-  <main class="max-w-(--breakpoint-lg) mx-auto prose p-4
-              prose-a:text-[oklch(var(--p)/1)] prose-a:font-bold prose-a:no-underline
-              prose-a:hover:underline prose-a:hover:text-[oklch(var(--pf)/1)]">
+  <main class="max-w-(--breakpoint-lg) mx-auto prose p-4">
     <p>
       <i> Le but de cette section est d’essayer de répondre aux questions que vous pourriez vous poser à propos du
         vélogrimpe : train, matériel, logistique, etc. </i>

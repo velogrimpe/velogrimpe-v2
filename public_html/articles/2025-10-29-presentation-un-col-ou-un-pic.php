@@ -46,9 +46,7 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/vite.php';
         <div class="text-5xl font-bold">Présentation : Un Col ou un Pic</div>
       </div>
     </div>
-    <div class="bg-base-100 p-8 max-w-2xl mx-auto prose prose-a:text-[oklch(var(--p)/1)] prose-a:font-bold prose-a:no-underline
-              prose-a:hover:underline prose-a:hover:text-[oklch(var(--pf)/1)]
-              ">
+    <div class="bg-base-100 p-8 max-w-2xl mx-auto prose">
       <img src="/images/articles/2025-10-29-presentation-un-col-ou-un-pic/logo-uncolouunpic.webp"
         alt="Logo Un Col ou un Pic" class="mx-auto mb-4 h-48 rounded-lg border shadow-lg" />
       <h1 class="text-3xl font-bold text-center">Stage d’escalade outdoor en mobilité douce avec <b>Un Col ou un Pic</b>

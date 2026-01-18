@@ -100,7 +100,7 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
 <body class="min-h-screen flex flex-col">
   <?php include $_SERVER['DOCUMENT_ROOT'] . "/components/header.html"; ?>
   <main
-    class="w-full grow max-w-(--breakpoint-md) mx-auto prose p-4 prose-a:text-[oklch(var(--p)/1)] prose-a:font-bold prose-a:no-underline prose-a:hover:underline prose-a:hover:text-[oklch(var(--pf)/1)]">
+    class="w-full grow max-w-(--breakpoint-md) mx-auto prose p-4">
     <h1 class="text-4xl font-bold text-wrap text-center"> Ajouter un itinéraire vélo<span class="admin text-red-900">
         (version admin)</span>
     </h1>

@@ -42,9 +42,7 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/vite.php';
       </div>
     </div>
   </div>
-  <div class="max-w-(--breakpoint-lg) mx-auto prose p-4
-              prose-a:text-[oklch(var(--p)/1)] prose-a:font-bold prose-a:no-underline
-              prose-a:hover:underline prose-a:hover:text-[oklch(var(--pf)/1)]">
+  <div class="max-w-(--breakpoint-lg) mx-auto prose p-4">
     <p> Comme vous l'imaginez, ce projet de site Vélogrimpe nécessite du temps et de l'énergie : si vous voulez nous
       aider, vous êtes les bienvenus ! </p>
     <h2>AJOUTER DES DONNÉES</h2>

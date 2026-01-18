@@ -1,7 +1,16 @@
 /* Base styling */
 body {
-  font-family: Arial, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+  font-family:
+    Arial,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif,
+    "Apple Color Emoji",
+    "Segoe UI Emoji",
     "Segoe UI Symbol";
   color: #333;
   background-color: #f4f4f9;
@@ -10,12 +19,12 @@ body {
 }
 
 /* Links styling - exclude navbar and menu links */
-a:not(.navbar a):not(.menu a):not(.btn) {
+a:not(.navbar a):not(.menu a):not(.btn):not(#map a):not(.editor-map a) {
   color: #2e8b57;
   text-decoration: none;
   font-weight: bold;
 }
-a:not(.navbar a):not(.menu a):not(.btn):hover {
+a:not(.navbar a):not(.menu a):not(.btn):not(#map a):not(.editor-map a):hover {
   /* color: #1e5d3e; */
   text-decoration: underline;
 }
@@ -64,7 +73,10 @@ a:not(.navbar a):not(.menu a):not(.btn):hover {
 
 .info {
   padding: 6px 8px;
-  font: 14px/16px Arial, Helvetica, sans-serif;
+  font:
+    14px/16px Arial,
+    Helvetica,
+    sans-serif;
   background: white;
   background: rgba(255, 255, 255, 0.8);
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
@@ -116,7 +128,7 @@ a:not(.navbar a):not(.menu a):not(.btn):hover {
 
 #map a.btn,
 .editor-map a.btn {
-  color: oklch(var(--b1));
+  color: var(--color-base-100);
   text-decoration: none;
   font-weight: bold;
 }
@@ -151,18 +163,54 @@ a:not(.navbar a):not(.menu a):not(.btn):hover {
   color: white;
   font-weight: bold;
 }
-.vg-velo-tooltip-indianRed { background-color: indianRed; border-color: indianRed; }
-.vg-velo-tooltip-tomato { background-color: tomato; border-color: tomato; }
-.vg-velo-tooltip-teal { background-color: teal; border-color: teal; }
-.vg-velo-tooltip-paleVioletRed { background-color: paleVioletRed; border-color: paleVioletRed; }
-.vg-velo-tooltip-mediumSlateBlue { background-color: mediumSlateBlue; border-color: mediumSlateBlue; }
-.vg-velo-tooltip-lightSalmon { background-color: lightSalmon; border-color: lightSalmon; }
-.vg-velo-tooltip-fireBrick { background-color: fireBrick; border-color: fireBrick; }
-.vg-velo-tooltip-crimson { background-color: crimson; border-color: crimson; }
-.vg-velo-tooltip-purple { background-color: purple; border-color: purple; }
-.vg-velo-tooltip-hotPink { background-color: hotPink; border-color: hotPink; }
-.vg-velo-tooltip-mediumOrchid { background-color: mediumOrchid; border-color: mediumOrchid; }
-.vg-velo-tooltip-black { background-color: black; border-color: black; }
+.vg-velo-tooltip-indianRed {
+  background-color: indianRed;
+  border-color: indianRed;
+}
+.vg-velo-tooltip-tomato {
+  background-color: tomato;
+  border-color: tomato;
+}
+.vg-velo-tooltip-teal {
+  background-color: teal;
+  border-color: teal;
+}
+.vg-velo-tooltip-paleVioletRed {
+  background-color: paleVioletRed;
+  border-color: paleVioletRed;
+}
+.vg-velo-tooltip-mediumSlateBlue {
+  background-color: mediumSlateBlue;
+  border-color: mediumSlateBlue;
+}
+.vg-velo-tooltip-lightSalmon {
+  background-color: lightSalmon;
+  border-color: lightSalmon;
+}
+.vg-velo-tooltip-fireBrick {
+  background-color: fireBrick;
+  border-color: fireBrick;
+}
+.vg-velo-tooltip-crimson {
+  background-color: crimson;
+  border-color: crimson;
+}
+.vg-velo-tooltip-purple {
+  background-color: purple;
+  border-color: purple;
+}
+.vg-velo-tooltip-hotPink {
+  background-color: hotPink;
+  border-color: hotPink;
+}
+.vg-velo-tooltip-mediumOrchid {
+  background-color: mediumOrchid;
+  border-color: mediumOrchid;
+}
+.vg-velo-tooltip-black {
+  background-color: black;
+  border-color: black;
+}
 
 /* Station/Falaise tooltip styles (with border-radius) */
 .vg-station-tooltip {
@@ -170,30 +218,90 @@ a:not(.navbar a):not(.menu a):not(.btn):hover {
   color: white;
   border-radius: 0.375rem;
 }
-.vg-station-tooltip-indianRed { background-color: indianRed; border-color: indianRed; }
-.vg-station-tooltip-indianRed::before { border-right-color: indianRed; }
-.vg-station-tooltip-tomato { background-color: tomato; border-color: tomato; }
-.vg-station-tooltip-tomato::before { border-right-color: tomato; }
-.vg-station-tooltip-teal { background-color: teal; border-color: teal; }
-.vg-station-tooltip-teal::before { border-right-color: teal; }
-.vg-station-tooltip-paleVioletRed { background-color: paleVioletRed; border-color: paleVioletRed; }
-.vg-station-tooltip-paleVioletRed::before { border-right-color: paleVioletRed; }
-.vg-station-tooltip-mediumSlateBlue { background-color: mediumSlateBlue; border-color: mediumSlateBlue; }
-.vg-station-tooltip-mediumSlateBlue::before { border-right-color: mediumSlateBlue; }
-.vg-station-tooltip-lightSalmon { background-color: lightSalmon; border-color: lightSalmon; }
-.vg-station-tooltip-lightSalmon::before { border-right-color: lightSalmon; }
-.vg-station-tooltip-fireBrick { background-color: fireBrick; border-color: fireBrick; }
-.vg-station-tooltip-fireBrick::before { border-right-color: fireBrick; }
-.vg-station-tooltip-crimson { background-color: crimson; border-color: crimson; }
-.vg-station-tooltip-crimson::before { border-right-color: crimson; }
-.vg-station-tooltip-purple { background-color: purple; border-color: purple; }
-.vg-station-tooltip-purple::before { border-right-color: purple; }
-.vg-station-tooltip-hotPink { background-color: hotPink; border-color: hotPink; }
-.vg-station-tooltip-hotPink::before { border-right-color: hotPink; }
-.vg-station-tooltip-mediumOrchid { background-color: mediumOrchid; border-color: mediumOrchid; }
-.vg-station-tooltip-mediumOrchid::before { border-right-color: mediumOrchid; }
-.vg-station-tooltip-black { background-color: black; border-color: black; }
-.vg-station-tooltip-black::before { border-right-color: black; }
+.vg-station-tooltip-indianRed {
+  background-color: indianRed;
+  border-color: indianRed;
+}
+.vg-station-tooltip-indianRed::before {
+  border-right-color: indianRed;
+}
+.vg-station-tooltip-tomato {
+  background-color: tomato;
+  border-color: tomato;
+}
+.vg-station-tooltip-tomato::before {
+  border-right-color: tomato;
+}
+.vg-station-tooltip-teal {
+  background-color: teal;
+  border-color: teal;
+}
+.vg-station-tooltip-teal::before {
+  border-right-color: teal;
+}
+.vg-station-tooltip-paleVioletRed {
+  background-color: paleVioletRed;
+  border-color: paleVioletRed;
+}
+.vg-station-tooltip-paleVioletRed::before {
+  border-right-color: paleVioletRed;
+}
+.vg-station-tooltip-mediumSlateBlue {
+  background-color: mediumSlateBlue;
+  border-color: mediumSlateBlue;
+}
+.vg-station-tooltip-mediumSlateBlue::before {
+  border-right-color: mediumSlateBlue;
+}
+.vg-station-tooltip-lightSalmon {
+  background-color: lightSalmon;
+  border-color: lightSalmon;
+}
+.vg-station-tooltip-lightSalmon::before {
+  border-right-color: lightSalmon;
+}
+.vg-station-tooltip-fireBrick {
+  background-color: fireBrick;
+  border-color: fireBrick;
+}
+.vg-station-tooltip-fireBrick::before {
+  border-right-color: fireBrick;
+}
+.vg-station-tooltip-crimson {
+  background-color: crimson;
+  border-color: crimson;
+}
+.vg-station-tooltip-crimson::before {
+  border-right-color: crimson;
+}
+.vg-station-tooltip-purple {
+  background-color: purple;
+  border-color: purple;
+}
+.vg-station-tooltip-purple::before {
+  border-right-color: purple;
+}
+.vg-station-tooltip-hotPink {
+  background-color: hotPink;
+  border-color: hotPink;
+}
+.vg-station-tooltip-hotPink::before {
+  border-right-color: hotPink;
+}
+.vg-station-tooltip-mediumOrchid {
+  background-color: mediumOrchid;
+  border-color: mediumOrchid;
+}
+.vg-station-tooltip-mediumOrchid::before {
+  border-right-color: mediumOrchid;
+}
+.vg-station-tooltip-black {
+  background-color: black;
+  border-color: black;
+}
+.vg-station-tooltip-black::before {
+  border-right-color: black;
+}
 
 /* Remove input type number default up/down arrows */
 input[type="number"]::-webkit-inner-spin-button,
@@ -221,7 +329,7 @@ input[type="number"] {
 /* Popup pour les polygones de falaises voisines */
 .vg-popup .leaflet-popup-content-wrapper {
   padding: 0;
-  background-color: oklch(var(--p));
+  background-color: var(--color-primary);
   box-shadow: none;
   border: none;
   width: fit-content;
@@ -230,13 +338,16 @@ input[type="number"] {
   margin: 0;
 }
 .vg-popup .leaflet-popup-tip {
-  background-color: oklch(var(--p));
+  background-color: var(--color-primary);
   box-shadow: none;
 }
 
 .vg-tooltip {
   padding: 6px 8px;
-  font: 14px/16px Arial, Helvetica, sans-serif;
+  font:
+    14px/16px Arial,
+    Helvetica,
+    sans-serif;
   border: 2px solid #e8cd51;
   width: fit-content;
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
