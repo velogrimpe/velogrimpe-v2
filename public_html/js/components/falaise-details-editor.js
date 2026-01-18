@@ -844,7 +844,7 @@ export function initFalaiseDetailsEditor(containerId) {
         };
 
         const cols = headers[type] || headers.secteur;
-        tableauRecap.innerHTML += `<div class="grid grid-cols-[${cols.map(() => "1fr").join("_")}] items-center gap-2">${cols.map((h) => `<div class="text-sm">${h}</div>`).join("")}</div>`.replace(/_/g, "_");
+        tableauRecap.innerHTML += `<div class="grid items-center gap-2" style="grid-template-columns: repeat(${cols.length}, 1fr)">${cols.map((h) => `<div class="text-sm">${h}</div>`).join("")}</div>`;
       }
 
       const rows = {
@@ -857,7 +857,7 @@ export function initFalaiseDetailsEditor(containerId) {
       };
 
       const row = rows[type] || rows.secteur;
-      tableauRecap.innerHTML += `<div class="grid grid-cols-[${row.map(() => "1fr").join("_")}] items-center gap-2">${row.join("")}</div>`.replace(/_/g, "_");
+      tableauRecap.innerHTML += `<div class="grid items-center gap-2" style="grid-template-columns: repeat(${row.length}, 1fr)">${row.join("")}</div>`;
     });
   }
 

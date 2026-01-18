@@ -37,8 +37,10 @@ function getVeloReturnTime(it: TableauItinerary): string {
 </script>
 
 <template>
-  <!-- Falaise name column -->
-  <div class="bg-base-100 px-2 py-1 self-stretch font-bold flex flex-col items-center justify-center text-base">
+  <!-- Wrapper with display:contents to preserve grid layout with Vue fragments -->
+  <div class="contents">
+    <!-- Falaise name column -->
+    <div class="bg-base-100 px-2 py-1 self-stretch font-bold flex flex-col items-center justify-center text-base">
     <div>
       <a :href="`/falaise.php?falaise_id=${common.falaise_id}&ville_id=${villeId}`">
         {{ common.falaise_nom }}
@@ -112,5 +114,6 @@ function getVeloReturnTime(it: TableauItinerary): string {
       :expo2="common.falaise_exposhort2"
       :size="72"
     />
+  </div>
   </div>
 </template>
