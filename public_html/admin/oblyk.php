@@ -158,7 +158,7 @@ $itineraires = $mysqli->query("SELECT * FROM velo WHERE velo_public >= 1")->fetc
               className: "btn btn-accent btn-xs text-base-100! hover:text-base-100! p-px rounded-full",
               iconSize: [24, 24],
               iconAnchor: [24 / 2, 0],
-              html: `<div id="linkFalaises_${selected.falaise_id}_${falaise.id}"><svg class="w-3 h-3 fill-current"><use xlink:href="/symbols/icons.svg#link"></use></svg></div>`,
+              html: `<div id="linkFalaises_${selected.falaise_id}_${falaise.id}" class="flex items-center justify-center w-full h-full"><svg class="w-3 h-3 fill-current"><use xlink:href="/symbols/icons.svg#link"></use></svg></div>`,
             }),
             riseOnHover: true,
             autoPanOnFocus: true,
@@ -203,7 +203,7 @@ $itineraires = $mysqli->query("SELECT * FROM velo WHERE velo_public >= 1")->fetc
                     console.log("Falaise linked successfully:", data);
                     falaise.button.remove();
                     falaise.marker.setIcon(oblykIcon(iconSize, "invert"));
-                    selected.site_ids = selected.site_ids ? selected.site_ids + "," + falaise.id : falaise.id;
+                    selected.site_ids = selected.site_ids ? selected.site_ids + "," + falaise.id : String(falaise.id);
                     selected.marker.setIcon(falaiseIcon(iconSize, "sepia"));
                     info.update();
                   }
