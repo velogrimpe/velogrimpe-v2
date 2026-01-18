@@ -99,8 +99,7 @@ $highlight = $_GET['h'] ?? '';
             </div>
             <div id="filtersFormPanelContainer">
               <!-- Vue Filter Panel -->
-              <div id="vue-filters"
-                   data-villes='<?= htmlspecialchars(json_encode($villes), ENT_QUOTES) ?>'>
+              <div id="vue-filters" data-villes='<?= htmlspecialchars(json_encode($villes), ENT_QUOTES) ?>'>
               </div>
             </div>
           </div>
@@ -134,13 +133,16 @@ $highlight = $_GET['h'] ?? '';
       </button>
       <dialog id="filtersModal" class="modal modal-bottom sm:modal-middle">
         <div class="modal-box md:w-4/5 max-w-3xl m-0 p-4">
-          <form method="dialog">
-            <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-          </form>
+          <div class="flex justify-between items-center pb-3 border-b border-base-300 mb-4 ">
+            <div>
+              <span class="font-bold text-lg">Filtres</span>
+              <span class="text-sm text-base-content/70" id="mobile-filter-stats"></span>
+            </div>
+            <form method="dialog">
+              <button class="btn btn-sm btn-primary">OK</button>
+            </form>
+          </div>
           <div id="filtersFormDialogContainer"></div>
-          <form method="dialog" class="flex justify-end mt-4">
-            <button class="btn btn-sm btn-primary">Fermer</button>
-          </form>
         </div>
         <form method="dialog" class="modal-backdrop">
           <button>close</button>
@@ -694,6 +696,15 @@ $highlight = $_GET['h'] ?? '';
     if (window.velogrimpe?.carteInfo) {
       window.velogrimpe.carteInfo.updateStats(nFalaises, nFalaiseFiltered);
       window.velogrimpe.carteInfo.setSelected(selected);
+    }
+
+    // Update mobile filter stats
+    const mobileStats = document.getElementById('mobile-filter-stats');
+    if (mobileStats) {
+      const hasFilters = nFalaises !== nFalaiseFiltered;
+      mobileStats.textContent = hasFilters
+        ? `${nFalaiseFiltered} / ${nFalaises} falaises`
+        : `${nFalaises} falaises`;
     }
 
     // Open details on desktop after Vue renders
