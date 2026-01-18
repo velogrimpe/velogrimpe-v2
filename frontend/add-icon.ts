@@ -155,13 +155,6 @@ async function main() {
   console.log(`\nExtracted ${parsed.paths.length} path(s)`)
   console.log(`viewBox: ${parsed.viewBox}`)
 
-  // Confirm
-  const confirm = await prompt('\nAdd this icon? (y/n): ')
-
-  if (confirm.toLowerCase() !== 'y') {
-    console.log('Cancelled')
-    process.exit(0)
-  }
 
   // Add to file
   const newIcon: IconDefinition = {
