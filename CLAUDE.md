@@ -118,14 +118,6 @@ git config core.hooksPath .githooks
 **NOTE** : Tâches à réaliser, une par une, avec confirmation utilisateur avant commit :
 
 - [ ] dans ajout_falaise.php les champs teaxtarea ne sont pas en full width
-- [ ] Suite à l'ajout d'un itinéraire vélo, rajouter un écran de confirmation comme pour les falaise qui propose différents choix tels que consulter la falaise concernée, ajouter un autre itinéraire vélo pour la même falaise etc.
-- [ ] Sur la page actus, au hover sur les cartes d'actu, il y a un underline qui se rajoute, enlève le
-- [ ] Dans l'admin Supprime le bouton de création de zone, c'est obsolète.
-- [ ] Sur le formulaire d'ajout train, l'api renvoie une erreur : "Il manque une info obligatoire : train_arrivee"
-- [ ] sur la page oblyk.php, l'icone link n'est plus centré dans le bouton bleu
-- [ ] sur la page oblyk.php, au moment du click sur le bouton de lien, l'api renvoie cette erreur : "Error: TypeError: selected.site_ids?.includes is not a function"
-- [ ] sur la page tableau_train.php, il manque une partie des boutons d'action : sur une corresp gare/falaise, il n'y a que le bouton d'ajout, et pas les boutons d'exclusion du couple (juste une fois ou de manière globale)
-- [ ] Il faut ajouter du versionning sur les détails falaise : à chaque sauvegarde dans l'interface, créer une sauvegarde de la version précédente dans le dossier barres-historique. en ajoutant la date (ex: 2026-01-01-10H24) de sauvegarde à la fin du nom du fichier avant l'extension.
 
 # TODO someday (ne pas commencer)
 
