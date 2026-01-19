@@ -56,11 +56,9 @@ velo-grimpe/
 ## Development
 
 ```bash
-# Docker (from parent directory)
-docker run --platform linux/x86_64 --name myXampp -p 4001:22 -p 4000:80 -d \
-  -v $PWD/velo-grimpe/public_html:/opt/lampp/htdocs \
-  --mount type=bind,source=$PWD/velo-grimpe/config.php,target=/opt/lampp/config.php,readonly \
-  tomsik68/xampp:8
+# Docker container: velogrimpe-2, port 4002
+# Start: docker start velogrimpe-2
+# Access: http://localhost:4002
 
 # Frontend
 cd frontend
@@ -117,13 +115,22 @@ git config core.hooksPath .githooks
 
 **NOTE** : Tâches à réaliser, une par une, avec confirmation utilisateur avant commit :
 
-- [ ] dans ajout_falaise.php les champs teaxtarea ne sont pas en full width
+(liste vide)
 
 # TODO someday (ne pas commencer)
 
 - [ ] Amélioration SEO (meta tags dynamiques)
-- [ ] Tests automatisés (PHPUnit, Vitest)
 - [ ] Optimisation bundle map.js (actuellement 479KB)
+
+## Tests E2E
+
+Tests Playwright configurés dans `tests/e2e/`. Serveur requis sur `localhost:4002`.
+
+```bash
+bun run test          # Lancer tous les tests
+bun run test:ui       # Interface visuelle
+bun run test:headed   # Voir le navigateur
+```
 
 ## Additional Documentation
 
