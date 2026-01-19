@@ -169,11 +169,12 @@ test.describe('Autocomplete - Ajout Vélo', () => {
   })
 
   test('autocomplete gare affiche des suggestions', async ({ page }) => {
-    // Le premier input est la gare
-    const gareInput = page.locator('#vue-ajout-velo input[type="text"]').first()
+    // Le premier container est la gare
+    const gareContainer = page.locator('#vue-ajout-velo > div > div').first()
+    const gareInput = gareContainer.locator('input[type="text"]')
     await gareInput.fill('Lyon')
 
-    const dropdown = page.locator('.autocomplete-list')
+    const dropdown = gareContainer.locator('.autocomplete-list')
     await expect(dropdown).toBeVisible()
 
     const options = dropdown.locator('li')
@@ -182,10 +183,11 @@ test.describe('Autocomplete - Ajout Vélo', () => {
   })
 
   test('autocomplete gare sélectionne une option et remplit le champ caché', async ({ page }) => {
-    const gareInput = page.locator('#vue-ajout-velo input[type="text"]').first()
+    const gareContainer = page.locator('#vue-ajout-velo > div > div').first()
+    const gareInput = gareContainer.locator('input[type="text"]')
     await gareInput.fill('Lyon')
 
-    const dropdown = page.locator('.autocomplete-list')
+    const dropdown = gareContainer.locator('.autocomplete-list')
     await expect(dropdown).toBeVisible()
 
     // Cliquer sur la première option Lyon
@@ -199,11 +201,12 @@ test.describe('Autocomplete - Ajout Vélo', () => {
   })
 
   test('autocomplete falaise affiche des suggestions', async ({ page }) => {
-    // Le deuxième input est la falaise
-    const falaiseInput = page.locator('#vue-ajout-velo input[type="text"]').nth(1)
+    // Le deuxième container est la falaise
+    const falaiseContainer = page.locator('#vue-ajout-velo > div > div').nth(1)
+    const falaiseInput = falaiseContainer.locator('input[type="text"]')
     await falaiseInput.fill('Pont')
 
-    const dropdown = page.locator('.autocomplete-list')
+    const dropdown = falaiseContainer.locator('.autocomplete-list')
     await expect(dropdown).toBeVisible()
 
     const options = dropdown.locator('li')
@@ -212,10 +215,11 @@ test.describe('Autocomplete - Ajout Vélo', () => {
   })
 
   test('autocomplete falaise sélectionne une option et remplit le champ caché', async ({ page }) => {
-    const falaiseInput = page.locator('#vue-ajout-velo input[type="text"]').nth(1)
+    const falaiseContainer = page.locator('#vue-ajout-velo > div > div').nth(1)
+    const falaiseInput = falaiseContainer.locator('input[type="text"]')
     await falaiseInput.fill('Pont')
 
-    const dropdown = page.locator('.autocomplete-list')
+    const dropdown = falaiseContainer.locator('.autocomplete-list')
     await expect(dropdown).toBeVisible()
 
     const option = dropdown.locator('li').filter({ hasText: /Pont/ }).first()
@@ -228,15 +232,18 @@ test.describe('Autocomplete - Ajout Vélo', () => {
   })
 
   test('sélectionner gare ET falaise remplit les deux champs cachés', async ({ page }) => {
+    const gareContainer = page.locator('#vue-ajout-velo > div > div').first()
+    const falaiseContainer = page.locator('#vue-ajout-velo > div > div').nth(1)
+
     // Sélectionner une gare
-    const gareInput = page.locator('#vue-ajout-velo input[type="text"]').first()
+    const gareInput = gareContainer.locator('input[type="text"]')
     await gareInput.fill('Lyon')
-    await page.locator('.autocomplete-list li').filter({ hasText: /Lyon/ }).first().click()
+    await gareContainer.locator('.autocomplete-list li').filter({ hasText: /Lyon/ }).first().click()
 
     // Sélectionner une falaise
-    const falaiseInput = page.locator('#vue-ajout-velo input[type="text"]').nth(1)
+    const falaiseInput = falaiseContainer.locator('input[type="text"]')
     await falaiseInput.fill('Pont')
-    await page.locator('.autocomplete-list li').filter({ hasText: /Pont/ }).first().click()
+    await falaiseContainer.locator('.autocomplete-list li').filter({ hasText: /Pont/ }).first().click()
 
     // Vérifier les deux champs cachés
     const gareId = await page.locator('#gare_id').inputValue()
@@ -247,8 +254,26 @@ test.describe('Autocomplete - Ajout Vélo', () => {
   })
 
   test('navigation clavier sur autocomplete gare', async ({ page }) => {
-    const gareInput = page.locator('#vue-ajout-velo input[type="text"]').first()
-    await testAutocompleteKeyboard(page, '#vue-ajout-velo input[type="text"]', 'Lyon')
+    const gareContainer = page.locator('#vue-ajout-velo > div > div').first()
+    const gareInput = gareContainer.locator('input[type="text"]')
+
+    await gareInput.fill('Lyon')
+
+    const dropdown = gareContainer.locator('.autocomplete-list')
+    await expect(dropdown).toBeVisible()
+
+    // Navigation avec flèches
+    await gareInput.press('ArrowDown')
+    const firstOption = dropdown.locator('li').first()
+    await expect(firstOption).toHaveClass(/bg-primary/)
+
+    // Sélectionner avec Enter
+    await gareInput.press('Enter')
+    await expect(dropdown).not.toBeVisible()
+
+    // L'input devrait avoir une valeur
+    const value = await gareInput.inputValue()
+    expect(value.length).toBeGreaterThan(0)
   })
 })
 
