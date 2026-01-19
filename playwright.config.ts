@@ -28,7 +28,7 @@ export default defineConfig({
   // Shared settings for all projects
   use: {
     // Base URL for the local PHP server
-    baseURL: 'http://localhost:4000',
+    baseURL: 'http://localhost:4002',
 
     // Collect trace when retrying the failed test
     trace: 'on-first-retry',
@@ -65,8 +65,8 @@ export default defineConfig({
 
   // Local dev server (optional - use if you want Playwright to start the server)
   // webServer: {
-  //   command: 'docker start myXampp',
-  //   url: 'http://localhost:4000',
+  //   command: 'docker start velogrimpe-2',
+  //   url: 'http://localhost:4002',
   //   reuseExistingServer: !process.env.CI,
   // },
 })

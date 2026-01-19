@@ -4,8 +4,8 @@ Tests end-to-end avec Playwright.
 
 ## Prérequis
 
-- Le serveur PHP doit tourner sur `http://localhost:4000`
-- Docker XAMPP ou autre serveur local
+- Le serveur PHP doit tourner sur `http://localhost:4002`
+- Docker container `velogrimpe-2` démarré
 
 ## Commandes
 
