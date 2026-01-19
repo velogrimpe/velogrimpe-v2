@@ -1,26 +1,6 @@
 # Database Schema
 
-## Overview
-
-The main database (`velogrimpe`) contains tables for climbing crags, bike routes, train stations, and user contributions.
-
-## Entity Relationship
-
-```
-villes (cities)
-    │
-    ├──< train >── gares (stations)
-    │                   │
-    │                   └──< velo >── falaises (crags)
-    │                                     │
-    └── exclusions_villes_falaises ───────┘
-```
-
-## Tables
-
-### falaises (Climbing Crags)
-
-Main table for climbing sites.
+## Main tables
 
 ```sql
 CREATE TABLE falaises (
@@ -46,11 +26,7 @@ CREATE TABLE falaises (
   date_creation timestamp DEFAULT CURRENT_TIMESTAMP,
   date_modification timestamp
 );
-```
 
-### gares (Train Stations)
-
-```sql
 CREATE TABLE gares (
   gare_id smallint(6) PRIMARY KEY AUTO_INCREMENT,
   gare_nom text NOT NULL,
@@ -63,25 +39,13 @@ CREATE TABLE gares (
   gare_tgv tinyint(4) NOT NULL,               -- 1 if TGV station
   deleted tinyint(4) DEFAULT 0
 );
-```
 
-### villes (Cities)
-
-Departure cities for train searches.
-
-```sql
 CREATE TABLE villes (
   ville_id smallint(6) PRIMARY KEY AUTO_INCREMENT,
   ville_nom text NOT NULL UNIQUE,
   ville_tableau int(11) DEFAULT 0             -- 1 if shown in main table
 );
-```
 
-### train (Train Connections)
-
-Links cities to stations with travel info.
-
-```sql
 CREATE TABLE train (
   train_id smallint(6) PRIMARY KEY AUTO_INCREMENT,
   ville_id smallint(6) NOT NULL,              -- FK to villes
@@ -100,13 +64,7 @@ CREATE TABLE train (
   date_creation timestamp DEFAULT CURRENT_TIMESTAMP,
   date_modification timestamp
 );
-```
 
-### velo (Bike Routes)
-
-Links stations to crags with route info.
-
-```sql
 CREATE TABLE velo (
   velo_id smallint(6) PRIMARY KEY AUTO_INCREMENT,
   gare_id smallint(6) NOT NULL,               -- FK to gares
@@ -154,32 +112,28 @@ CREATE TABLE commentaires_falaises (
 Used to hide certain combinations from search results.
 
 ```sql
--- Hide crags from specific cities
+-- Hide crags from specific cities (and do not require train itinerary to the crag linked gares)
 CREATE TABLE exclusions_villes_falaises (
   id smallint(6) PRIMARY KEY AUTO_INCREMENT,
   ville_id smallint(6) NOT NULL,
   falaise_id smallint(6) NOT NULL
 );
 
--- Hide stations from specific cities
+-- Hide stations from specific cities (and do not require train itinerary to the gare)
 CREATE TABLE exclusions_villes_gares (
   id smallint(6) PRIMARY KEY AUTO_INCREMENT,
   ville_id smallint(6) NOT NULL,
   gare_id smallint(6) NOT NULL
 );
 
--- Hide specific station-crag combos from cities
+-- Hide specific station-crag combos from cities (and do not require train itinerary to this gare for this crag)
 CREATE TABLE exclusions_villes_gares_falaises (
   id smallint(6) PRIMARY KEY AUTO_INCREMENT,
   ville_id smallint(6) NOT NULL,
   gare_id smallint(6) NOT NULL,
   falaise_id smallint(6) NOT NULL
 );
-```
 
-### Supporting Tables
-
-```sql
 -- Geographic zones
 CREATE TABLE zones (
   zone_id smallint(6) PRIMARY KEY AUTO_INCREMENT,
@@ -227,33 +181,4 @@ CREATE TABLE mailing_list (
   date_inscription timestamp DEFAULT CURRENT_TIMESTAMP,
   date_desinscription timestamp
 );
-```
-
-## Common Queries
-
-### Get all crags accessible from a city
-
-```sql
-SELECT DISTINCT f.*, v.velo_km, v.velo_dplus, t.train_temps
-FROM falaises f
-JOIN velo v ON f.falaise_id = v.falaise_id
-JOIN gares g ON v.gare_id = g.gare_id
-JOIN train t ON g.gare_id = t.gare_id
-WHERE t.ville_id = :ville_id
-  AND f.falaise_public = 1
-  AND v.velo_public = 1
-  AND t.train_public = 1
-ORDER BY (t.train_temps + v.velo_km * 3) ASC;
-```
-
-### Get routes to a specific crag
-
-```sql
-SELECT t.*, g.*, v.*
-FROM train t
-JOIN gares g ON t.gare_id = g.gare_id
-JOIN velo v ON g.gare_id = v.gare_id
-WHERE v.falaise_id = :falaise_id
-  AND t.ville_id = :ville_id
-ORDER BY t.train_temps ASC;
 ```

@@ -2,7 +2,7 @@
 // Check that Authorization header is and equal to config["admin_token"]
 
 // Allow CORS from all origins
-header('Access-Control-Allow-Origin: localhost:4000, https://velogrimpe.fr, https://www.velogrimpe.fr');
+header('Access-Control-Allow-Origin: localhost:4002, https://velogrimpe.fr, https://www.velogrimpe.fr');
 header('Access-Control-Allow-Methods: GET, OPTIONS');
 
 // Handle preflight requests

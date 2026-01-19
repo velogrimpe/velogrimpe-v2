@@ -1,4 +1,4 @@
 
-GET http://localhost:4000/api/private/crons/export_open_data.php
+GET http://localhost:4002/api/private/crons/export_open_data.php
 Authorization: Bearer FyiloYmSAGkdaleukfEDrivTesxviYyc
 

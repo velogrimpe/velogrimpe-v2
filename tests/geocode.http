@@ -1,8 +1,8 @@
 
-GET http://localhost:4000/api/geocode.php?lat=46.8566&lng=6.3522
+GET http://localhost:4002/api/geocode.php?lat=46.8566&lng=6.3522
 
 ###
-GET http://localhost:4000/api/private/batch-geocode.php?admin=EZkabdP1caAlCbQbdaSE8patAArbbKCakarn5lH4gB2bSublY
+GET http://localhost:4002/api/private/batch-geocode.php?admin=EZkabdP1caAlCbQbdaSE8patAArbbKCakarn5lH4gB2bSublY
 
 ###
 GET https://velogrimpe.fr/api/private/batch-geocode.php?admin=EZkabdP1caAlCbQbdaSE8patAArbbKCakarn5lH4gB2bSublY
