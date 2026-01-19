@@ -35,3 +35,8 @@ npm-debug.log*
 
 db_backup.sql
 db_init.sql
+
+# Playwright
+playwright-report/
+test-results/
+playwright/.cache/
