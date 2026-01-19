@@ -28,16 +28,17 @@ test.describe('Navigation', () => {
   })
 
   test('can navigate to tableau page', async ({ page }) => {
-    await page.goto('/tableau.php')
+    // tableau.php requires a ville_id parameter
+    await page.goto('/tableau.php?ville_id=6')
 
-    // Page should load
-    await expect(page).toHaveTitle(/Tableau|Falaises/)
+    // Page should load - title is "Escalade au départ de [ville] - Vélogrimpe.fr"
+    await expect(page).toHaveTitle(/Escalade|Vélogrimpe/i)
   })
 
   test('can navigate to contribuer page', async ({ page }) => {
     await page.goto('/contribuer.php')
 
-    // Page should have contribution content
-    await expect(page.locator('main')).toContainText(/contribuer|ajouter/i)
+    // Page should have contribution content (no <main> tag, use body)
+    await expect(page.locator('body')).toContainText(/contribuer|ajouter/i)
   })
 })

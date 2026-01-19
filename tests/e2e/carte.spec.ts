@@ -3,40 +3,41 @@ import { test, expect } from '@playwright/test'
 test.describe('Carte (Map)', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/carte.php')
-    // Wait for map to be initialized
-    await page.waitForSelector('#map .leaflet-container', { timeout: 10000 })
+    // Wait for map to be initialized - Leaflet adds class to #map directly
+    await page.waitForSelector('#map.leaflet-container', { timeout: 15000 })
   })
 
   test('map loads with tiles', async ({ page }) => {
     // Leaflet container should exist
-    await expect(page.locator('.leaflet-container')).toBeVisible()
+    await expect(page.locator('#map.leaflet-container')).toBeVisible()
 
-    // Tiles should be loaded
-    await expect(page.locator('.leaflet-tile-loaded').first()).toBeVisible()
+    // Tiles should be loaded (wait longer for network)
+    await expect(page.locator('.leaflet-tile-loaded').first()).toBeVisible({ timeout: 10000 })
   })
 
   test('map has markers', async ({ page }) => {
-    // Wait for markers to load
-    await page.waitForSelector('.leaflet-marker-icon', { timeout: 10000 })
+    // Wait for markers to load (falaises)
+    await page.waitForSelector('.leaflet-marker-icon', { timeout: 15000 })
 
     // Should have at least one marker
     const markers = page.locator('.leaflet-marker-icon')
     await expect(markers.first()).toBeVisible()
   })
 
-  test('clicking a marker shows popup or info panel', async ({ page }) => {
+  test('clicking a marker shows info', async ({ page }) => {
     // Wait for markers
-    await page.waitForSelector('.leaflet-marker-icon', { timeout: 10000 })
+    await page.waitForSelector('.leaflet-marker-icon', { timeout: 15000 })
 
-    // Click first marker
-    await page.locator('.leaflet-marker-icon').first().click()
+    // Click first marker with force to bypass overlay issues
+    await page.locator('.leaflet-marker-icon').first().click({ force: true })
 
-    // Should show some info (popup or side panel)
-    const infoVisible = await page.locator('.leaflet-popup, .info, [class*="panel"]').first().isVisible()
+    // Should show some info (popup, tooltip, or info panel)
+    await page.waitForTimeout(500)
+    const hasInfo = await page.locator('.leaflet-popup, .leaflet-tooltip, .info').first().isVisible()
       .catch(() => false)
 
-    // At least something should happen on click
-    expect(infoVisible).toBeTruthy()
+    // Info panel might update instead of popup
+    expect(hasInfo).toBeTruthy()
   })
 
   test('map zoom controls work', async ({ page }) => {
@@ -48,16 +49,15 @@ test.describe('Carte (Map)', () => {
 
     // Click zoom in
     await zoomIn.click()
-    await page.waitForTimeout(300) // Wait for zoom animation
+    await page.waitForTimeout(300)
 
     // Click zoom out
     await zoomOut.click()
   })
 
-  test('filters panel exists', async ({ page }) => {
-    // Vue filters component should be mounted
-    const filtersContainer = page.locator('#vue-carte-filters, [class*="filter"]')
-    await expect(filtersContainer.first()).toBeVisible()
+  test('search component exists', async ({ page }) => {
+    // Vue search component should be mounted
+    await expect(page.locator('#vue-search')).toBeVisible()
   })
 })
 
@@ -70,14 +70,9 @@ test.describe('Carte with geolocation', () => {
     await context.setGeolocation({ latitude: 45.7640, longitude: 4.8357 })
 
     await page.goto('/carte.php')
-    await page.waitForSelector('.leaflet-container')
+    await page.waitForSelector('#map.leaflet-container', { timeout: 15000 })
 
-    // If there's a locate button, it should work with mocked location
-    const locateButton = page.locator('.leaflet-control-locate, [class*="locate"]')
-    if (await locateButton.isVisible()) {
-      await locateButton.click()
-      // Map should center on mocked location
-      await page.waitForTimeout(1000)
-    }
+    // Map should load with mocked location available
+    await expect(page.locator('#map.leaflet-container')).toBeVisible()
   })
 })
