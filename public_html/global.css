@@ -19,12 +19,16 @@ body {
 }
 
 /* Links styling - exclude navbar, menu, card links */
-a:not(.navbar a):not(.menu a):not(.btn):not(#map a):not(.editor-map a):not(.card-link) {
+a:not(.navbar a):not(.menu a):not(.btn):not(#map a):not(.editor-map a):not(
+    .card-link
+  ):not(.link) {
   color: #2e8b57;
   text-decoration: none;
   font-weight: bold;
 }
-a:not(.navbar a):not(.menu a):not(.btn):not(#map a):not(.editor-map a):not(.card-link):hover {
+a:not(.navbar a):not(.menu a):not(.btn):not(#map a):not(.editor-map a):not(
+    .card-link
+  ):hover:not(.link) {
   /* color: #1e5d3e; */
   text-decoration: underline;
 }
@@ -158,18 +162,42 @@ a:not(.navbar a):not(.menu a):not(.btn):not(#map a):not(.editor-map a):not(.card
 }
 
 /* Map color palette - defines --vg-color variable */
-.vg-color-indianRed { --vg-color: indianRed; }
-.vg-color-tomato { --vg-color: tomato; }
-.vg-color-teal { --vg-color: teal; }
-.vg-color-paleVioletRed { --vg-color: paleVioletRed; }
-.vg-color-mediumSlateBlue { --vg-color: mediumSlateBlue; }
-.vg-color-lightSalmon { --vg-color: lightSalmon; }
-.vg-color-fireBrick { --vg-color: fireBrick; }
-.vg-color-crimson { --vg-color: crimson; }
-.vg-color-purple { --vg-color: purple; }
-.vg-color-hotPink { --vg-color: hotPink; }
-.vg-color-mediumOrchid { --vg-color: mediumOrchid; }
-.vg-color-black { --vg-color: black; }
+.vg-color-indianRed {
+  --vg-color: indianRed;
+}
+.vg-color-tomato {
+  --vg-color: tomato;
+}
+.vg-color-teal {
+  --vg-color: teal;
+}
+.vg-color-paleVioletRed {
+  --vg-color: paleVioletRed;
+}
+.vg-color-mediumSlateBlue {
+  --vg-color: mediumSlateBlue;
+}
+.vg-color-lightSalmon {
+  --vg-color: lightSalmon;
+}
+.vg-color-fireBrick {
+  --vg-color: fireBrick;
+}
+.vg-color-crimson {
+  --vg-color: crimson;
+}
+.vg-color-purple {
+  --vg-color: purple;
+}
+.vg-color-hotPink {
+  --vg-color: hotPink;
+}
+.vg-color-mediumOrchid {
+  --vg-color: mediumOrchid;
+}
+.vg-color-black {
+  --vg-color: black;
+}
 
 /* Velo tooltip - uses --vg-color */
 .vg-velo-tooltip {
