@@ -62,7 +62,7 @@ $falaisesVG = $mysqli->query("SELECT * FROM falaises WHERE falaise_public >= 1")
 <body>
   <?php include $_SERVER['DOCUMENT_ROOT'] . "/components/header.html"; ?>
   <main class="">
-    <div class="hero min-h-[100px] bg-bottom"
+    <div class="hero min-h-25 bg-bottom"
       style="background-image: url(/images/mw/078-groupe-5.webp); background-position-y: 200px;">
       <div class="hero-overlay bg-slate-600/70"></div>
       <div class="hero-content text-center text-base-100">
