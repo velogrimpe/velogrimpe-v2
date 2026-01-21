@@ -12,12 +12,12 @@
 
 defineProps<{
   /** Icon name (e.g., 'search', 'filter', 'close') */
-  name: string
-}>()
+  name: string;
+}>();
 </script>
 
 <template>
-  <svg class="w-4 h-4 fill-current" aria-hidden="true">
+  <svg class="w-4 h-4 fill-none stroke-current" aria-hidden="true">
     <use :xlink:href="`/symbols/icons.svg#${name}`"></use>
   </svg>
 </template>

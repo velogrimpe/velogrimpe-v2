@@ -1,49 +1,54 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useCarteStore, type CarteFalaise, type CarteGare } from '../../stores/carte'
-import { formatTime, calculateVeloTime } from '../../utils'
+import { computed } from "vue";
+import {
+  useCarteStore,
+  type CarteFalaise,
+  type CarteGare,
+} from "../../stores/carte";
+import { formatTime, calculateVeloTime } from "../../utils";
 
-const store = useCarteStore()
+const store = useCarteStore();
 
-const selected = computed(() => store.selected)
-const isFalaise = computed(() => store.isFalaiseSelected)
-const isGare = computed(() => store.isGareSelected)
-const hasFilters = computed(() => store.hasFiltersApplied)
+const selected = computed(() => store.selected);
+const isFalaise = computed(() => store.isFalaiseSelected);
+const isGare = computed(() => store.isGareSelected);
+const hasFilters = computed(() => store.hasFiltersApplied);
 
 const selectedFalaise = computed(() =>
-  isFalaise.value ? (selected.value as CarteFalaise) : null
-)
+  isFalaise.value ? (selected.value as CarteFalaise) : null,
+);
 
 const selectedGare = computed(() =>
-  isGare.value ? (selected.value as CarteGare) : null
-)
+  isGare.value ? (selected.value as CarteGare) : null,
+);
 
 function getColorClass(index: number): string {
-  return store.getColorForIndex(index)
+  return store.getColorForIndex(index);
 }
 
 function formatDescription(text: string | null): string {
-  if (!text) return ''
-  return text.replace(/\n/g, '<br>')
+  if (!text) return "";
+  return text.replace(/\n/g, "<br>");
 }
 
-// Use runtime variable to prevent Vite from importing the SVG as a module
-const filterIconHref = '/symbols/icons.svg#ri-filter-line'
+// Using inline reference since SVG sprite is inlined in footer
+const filterIconHref = "#filter";
 </script>
 
 <template>
   <div>
     <!-- Header: Filter stats (when nothing selected) -->
-    <div v-if="!selected" class="flex gap-1 items-center justify-center font-bold text-primary border-b border-base-300 pb-1 mb-1">
-      <svg class="w-4 h-4 fill-current">
+    <div
+      v-if="!selected"
+      class="flex gap-1 items-center justify-center font-bold text-primary border-b border-base-300 pb-1 mb-1"
+    >
+      <svg class="w-4 h-4 fill-none stroke-current">
         <use :href="filterIconHref"></use>
       </svg>
       <span v-if="hasFilters">
         {{ store.filteredFalaises }} falaises correspondent aux filtres
       </span>
-      <span v-else>
-        {{ store.totalFalaises }} falaises
-      </span>
+      <span v-else> {{ store.totalFalaises }} falaises </span>
     </div>
 
     <!-- No selection content -->
@@ -91,8 +96,12 @@ const filterIconHref = '/symbols/icons.svg#ri-filter-line'
               :class="getColorClass(i)"
             />
             <div>
-              <b>{{ it.gare?.gare_nom }} ({{ formatTime(calculateVeloTime(it)) }})</b> :
-              {{ it.velo_km }} km, {{ it.velo_dplus }} D+
+              <b
+                >{{ it.gare?.gare_nom }} ({{
+                  formatTime(calculateVeloTime(it))
+                }})</b
+              >
+              : {{ it.velo_km }} km, {{ it.velo_dplus }} D+
               <span v-if="it.velo_apieduniquement === '1'"> (à pied)</span>
             </div>
           </li>
@@ -117,11 +126,15 @@ const filterIconHref = '/symbols/icons.svg#ri-filter-line'
               :class="getColorClass(i)"
             />
             <div>
-              <a class="link" :href="`/falaise.php?falaise_id=${it.falaise?.falaise_id}`">
+              <a
+                class="link"
+                :href="`/falaise.php?falaise_id=${it.falaise?.falaise_id}`"
+              >
                 {{ it.falaise?.falaise_nom }}
-              </a> :
+              </a>
+              :
               <b>{{ formatTime(calculateVeloTime(it)) }}</b>
-              {{ it.velo_apieduniquement === '1' ? 'à pied' : 'à vélo' }}
+              {{ it.velo_apieduniquement === "1" ? "à pied" : "à vélo" }}
               ({{ it.velo_km }} km, {{ it.velo_dplus }} D+).
             </div>
           </li>
@@ -133,17 +146,39 @@ const filterIconHref = '/symbols/icons.svg#ri-filter-line'
 
 <style scoped>
 /* Color classes for itineraire markers - must match store colors */
-.indianRed { background-color: indianred; }
-.tomato { background-color: tomato; }
-.teal { background-color: teal; }
-.paleVioletRed { background-color: palevioletred; }
-.mediumSlateBlue { background-color: mediumslateblue; }
-.lightSalmon { background-color: lightsalmon; }
-.fireBrick { background-color: firebrick; }
-.crimson { background-color: crimson; }
-.purple { background-color: purple; }
-.hotPink { background-color: hotpink; }
-.mediumOrchid { background-color: mediumorchid; }
+.indianRed {
+  background-color: indianred;
+}
+.tomato {
+  background-color: tomato;
+}
+.teal {
+  background-color: teal;
+}
+.paleVioletRed {
+  background-color: palevioletred;
+}
+.mediumSlateBlue {
+  background-color: mediumslateblue;
+}
+.lightSalmon {
+  background-color: lightsalmon;
+}
+.fireBrick {
+  background-color: firebrick;
+}
+.crimson {
+  background-color: crimson;
+}
+.purple {
+  background-color: purple;
+}
+.hotPink {
+  background-color: hotpink;
+}
+.mediumOrchid {
+  background-color: mediumorchid;
+}
 
 details[open] summary {
   margin-bottom: 0.5rem;

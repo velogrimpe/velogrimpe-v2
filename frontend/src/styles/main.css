@@ -50,7 +50,7 @@
   btn btn-sm btn-primary
   flex flex-row items-center gap-1
   inline inline-block
-  w-2 w-3 w-4 h-2 h-3 h-4 fill-current
+  w-2 w-3 w-4 h-2 h-3 h-4 fill-none stroke-current
   max-w-[260px] font-bold text-sm text-xs
   pointer-events-none absolute
   z-10 top-0 left-1/2

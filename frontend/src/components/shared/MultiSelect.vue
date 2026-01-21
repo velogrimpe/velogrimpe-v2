@@ -19,7 +19,7 @@ const props = withDefaults(
     placeholder: "",
     disabled: false,
     required: false,
-  }
+  },
 );
 
 const emit = defineEmits<{
@@ -35,12 +35,12 @@ const searchInputRef = ref<HTMLInputElement | null>(null);
 const selectedValues = computed(() => new Set(props.modelValue));
 
 const selectedOptions = computed(() =>
-  props.options.filter((opt) => selectedValues.value.has(opt.value))
+  props.options.filter((opt) => selectedValues.value.has(opt.value)),
 );
 
 const availableOptions = computed(() => {
   const unselected = props.options.filter(
-    (opt) => !selectedValues.value.has(opt.value)
+    (opt) => !selectedValues.value.has(opt.value),
   );
   if (!searchQuery.value) return unselected;
   const query = searchQuery.value.toUpperCase();
@@ -157,8 +157,8 @@ onUnmounted(() => {
         :disabled="disabled"
         @click="clearAll"
       >
-        <svg class="w-4 h-4 fill-current">
-          <use :href="'/symbols/icons.svg#ri-close-line'"></use>
+        <svg class="w-4 h-4 fill-none stroke-current">
+          <use href="#close"></use>
         </svg>
       </button>
     </div>

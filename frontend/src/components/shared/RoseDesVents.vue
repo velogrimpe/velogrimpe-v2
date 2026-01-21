@@ -10,13 +10,27 @@ const props = withDefaults(
   {
     expo2: "",
     size: 60,
-  }
+  },
 );
 
 // Direction order matching the SVG sectors (starting from East, going clockwise)
 const directions = [
-  "E", "ESE", "SE", "SSE", "S", "SSO", "SO", "OSO",
-  "O", "ONO", "NO", "NNO", "N", "NNE", "NE", "ENE",
+  "E",
+  "ESE",
+  "SE",
+  "SSE",
+  "S",
+  "SSO",
+  "SO",
+  "OSO",
+  "O",
+  "ONO",
+  "NO",
+  "NNO",
+  "N",
+  "NNE",
+  "NE",
+  "ENE",
 ];
 
 // Parse exposition string to array of directions
@@ -86,7 +100,12 @@ const sectors = computed<SectorPath[]>(() => {
 
     // Radius varies based on cardinal/intercardinal direction
     const r = i % 4 === 0 ? radius : i % 2 === 0 ? radius * 0.9 : radius * 0.75;
-    const rNext = (i + 1) % 4 === 0 ? radius : (i + 1) % 2 === 0 ? radius * 0.9 : radius * 0.75;
+    const rNext =
+      (i + 1) % 4 === 0
+        ? radius
+        : (i + 1) % 2 === 0
+          ? radius * 0.9
+          : radius * 0.75;
 
     const x1 = Math.cos(angle) * r;
     const y1 = Math.sin(angle) * r;
