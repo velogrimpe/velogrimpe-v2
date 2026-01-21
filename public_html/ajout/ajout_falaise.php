@@ -310,16 +310,15 @@ if ($falaise_id) {
             fetch(`/api/geocode.php?lat=${lat}&lng=${lng}`)
               .then(r => r.ok ? r.json() : Promise.reject(new Error('geocode failed')))
               .then(data => {
-                if (!data) return;
-                const z = (data.zone || '').trim();
-                const dn = (data.dept_name || '').trim();
-                const dc = (data.dept_code || '').trim();
+                const z = (data?.zone || '').trim();
+                const dn = (data?.dept_name || '').trim();
+                const dc = (data?.dept_code || '').trim();
                 const zHidden = document.getElementById('falaise_zonename');
-                if (z && zHidden) zHidden.value = z;
+                if (zHidden) zHidden.value = z;
                 const dnHidden = document.getElementById('falaise_deptname');
-                if (dn && dnHidden) dnHidden.value = dn;
+                if (dnHidden) dnHidden.value = dn;
                 const dcHidden = document.getElementById('falaise_deptcode');
-                if (dc && dcHidden) dcHidden.value = dc;
+                if (dcHidden) dcHidden.value = dc;
               })
               .catch(() => { /* silent */ });
           }
