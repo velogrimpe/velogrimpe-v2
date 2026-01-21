@@ -126,6 +126,10 @@ const sectors = computed<SectorPath[]>(() => {
 
 // Colors matching the original D3 implementation
 const colors = {
+  // primary: "#fcb700",
+  // primaryStroke: "#963b00",
+  // secondary: "#fef2c6",
+  // secondaryStroke: "#fdcf2b",
   primary: "#1e5d3e",
   primaryStroke: "#2e8b57",
   secondary: "rgba(30, 93, 62, 0.5)",
