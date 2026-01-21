@@ -23,6 +23,7 @@ $table_html = preg_replace_callback(
 
 $description = "Tableau récapitulatif des conditions d'emport de vélos dans les trains en France : TGV, TER, Intercités, Ouigo et compagnies étrangères. - CARTOTRAIN x Velogrimpe";
 $title = "Vélo + Train : Conditions d'emport en France - CARTOTRAIN x Vélogrimpe";
+$image = "https://velogrimpe.fr/images/articles/2026-01-20-velo-train-conditions-emport/logo-cartotrain.png";
 ?>
 <!DOCTYPE html>
 <html lang="fr" data-theme="velogrimpe">
@@ -40,6 +41,8 @@ $title = "Vélo + Train : Conditions d'emport en France - CARTOTRAIN x Vélogrim
   <meta property="og:site_name" content="Velogrimpe.fr">
   <meta property="og:url" content="https://velogrimpe.fr/articles/2026-01-20-velo-train-conditions-emport.php">
   <meta property="og:description" content="<?= htmlspecialchars($description) ?>">
+  <meta property="og:image" content="<?= htmlspecialchars($image) ?>">
+  <meta name="twitter:image" content="<?= htmlspecialchars($image) ?>">
   <meta name="twitter:title" content="<?= htmlspecialchars($title) ?>">
   <meta name="twitter:description" content="<?= htmlspecialchars($description) ?>">
   <?php vite_css('main'); ?>
