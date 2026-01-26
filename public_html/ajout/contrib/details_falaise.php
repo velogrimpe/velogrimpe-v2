@@ -21,7 +21,7 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/components/falaise-details-editor.php
 // Liste des falaises pour le sélecteur
 $falaises = $mysqli->query("SELECT falaise_id, falaise_nom
                             FROM falaises
-                            ORDER BY falaise_id DESC")->fetch_all(MYSQLI_ASSOC);
+                            ORDER BY falaise_nom ASC")->fetch_all(MYSQLI_ASSOC);
 
 // Données de la falaise courante
 $stmtF = $mysqli->prepare("SELECT
@@ -77,7 +77,6 @@ if (!$falaise) {
         <?php endforeach; ?>
       </select>
     </div>
-
     <?php
     render_falaise_details_editor($falaise, $token, [
       'height' => 'calc(100vh - 220px)',
