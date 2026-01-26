@@ -2,6 +2,11 @@ import { createApp, h, ref, onMounted } from 'vue'
 import FormAutocomplete from '@/components/shared/FormAutocomplete.vue'
 import type { FormAutocompleteItem } from '@/components/shared/FormAutocomplete.vue'
 
+// Helper to create search icon slot
+const searchIconSlot = () => ({
+  icon: () => h('svg', { class: 'w-4 h-4 fill-none stroke-current shrink-0' }, [h('use', { href: '#search' })]),
+})
+
 // Wait for DOM to be ready
 document.addEventListener('DOMContentLoaded', () => {
   const mountEl = document.getElementById('vue-falaise-comment')
@@ -45,14 +50,18 @@ document.addEventListener('DOMContentLoaded', () => {
               h('label', { class: 'label', for: 'ville_nom' }, [
                 h('span', { class: 'label-text' }, 'Ville de départ'),
               ]),
-              h(FormAutocomplete, {
-                modelValue: villeValue.value,
-                'onUpdate:modelValue': (v: string) => {
-                  villeValue.value = v
+              h(
+                FormAutocomplete,
+                {
+                  modelValue: villeValue.value,
+                  'onUpdate:modelValue': (v: string) => {
+                    villeValue.value = v
+                  },
+                  items: villes,
+                  acceptNewValue: true,
                 },
-                items: villes,
-                acceptNewValue: true,
-              }),
+                searchIconSlot()
+              ),
               // Hidden input for form submission
               h('input', {
                 type: 'hidden',
@@ -67,14 +76,18 @@ document.addEventListener('DOMContentLoaded', () => {
               h('label', { class: 'label', for: 'gare_depart' }, [
                 h('span', { class: 'label-text' }, 'Gare de départ'),
               ]),
-              h(FormAutocomplete, {
-                modelValue: gareDepartValue.value,
-                'onUpdate:modelValue': (v: string) => {
-                  gareDepartValue.value = v
+              h(
+                FormAutocomplete,
+                {
+                  modelValue: gareDepartValue.value,
+                  'onUpdate:modelValue': (v: string) => {
+                    gareDepartValue.value = v
+                  },
+                  items: gares,
+                  acceptNewValue: true,
                 },
-                items: gares,
-                acceptNewValue: true,
-              }),
+                searchIconSlot()
+              ),
               // Hidden input for form submission
               h('input', {
                 type: 'hidden',
@@ -89,14 +102,18 @@ document.addEventListener('DOMContentLoaded', () => {
               h('label', { class: 'label', for: 'gare_arrivee' }, [
                 h('span', { class: 'label-text' }, 'Gare d\'arrivée'),
               ]),
-              h(FormAutocomplete, {
-                modelValue: gareArriveeValue.value,
-                'onUpdate:modelValue': (v: string) => {
-                  gareArriveeValue.value = v
+              h(
+                FormAutocomplete,
+                {
+                  modelValue: gareArriveeValue.value,
+                  'onUpdate:modelValue': (v: string) => {
+                    gareArriveeValue.value = v
+                  },
+                  items: gares,
+                  acceptNewValue: true,
                 },
-                items: gares,
-                acceptNewValue: true,
-              }),
+                searchIconSlot()
+              ),
               // Hidden input for form submission
               h('input', {
                 type: 'hidden',

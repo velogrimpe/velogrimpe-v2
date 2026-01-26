@@ -1,6 +1,11 @@
 import { createApp, h, ref } from 'vue'
 import FormAutocomplete, { type FormAutocompleteItem } from '@/components/shared/FormAutocomplete.vue'
 
+// Helper to create search icon slot
+const searchIconSlot = () => ({
+  icon: () => h('svg', { class: 'w-4 h-4 fill-none stroke-current shrink-0' }, [h('use', { href: '#search' })]),
+})
+
 interface GareItem extends FormAutocompleteItem {
   nomformate: string
 }
@@ -136,15 +141,19 @@ document.addEventListener('DOMContentLoaded', () => {
             h('div', { class: 'relative not-prose' }, [
               h('label', { class: 'form-control', for: 'gare_nom' }, [
                 h('b', null, 'Gare de départ de l\'itinéraire vélo :'),
-                h(FormAutocomplete, {
-                  modelValue: gareValue.value,
-                  'onUpdate:modelValue': (v: string) => {
-                    gareValue.value = v
+                h(
+                  FormAutocomplete,
+                  {
+                    modelValue: gareValue.value,
+                    'onUpdate:modelValue': (v: string) => {
+                      gareValue.value = v
+                    },
+                    items: gares,
+                    disabled: gareDisabled.value,
+                    onSelect: onGareSelect,
                   },
-                  items: gares,
-                  disabled: gareDisabled.value,
-                  onSelect: onGareSelect,
-                }),
+                  searchIconSlot()
+                ),
               ]),
             ]),
           ]),
@@ -153,15 +162,19 @@ document.addEventListener('DOMContentLoaded', () => {
             h('div', { class: 'relative not-prose' }, [
               h('label', { class: 'form-control', for: 'falaise_nom' }, [
                 h('b', null, 'Falaise d\'arrivée de l\'itinéraire vélo :'),
-                h(FormAutocomplete, {
-                  modelValue: falaiseValue.value,
-                  'onUpdate:modelValue': (v: string) => {
-                    falaiseValue.value = v
+                h(
+                  FormAutocomplete,
+                  {
+                    modelValue: falaiseValue.value,
+                    'onUpdate:modelValue': (v: string) => {
+                      falaiseValue.value = v
+                    },
+                    items: falaises,
+                    disabled: falaiseDisabled.value,
+                    onSelect: onFalaiseSelect,
                   },
-                  items: falaises,
-                  disabled: falaiseDisabled.value,
-                  onSelect: onFalaiseSelect,
-                }),
+                  searchIconSlot()
+                ),
               ]),
             ]),
           ]),

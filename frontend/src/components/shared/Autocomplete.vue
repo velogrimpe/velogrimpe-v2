@@ -1,153 +1,165 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import type { AutocompleteOption } from '@/types/autocomplete'
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import type { AutocompleteOption } from "@/types/autocomplete";
 
 const props = withDefaults(
   defineProps<{
-    modelValue: string
-    options: AutocompleteOption[]
-    placeholder?: string
-    acceptNewValue?: boolean
-    disabled?: boolean
-    name?: string
-    required?: boolean
+    modelValue: string;
+    options: AutocompleteOption[];
+    placeholder?: string;
+    acceptNewValue?: boolean;
+    disabled?: boolean;
+    name?: string;
+    required?: boolean;
   }>(),
   {
-    placeholder: '',
+    placeholder: "",
     acceptNewValue: false,
     disabled: false,
     name: undefined,
     required: false,
-  }
-)
+  },
+);
 
 const emit = defineEmits<{
-  'update:modelValue': [value: string]
-  select: [option: AutocompleteOption]
-}>()
+  "update:modelValue": [value: string];
+  select: [option: AutocompleteOption];
+}>();
 
-const inputRef = ref<HTMLInputElement | null>(null)
-const listRef = ref<HTMLUListElement | null>(null)
-const isOpen = ref(false)
-const currentFocus = ref(-1)
-const inputValue = ref(props.modelValue)
+const inputRef = ref<HTMLInputElement | null>(null);
+const listRef = ref<HTMLUListElement | null>(null);
+const isOpen = ref(false);
+const currentFocus = ref(-1);
+const inputValue = ref(props.modelValue);
 
 watch(
   () => props.modelValue,
   (newVal) => {
-    inputValue.value = newVal
-  }
-)
+    inputValue.value = newVal;
+  },
+);
 
 const filteredOptions = computed(() => {
-  if (!inputValue.value) return []
-  return props.options.filter((option) => matchOption(option.value, inputValue.value))
-})
+  if (!inputValue.value) return [];
+  return props.options.filter((option) =>
+    matchOption(option.value, inputValue.value),
+  );
+});
 
 const showList = computed(() => {
-  return isOpen.value && (filteredOptions.value.length > 0 || (props.acceptNewValue && inputValue.value))
-})
+  return (
+    isOpen.value &&
+    (filteredOptions.value.length > 0 ||
+      (props.acceptNewValue && inputValue.value))
+  );
+});
 
 function normalizeString(str: string): string {
   return str
     .toLowerCase()
-    .normalize('NFD')
-    .replace(/[-']/g, ' ')
-    .replace(/[\u0300-\u036f]/g, '')
+    .normalize("NFD")
+    .replace(/[-']/g, " ")
+    .replace(/[\u0300-\u036f]/g, "");
 }
 
 function matchOption(optionValue: string, searchValue: string): boolean {
-  const normalizedOption = normalizeString(optionValue)
-  const normalizedSearch = normalizeString(searchValue)
+  const normalizedOption = normalizeString(optionValue);
+  const normalizedSearch = normalizeString(searchValue);
 
   // Inclusion match
-  if (normalizedOption.includes(normalizedSearch)) return true
+  if (normalizedOption.includes(normalizedSearch)) return true;
 
   // Typo tolerance (1 error allowed for strings > 4 chars)
-  let errors = 0
-  const maxErrors = normalizedSearch.length > 4 ? 1 : 0
+  let errors = 0;
+  const maxErrors = normalizedSearch.length > 4 ? 1 : 0;
   for (let i = 0; i < normalizedSearch.length; i++) {
     if (normalizedOption[i] !== normalizedSearch[i]) {
-      errors++
-      if (errors > maxErrors) return false
+      errors++;
+      if (errors > maxErrors) return false;
     }
   }
 
-  return true
+  return true;
 }
 
 function onInput(event: Event) {
-  const target = event.target as HTMLInputElement
-  inputValue.value = target.value
-  emit('update:modelValue', target.value)
-  isOpen.value = true
-  currentFocus.value = -1
+  const target = event.target as HTMLInputElement;
+  inputValue.value = target.value;
+  emit("update:modelValue", target.value);
+  isOpen.value = true;
+  currentFocus.value = -1;
 }
 
 function selectOption(option: AutocompleteOption) {
-  inputValue.value = option.value
-  emit('update:modelValue', option.value)
-  emit('select', option)
-  isOpen.value = false
-  currentFocus.value = -1
+  inputValue.value = option.value;
+  emit("update:modelValue", option.value);
+  emit("select", option);
+  isOpen.value = false;
+  currentFocus.value = -1;
 }
 
 function selectNewValue() {
   if (props.acceptNewValue && inputValue.value) {
-    const newOption: AutocompleteOption = { value: inputValue.value }
-    emit('select', newOption)
-    isOpen.value = false
-    currentFocus.value = -1
+    const newOption: AutocompleteOption = { value: inputValue.value };
+    emit("select", newOption);
+    isOpen.value = false;
+    currentFocus.value = -1;
   }
 }
 
 function onKeydown(event: KeyboardEvent) {
-  const items = filteredOptions.value
-  const hasNewValueOption = props.acceptNewValue && inputValue.value && !items.some((o) => o.value === inputValue.value)
-  const totalItems = items.length + (hasNewValueOption ? 1 : 0)
+  const items = filteredOptions.value;
+  const hasNewValueOption =
+    props.acceptNewValue &&
+    inputValue.value &&
+    !items.some((o) => o.value === inputValue.value);
+  const totalItems = items.length + (hasNewValueOption ? 1 : 0);
 
-  if (totalItems === 0) return
+  if (totalItems === 0) return;
 
-  if (event.key === 'ArrowDown') {
-    event.preventDefault()
-    event.stopImmediatePropagation()
+  if (event.key === "ArrowDown") {
+    event.preventDefault();
+    event.stopImmediatePropagation();
     if (currentFocus.value < totalItems - 1) {
-      currentFocus.value++
+      currentFocus.value++;
     } else {
-      currentFocus.value = 0
+      currentFocus.value = 0;
     }
-    ensureVisible()
-  } else if (event.key === 'ArrowUp') {
-    event.preventDefault()
-    event.stopImmediatePropagation()
+    ensureVisible();
+  } else if (event.key === "ArrowUp") {
+    event.preventDefault();
+    event.stopImmediatePropagation();
     if (currentFocus.value > 0) {
-      currentFocus.value--
+      currentFocus.value--;
     } else {
-      currentFocus.value = totalItems - 1
+      currentFocus.value = totalItems - 1;
     }
-    ensureVisible()
-  } else if (event.key === 'Enter') {
-    event.preventDefault()
-    event.stopImmediatePropagation()
+    ensureVisible();
+  } else if (event.key === "Enter") {
+    event.preventDefault();
+    event.stopImmediatePropagation();
     if (currentFocus.value >= 0 && currentFocus.value < items.length) {
-      selectOption(items[currentFocus.value])
+      selectOption(items[currentFocus.value]);
     } else if (hasNewValueOption && currentFocus.value === items.length) {
-      selectNewValue()
+      selectNewValue();
     }
-  } else if (event.key === 'Escape') {
-    event.preventDefault()
-    inputValue.value = ''
-    emit('update:modelValue', '')
-    isOpen.value = false
-    currentFocus.value = -1
+  } else if (event.key === "Escape") {
+    event.preventDefault();
+    inputValue.value = "";
+    emit("update:modelValue", "");
+    isOpen.value = false;
+    currentFocus.value = -1;
   }
 }
 
 function ensureVisible() {
-  if (currentFocus.value < 0 || !listRef.value) return
-  const items = listRef.value.querySelectorAll('li')
+  if (currentFocus.value < 0 || !listRef.value) return;
+  const items = listRef.value.querySelectorAll("li");
   if (items[currentFocus.value]) {
-    items[currentFocus.value].scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    items[currentFocus.value].scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+    });
   }
 }
 
@@ -155,33 +167,38 @@ function onBlur() {
   // Delay to allow click events to fire
   setTimeout(() => {
     if (!props.acceptNewValue && inputValue.value) {
-      const isValid = props.options.some((o) => o.value === inputValue.value)
+      const isValid = props.options.some((o) => o.value === inputValue.value);
       if (!isValid) {
-        inputValue.value = ''
-        emit('update:modelValue', '')
+        inputValue.value = "";
+        emit("update:modelValue", "");
       }
     }
-    isOpen.value = false
-  }, 200)
+    isOpen.value = false;
+  }, 200);
 }
 
 function onClickOutside(event: MouseEvent) {
-  const target = event.target as Node
-  if (inputRef.value && !inputRef.value.contains(target) && listRef.value && !listRef.value.contains(target)) {
-    isOpen.value = false
+  const target = event.target as Node;
+  if (
+    inputRef.value &&
+    !inputRef.value.contains(target) &&
+    listRef.value &&
+    !listRef.value.contains(target)
+  ) {
+    isOpen.value = false;
   }
 }
 
 onMounted(() => {
-  document.addEventListener('click', onClickOutside)
-})
+  document.addEventListener("click", onClickOutside);
+});
 
 onUnmounted(() => {
-  document.removeEventListener('click', onClickOutside)
-})
+  document.removeEventListener("click", onClickOutside);
+});
 
 function getOptionLabel(option: AutocompleteOption): string {
-  return option.label || option.value
+  return option.label || option.value;
 }
 </script>
 
@@ -195,23 +212,26 @@ function getOptionLabel(option: AutocompleteOption): string {
       :value="inputValue"
       :required="required"
     />
-    <input
-      ref="inputRef"
-      type="text"
-      :value="inputValue"
-      :placeholder="placeholder"
-      :disabled="disabled"
-      class="input input-primary w-full"
-      autocomplete="off"
-      @input="onInput"
-      @keydown="onKeydown"
-      @focus="isOpen = true"
-      @blur="onBlur"
-    />
+    <div class="input input-primary w-full flex items-center gap-2">
+      <input
+        ref="inputRef"
+        type="text"
+        :value="inputValue"
+        :placeholder="placeholder"
+        :disabled="disabled"
+        class="grow bg-transparent outline-none"
+        autocomplete="off"
+        @input="onInput"
+        @keydown="onKeydown"
+        @focus="isOpen = true"
+        @blur="onBlur"
+      />
+      <slot name="icon" />
+    </div>
     <ul
       v-show="showList"
       ref="listRef"
-      class="autocomplete-list absolute w-full bg-white border border-primary mt-1 max-h-60 overflow-y-auto z-50"
+      class="autocomplete-list absolute w-full bg-white border border-primary mt-1 max-h-60 overflow-y-auto z-10000"
     >
       <li
         v-for="(option, index) in filteredOptions"
@@ -223,9 +243,15 @@ function getOptionLabel(option: AutocompleteOption): string {
         {{ getOptionLabel(option) }}
       </li>
       <li
-        v-if="acceptNewValue && inputValue && !filteredOptions.some((o) => o.value === inputValue)"
+        v-if="
+          acceptNewValue &&
+          inputValue &&
+          !filteredOptions.some((o) => o.value === inputValue)
+        "
         class="p-2 cursor-pointer hover:bg-primary hover:text-white"
-        :class="{ 'bg-primary text-white': currentFocus === filteredOptions.length }"
+        :class="{
+          'bg-primary text-white': currentFocus === filteredOptions.length,
+        }"
         @click="selectNewValue"
       >
         "{{ inputValue }}"

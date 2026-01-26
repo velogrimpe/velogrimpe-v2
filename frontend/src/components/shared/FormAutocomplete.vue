@@ -59,5 +59,9 @@ function onSelect(option: AutocompleteOption) {
     :name="name"
     :required="required"
     @select="onSelect"
-  />
+  >
+    <template #icon>
+      <slot name="icon" />
+    </template>
+  </Autocomplete>
 </template>

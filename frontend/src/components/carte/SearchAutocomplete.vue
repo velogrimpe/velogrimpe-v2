@@ -52,5 +52,11 @@ function onSelect(option: AutocompleteOption) {
 </script>
 
 <template>
-  <Autocomplete v-model="searchValue" :options="options" placeholder="falaise/gare" @select="onSelect" />
+  <Autocomplete v-model="searchValue" :options="options" placeholder="falaise/gare" @select="onSelect">
+    <template #icon>
+      <svg class="w-4 h-4 fill-none stroke-current shrink-0">
+        <use href="#search" />
+      </svg>
+    </template>
+  </Autocomplete>
 </template>

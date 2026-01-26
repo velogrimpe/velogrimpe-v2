@@ -2,6 +2,11 @@ import { createApp, h, ref } from 'vue'
 import FormAutocomplete, { type FormAutocompleteItem } from '@/components/shared/FormAutocomplete.vue'
 import TransitousStationSearch, { type TransitousStation } from '@/components/shared/TransitousStationSearch.vue'
 
+// Helper to create search icon slot
+const searchIconSlot = () => ({
+  icon: () => h('svg', { class: 'w-4 h-4 fill-none stroke-current shrink-0' }, [h('use', { href: '#search' })]),
+})
+
 interface GareItem extends FormAutocompleteItem {
   codeuic?: string
 }
@@ -93,14 +98,18 @@ function mountGareAutocomplete() {
       }, 0)
 
       return () =>
-        h(FormAutocomplete, {
-          modelValue: gareValue.value,
-          'onUpdate:modelValue': (v: string) => {
-            gareValue.value = v
+        h(
+          FormAutocomplete,
+          {
+            modelValue: gareValue.value,
+            'onUpdate:modelValue': (v: string) => {
+              gareValue.value = v
+            },
+            items: gares,
+            onSelect: onGareSelect,
           },
-          items: gares,
-          onSelect: onGareSelect,
-        })
+          searchIconSlot()
+        )
     },
   })
 

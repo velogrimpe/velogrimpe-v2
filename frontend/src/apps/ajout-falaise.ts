@@ -3,6 +3,11 @@ import FormAutocomplete, { type FormAutocompleteItem } from '@/components/shared
 import MultiSelect, { type MultiSelectOption } from '@/components/shared/MultiSelect.vue'
 import RoseDesVents from '@/components/shared/RoseDesVents.vue'
 
+// Helper to create search icon slot
+const searchIconSlot = () => ({
+  icon: () => h('svg', { class: 'w-4 h-4 fill-none stroke-current shrink-0' }, [h('use', { href: '#search' })]),
+})
+
 // Shared refs for exposition values (used by both MultiSelect and RoseDesVents)
 const expo1Value = ref<string[]>([])
 const expo2Value = ref<string[]>([])
@@ -175,22 +180,26 @@ document.addEventListener('DOMContentLoaded', () => {
       })
 
       return () =>
-        h(FormAutocomplete, {
-          modelValue: falaiseNameValue.value,
-          'onUpdate:modelValue': (v: string) => {
-            falaiseNameValue.value = v
+        h(
+          FormAutocomplete,
+          {
+            modelValue: falaiseNameValue.value,
+            'onUpdate:modelValue': (v: string) => {
+              falaiseNameValue.value = v
+            },
+            items: falaises.map((f) => ({
+              ...f,
+              // Add status to label for better UX
+              nom: f.nom,
+            })),
+            acceptNewValue: true,
+            disabled: isDisabled.value,
+            onSelect: onFalaiseSelect,
+            name: 'falaise_nom',
+            required: true,
           },
-          items: falaises.map((f) => ({
-            ...f,
-            // Add status to label for better UX
-            nom: f.nom,
-          })),
-          acceptNewValue: true,
-          disabled: isDisabled.value,
-          onSelect: onFalaiseSelect,
-          name: 'falaise_nom',
-          required: true,
-        })
+          searchIconSlot()
+        )
     },
   })
 

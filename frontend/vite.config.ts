@@ -23,6 +23,7 @@ export default defineConfig({
         "ajout-train": resolve(__dirname, "src/apps/ajout-train.ts"),
         "falaise-comment": resolve(__dirname, "src/apps/falaise-comment.ts"),
         "falaise-rose": resolve(__dirname, "src/apps/falaise-rose.ts"),
+        "contrib-details-falaise": resolve(__dirname, "src/apps/contrib-details-falaise.ts"),
       },
       output: {
         entryFileNames: "[name].js",
