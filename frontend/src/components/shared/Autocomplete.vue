@@ -231,7 +231,7 @@ function getOptionLabel(option: AutocompleteOption): string {
     <ul
       v-show="showList"
       ref="listRef"
-      class="autocomplete-list absolute w-full bg-white border border-primary mt-1 max-h-60 overflow-y-auto z-[10000]"
+      class="autocomplete-list absolute w-full bg-white border border-primary mt-1 max-h-60 overflow-y-auto"
     >
       <li
         v-for="(option, index) in filteredOptions"
