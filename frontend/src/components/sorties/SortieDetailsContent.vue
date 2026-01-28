@@ -18,9 +18,9 @@ defineProps<{
   >
 
   <!-- Title -->
-  <div class="flex flex-col md:flex-row justify-between items-start mb-4">
+  <div class="flex flex-col items-start mb-4">
     <h1 class="text-3xl md:text-2xl font-bold mb-2 md:mb-0">
-      {{ sortie.falaise_principale_nom }}
+      Sortie vélogrimpe à {{ sortie.falaise_principale_nom }}
     </h1>
     <a
       v-if="sortie.falaise_principale_id"
@@ -28,7 +28,7 @@ defineProps<{
       class="link link-primary text-sm"
       target="_blank"
     >
-      Voir la fiche falaise →
+      Voir la fiche falaise
     </a>
   </div>
 
