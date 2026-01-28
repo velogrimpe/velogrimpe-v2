@@ -12,10 +12,14 @@ function handleVilleChange(event: Event) {
 
 <template>
   <div class="bg-base-100 rounded-lg p-4 shadow-lg">
-    <div class="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-      <div class="flex-1">
+    <div
+      class="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between"
+    >
+      <div class="flex-1 flex flex-col md:flex-row md:gap-4">
         <label for="ville-filter" class="label">
-          <span class="label-text font-semibold">Filtrer par ville de départ</span>
+          <span class="label-text font-semibold"
+            >Filtrer par ville de départ</span
+          >
         </label>
         <select
           id="ville-filter"
@@ -35,9 +39,15 @@ function handleVilleChange(event: Event) {
       </div>
 
       <div class="text-sm text-base-content/70">
-        <span v-if="store.filteredSorties.length === 0">Aucune sortie trouvée</span>
-        <span v-else-if="store.filteredSorties.length === 1">1 sortie disponible</span>
-        <span v-else>{{ store.filteredSorties.length }} sorties disponibles</span>
+        <span v-if="store.filteredSorties.length === 0"
+          >Aucune sortie trouvée</span
+        >
+        <span v-else-if="store.filteredSorties.length === 1"
+          >1 sortie disponible</span
+        >
+        <span v-else
+          >{{ store.filteredSorties.length }} sorties disponibles</span
+        >
       </div>
     </div>
   </div>
