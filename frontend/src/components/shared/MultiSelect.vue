@@ -157,9 +157,7 @@ onUnmounted(() => {
         :disabled="disabled"
         @click="clearAll"
       >
-        <svg class="w-4 h-4 fill-none stroke-current">
-          <use href="#close"></use>
-        </svg>
+        <Icon name="close" class="w-4 h-4" />
       </button>
     </div>
 

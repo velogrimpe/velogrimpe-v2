@@ -24,6 +24,9 @@ export default defineConfig({
         "falaise-comment": resolve(__dirname, "src/apps/falaise-comment.ts"),
         "falaise-rose": resolve(__dirname, "src/apps/falaise-rose.ts"),
         "contrib-details-falaise": resolve(__dirname, "src/apps/contrib-details-falaise.ts"),
+        sorties: resolve(__dirname, "src/apps/sorties.ts"),
+        "ajout-sortie": resolve(__dirname, "src/apps/ajout-sortie.ts"),
+        "sortie-details": resolve(__dirname, "src/apps/sortie-details.ts"),
       },
       output: {
         entryFileNames: "[name].js",

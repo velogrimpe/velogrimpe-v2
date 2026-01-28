@@ -6,6 +6,7 @@ import {
   type CarteGare,
 } from "../../stores/carte";
 import { formatTime, calculateVeloTime } from "../../utils";
+import Icon from "../shared/Icon.vue";
 
 const store = useCarteStore();
 
@@ -32,7 +33,6 @@ function formatDescription(text: string | null): string {
 }
 
 // Using inline reference since SVG sprite is inlined in footer
-const filterIconHref = "#filter";
 </script>
 
 <template>
@@ -42,9 +42,7 @@ const filterIconHref = "#filter";
       v-if="!selected"
       class="flex gap-1 items-center justify-center font-bold text-primary border-b border-base-300 pb-1 mb-1"
     >
-      <svg class="w-4 h-4 fill-none stroke-current">
-        <use :href="filterIconHref"></use>
-      </svg>
+      <Icon name="filter" class="w-4 h-4" />
       <span v-if="hasFilters">
         {{ store.filteredFalaises }} falaises correspondent aux filtres
       </span>
