@@ -45,5 +45,5 @@ jobs:
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git add -A
-          git diff --cached --quiet || git commit -m "${{ github.event.head_commit.message }}\n - Deploy from ${{ github.sha }}"
+          git diff --cached --quiet || git commit -m "${{ github.event.head_commit.message }} [[${{ github.sha }}]]"
           git push origin deploy
