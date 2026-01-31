@@ -73,8 +73,8 @@ $highlight = $_GET['h'] ?? '';
 
 <body>
   <?php include "./components/header.html"; ?>
-  <main class="pb-2 px-2 md:px-8 pt-2">
-    <div id="map" class="w-full h-[calc(100dvh-115px)]"></div>
+  <main class="">
+    <div id="map" class="w-full h-[calc(100dvh-100px)]"></div>
   </main>
   <?php include "./components/footer.php"; ?>
 </body>

@@ -33,12 +33,12 @@ function handleDropdownFocus(event: FocusEvent) {
   const isMobile = window.innerWidth < 768;
 
   content.style.position = "fixed";
-  content.style.top = `${rect.bottom}px`;
+  content.style.top = `${rect.bottom + 6}px`;
   content.style.left = "auto";
 
   if (isMobile) {
     // On mobile: always align to the right edge with a small margin
-    content.style.right = "50px";
+    content.style.right = "34px";
   } else {
     // On desktop: align to the right edge of the trigger button
     content.style.right = `${window.innerWidth - rect.right}px`;
@@ -179,12 +179,13 @@ function parseNumberInput(value: string): number | null {
       <button
         v-if="!isFiltersExpanded"
         type="button"
-        class="btn btn-sm btn-square shadow-md border-0"
+        class="btn btn-sm md:btn-md max-md:btn-square shadow-md border-0"
         :class="store.hasActiveFilters ? 'btn-primary' : 'bg-base-100'"
         title="Filtrer les falaises"
         @click="expandFilters"
       >
-        <Icon name="filter" class="w-4 h-4 stroke-2" />
+        <span class="hidden md:inline">Filtres</span
+        ><Icon name="filter" class="w-4 h-4 stroke-2" />
       </button>
       <template v-else>
         <!-- Scrollable filters container -->
@@ -194,7 +195,7 @@ function parseNumberInput(value: string): number | null {
             <div
               tabindex="0"
               role="button"
-              class="btn btn-sm text-nowrap focus:pointer-events-none shadow-md border-0"
+              class="btn btn-sm md:btn-md text-nowrap focus:pointer-events-none shadow-md border-0"
               :class="hasVilleFilter ? 'btn-primary' : 'bg-base-100'"
             >
               Ville 🏙️
@@ -232,7 +233,7 @@ function parseNumberInput(value: string): number | null {
             <div
               tabindex="0"
               role="button"
-              class="btn btn-sm text-nowrap focus:pointer-events-none shadow-md border-0"
+              class="btn btn-sm md:btn-md text-nowrap focus:pointer-events-none shadow-md border-0"
               :class="hasVoiesFilter ? 'btn-primary' : 'bg-base-100'"
             >
               Voies 🧗‍♀️
@@ -331,7 +332,7 @@ function parseNumberInput(value: string): number | null {
             <div
               tabindex="0"
               role="button"
-              class="btn btn-sm text-nowrap focus:pointer-events-none shadow-md border-0"
+              class="btn btn-sm md:btn-md text-nowrap focus:pointer-events-none shadow-md border-0"
               :class="hasExpoFilter ? 'btn-primary' : 'bg-base-100'"
             >
               Exposition 🔅
@@ -370,7 +371,7 @@ function parseNumberInput(value: string): number | null {
             <div
               tabindex="0"
               role="button"
-              class="btn btn-sm text-nowrap focus:pointer-events-none shadow-md border-0"
+              class="btn btn-sm md:btn-md text-nowrap focus:pointer-events-none shadow-md border-0"
               :class="{
                 'btn-primary': hasTrainFilter,
                 'bg-base-100': !hasTrainFilter && hasVilleFilter,
@@ -467,7 +468,7 @@ function parseNumberInput(value: string): number | null {
             <div
               tabindex="0"
               role="button"
-              class="btn btn-sm text-nowrap focus:pointer-events-none shadow-md border-0"
+              class="btn btn-sm md:btn-md text-nowrap focus:pointer-events-none shadow-md border-0"
               :class="hasVeloFilter ? 'btn-primary' : 'bg-base-100'"
             >
               Vélo 🚲
@@ -565,7 +566,7 @@ function parseNumberInput(value: string): number | null {
             <div
               tabindex="0"
               role="button"
-              class="btn btn-sm text-nowrap focus:pointer-events-none shadow-md border-0"
+              class="btn btn-sm md:btn-md text-nowrap focus:pointer-events-none shadow-md border-0"
               :class="hasApprocheFilter ? 'btn-primary' : 'bg-base-100'"
             >
               Marche 🥾
@@ -601,7 +602,7 @@ function parseNumberInput(value: string): number | null {
             <div
               tabindex="0"
               role="button"
-              class="btn btn-sm text-nowrap focus:pointer-events-none shadow-md border-0"
+              class="btn btn-sm md:btn-md text-nowrap focus:pointer-events-none shadow-md border-0"
               :class="{
                 'btn-primary': hasTotalFilter,
                 'bg-base-100': !hasTotalFilter && hasVilleFilter,
@@ -667,7 +668,7 @@ function parseNumberInput(value: string): number | null {
         <!-- Fixed buttons outside scroll container -->
         <button
           type="button"
-          class="btn btn-sm btn-square bg-base-100 shadow-md border-0 shrink-0"
+          class="btn btn-sm md:btn-md btn-square bg-base-100 shadow-md border-0 shrink-0"
           :disabled="!store.hasActiveFilters"
           title="Réinitialiser les filtres"
           @click="store.resetFilters()"
@@ -677,11 +678,12 @@ function parseNumberInput(value: string): number | null {
 
         <button
           type="button"
-          class="btn btn-sm btn-square bg-base-100 shadow-md border-0 shrink-0"
+          class="btn btn-sm md:btn-md max-md:btn-square bg-base-100 shadow-md border-0 shrink-0"
           title="Fermer les filtres"
           @click="collapseFilters"
         >
-          <Icon name="close" class="w-4 h-4 stroke-2" />
+          <span class="hidden md:inline">Filtres</span
+          ><Icon name="close" class="w-4 h-4 stroke-2" />
         </button>
       </template>
     </div>
@@ -691,11 +693,12 @@ function parseNumberInput(value: string): number | null {
       <button
         v-if="!isSearchExpanded"
         type="button"
-        class="btn btn-sm btn-square bg-base-100 shadow-md border-0"
+        class="btn btn-sm md:btn-md max-md:btn-square bg-base-100 shadow-md border-0"
         title="Rechercher une falaise ou une gare"
         @click="expandSearch"
       >
-        <Icon name="search" class="w-4 h-4 stroke-2" />
+        <span class="hidden md:inline">Rechercher</span
+        ><Icon name="search" class="w-4 h-4 stroke-2" />
       </button>
       <template v-else>
         <div
@@ -710,7 +713,7 @@ function parseNumberInput(value: string): number | null {
           </div>
           <button
             type="button"
-            class="btn btn-sm btn-square btn-ghost"
+            class="btn btn-sm md:btn-md btn-ghost"
             title="Fermer la recherche"
             @click="collapseSearch"
           >
