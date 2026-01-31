@@ -27,6 +27,7 @@ export default defineConfig({
         sorties: resolve(__dirname, "src/apps/sorties.ts"),
         "ajout-sortie": resolve(__dirname, "src/apps/ajout-sortie.ts"),
         "sortie-details": resolve(__dirname, "src/apps/sortie-details.ts"),
+        "carte-map-filters": resolve(__dirname, "src/apps/carte-map-filters.ts"),
       },
       output: {
         entryFileNames: "[name].js",
