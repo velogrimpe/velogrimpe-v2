@@ -212,7 +212,7 @@ function getOptionLabel(option: AutocompleteOption): string {
       :value="inputValue"
       :required="required"
     />
-    <div class="input input-primary w-full flex items-center gap-2">
+    <label class="input input-primary w-full flex items-center gap-2">
       <input
         ref="inputRef"
         type="text"
@@ -227,7 +227,7 @@ function getOptionLabel(option: AutocompleteOption): string {
         @blur="onBlur"
       />
       <slot name="icon" />
-    </div>
+    </label>
     <ul
       v-show="showList"
       ref="listRef"
@@ -238,7 +238,8 @@ function getOptionLabel(option: AutocompleteOption): string {
         :key="option.value"
         class="p-2 cursor-pointer hover:bg-primary hover:text-white"
         :class="{ 'bg-primary text-white': index === currentFocus }"
-        @click="selectOption(option)"
+        @mousedown.prevent
+        @click.stop="selectOption(option)"
       >
         {{ getOptionLabel(option) }}
       </li>
@@ -252,7 +253,8 @@ function getOptionLabel(option: AutocompleteOption): string {
         :class="{
           'bg-primary text-white': currentFocus === filteredOptions.length,
         }"
-        @click="selectNewValue"
+        @mousedown.prevent
+        @click.stop="selectNewValue"
       >
         "{{ inputValue }}"
       </li>
