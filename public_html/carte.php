@@ -56,6 +56,7 @@ $highlight = $_GET['h'] ?? '';
   <link rel="stylesheet" href="/global.css" />
   <!-- Vue Component Styles -->
   <?php vite_css('carte-info'); ?>
+  <?php vite_css('carte-map-filters'); ?>
   <link rel="stylesheet" href="./index.css" />
   <link rel="manifest" href="./site.webmanifest" />
   <style>
@@ -593,7 +594,7 @@ $highlight = $_GET['h'] ?? '';
 
   // Contrôle Leaflet pour filtres + recherche (Vue.js)
   var filtersControl = L.control({ position: 'topright' });
-  filtersControl.onAdd = function(map) {
+  filtersControl.onAdd = function (map) {
     this._div = L.DomUtil.create('div', 'leaflet-filters-control');
     this._div.id = 'vue-map-filters';
     // Note: Use JSON_HEX_APOS to safely embed in JS single-quoted strings (escapes ' as \u0027)
