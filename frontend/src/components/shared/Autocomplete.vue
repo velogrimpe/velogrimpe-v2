@@ -189,6 +189,12 @@ function onClickOutside(event: MouseEvent) {
   }
 }
 
+function focus() {
+  inputRef.value?.focus();
+}
+
+defineExpose({ focus });
+
 onMounted(() => {
   document.addEventListener("click", onClickOutside);
 });

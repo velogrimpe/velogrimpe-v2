@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, nextTick, onMounted, onUnmounted } from "vue";
 import { useFiltersStore } from "@/stores";
 import type { Exposition, Cotation, Ville } from "@/types";
 import Icon from "@/components/shared/Icon.vue";
@@ -67,9 +67,11 @@ function collapseFilters() {
 
 // Search state
 const isSearchExpanded = ref(false);
+const searchRef = ref<InstanceType<typeof SearchAutocomplete> | null>(null);
 
 function expandSearch() {
   isSearchExpanded.value = true;
+  nextTick(() => searchRef.value?.focus());
 }
 
 function collapseSearch() {
@@ -706,6 +708,7 @@ function parseNumberInput(value: string): number | null {
         >
           <div class="flex-1 min-w-48">
             <SearchAutocomplete
+              ref="searchRef"
               :falaises="props.falaises"
               :gares="props.gares"
               @select="onSearchSelect"

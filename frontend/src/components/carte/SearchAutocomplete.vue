@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { ref, computed } from "vue";
 import Autocomplete from "@/components/shared/Autocomplete.vue";
 import type { AutocompleteOption } from "@/types/autocomplete";
 import Icon from "../shared/Icon.vue";
@@ -19,7 +19,14 @@ const emit = defineEmits<{
   select: [item: SearchItem];
 }>();
 
+const autocompleteRef = ref<InstanceType<typeof Autocomplete> | null>(null);
 const searchValue = defineModel<string>({ default: "" });
+
+function focus() {
+  autocompleteRef.value?.focus();
+}
+
+defineExpose({ focus });
 
 const options = computed<AutocompleteOption[]>(() => {
   const falaiseOptions: AutocompleteOption[] = props.falaises.map((f) => ({
@@ -54,6 +61,7 @@ function onSelect(option: AutocompleteOption) {
 
 <template>
   <Autocomplete
+    ref="autocompleteRef"
     v-model="searchValue"
     :options="options"
     placeholder="falaise/gare"
