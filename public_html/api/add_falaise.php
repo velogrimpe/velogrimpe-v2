@@ -120,11 +120,11 @@ $stmt = $mysqli->prepare("INSERT INTO falaises (
     falaise_bloc,
     falaise_maa,
     falaise_mar,
-    falaise_nbvoies
+    falaise_nbvoies,
     falaise_public,
     -- strings
     falaise_acces_bus,
-    falaise_contrib
+    falaise_contrib,
     falaise_cotmax,
     falaise_cotmin,
     falaise_cottxt,
@@ -152,7 +152,7 @@ $stmt = $mysqli->prepare("INSERT INTO falaises (
     falaise_txt4,
     falaise_voies,
     falaise_voletcarto,
-    falaise_zonename,
+    falaise_zonename
   )
   VALUES (
     COALESCE(?, NULL),
