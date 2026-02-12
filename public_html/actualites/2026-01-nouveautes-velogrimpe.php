@@ -22,6 +22,27 @@ $webLinkStyle = "text-align: center; display: block; width: 100%; font-size: 10p
 $liStyle = "margin: 0px; margin-left: 20px; ";
 
 $nouvellesFalaises = [
+  "Ariège" => [
+    "falaises" => [
+      ["name" => "Quié d'urs", "id" => 338, "contributor" => "Alan"],
+    ],
+    "img" => "ariege.webp",
+  ],
+  "Pyrénées Orientales" => [
+    "falaises" => [
+      ["name" => "Tautavel - Le château", "id" => 339, "contributor" => "Florent"],
+      ["name" => "Tautavel - Saint Martin", "id" => 340, "contributor" => "Florent"],
+      ["name" => "Tautavel - L'Alzine", "id" => 341, "contributor" => "Florent"],
+      ["name" => "Tautavel - L'Alentou", "id" => 342, "contributor" => "Florent"],
+      ["name" => "Vingrau", "id" => 343, "contributor" => "Florent"],
+      ["name" => "Tautavel - Le Gouleyrous", "id" => 344, "contributor" => "Florent"],
+      ["name" => "Tautavel - Le bousquet", "id" => 345, "contributor" => "Florent"],
+      ["name" => "Tautavel - La Devèze", "id" => 346, "contributor" => "Florent"],
+      ["name" => "Opoul - Les abeilles", "id" => 347, "contributor" => "Florent"],
+      ["name" => "Opoul - Gratounette", "id" => 348, "contributor" => "Florent"],
+    ],
+    "img" => "pyrenees-orientales.webp",
+  ],
   "Autour de Paris" => [
     "falaises" => [
       ["name" => "Hauteroche", "id" => 349, "contributor" => "Tanguy"],
@@ -33,6 +54,54 @@ $nouvellesFalaises = [
       ["name" => "Surgy", "id" => 355, "contributor" => "Tanguy"],
     ],
     "img" => "paris.webp",
+  ],
+  "Hérault" => [
+    "falaises" => [
+      ["name" => "Saint Bauzille de Montmel", "id" => 356, "contributor" => "Florent"],
+      ["name" => "Le Joncas - Montpeyroux", "id" => 357, "contributor" => "Olivier"],
+    ],
+    "img" => "herault.webp",
+  ],
+  "Baronnies - Ventoux" => [
+    "falaises" => [
+      ["name" => "Dentelles de Montmirail", "id" => 358, "contributor" => "Sandrine"],
+    ],
+    "img" => "baronnies-ventoux.webp",
+  ],
+  "Autour du Morvan" => [
+    "falaises" => [
+      ["name" => "Le Saussois", "id" => 359, "contributor" => "Florent"],
+      ["name" => "Rochers du Parc", "id" => 360, "contributor" => "Florent"],
+      ["name" => "Montbard", "id" => 361, "contributor" => "Florent"],
+    ],
+    "img" => "morvan.webp",
+  ],
+  "Bretagne" => [
+    "falaises" => [
+      ["name" => "Lanvallay, l'Abbaye de Léhon", "id" => 362, "contributor" => "Louenn PIERRE"],
+      ["name" => "Lanvallay, la vieille rivière", "id" => 363, "contributor" => "Louenn PIERRE"],
+    ],
+    "img" => "bretagne.webp",
+  ],
+  "Les Calanques" => [
+    "falaises" => [
+      ["name" => "Les Calanques - Luminy", "id" => 364, "contributor" => "Florent"],
+      ["name" => "Les Calanques - Morgiou", "id" => 365, "contributor" => "Florent"],
+      ["name" => "Les Calanques - La Melette", "id" => 366, "contributor" => "Florent"],
+    ],
+    "img" => "calanques.webp",
+  ],
+  "Savoie" => [
+    "falaises" => [
+      ["name" => "La Grande Dent", "id" => 367, "contributor" => "David SZUMILO"],
+      ["name" => "Roc de Torméry", "id" => 368, "contributor" => "David SZUMILO"],
+      ["name" => "Hautecour", "id" => 369, "contributor" => "David SZUMILO"],
+      ["name" => "Villette", "id" => 370, "contributor" => "David SZUMILO"],
+      ["name" => "St Léger", "id" => 371, "contributor" => "David SZUMILO"],
+      ["name" => "Pontamafrey", "id" => 372, "contributor" => "David SZUMILO"],
+      ["name" => "Hermillon", "id" => 373, "contributor" => "David SZUMILO"],
+    ],
+    "img" => "savoie.webp",
   ],
 ]
 

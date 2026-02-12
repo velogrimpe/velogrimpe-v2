@@ -212,6 +212,12 @@ document.addEventListener('DOMContentLoaded', () => {
     falaiseNameValue.value = value
   }
 
+  // Fetch and prefill data for existing falaise (called here to guarantee setters are ready)
+  if (presetFalaiseId) {
+    const fetchFn = (window as unknown as Record<string, (id: number) => void>).fetchAndPrefillData
+    if (fetchFn) fetchFn(presetFalaiseId)
+  }
+
   // Mount exposition multi-selects
   mountExpositionSelects()
 })
