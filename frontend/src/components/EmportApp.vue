@@ -81,6 +81,10 @@ function onCategoryChange(cat: EmportCategory) {
   selectedSub.value = "all";
 }
 
+function isUrl(s: string | null): boolean {
+  return !!s && s.startsWith("http");
+}
+
 const categories: { key: EmportCategory; label: string }[] = [
   { key: "all", label: "Tous" },
   { key: "GV", label: "Grande vitesse" },
@@ -230,24 +234,26 @@ const categories: { key: EmportCategory; label: string }[] = [
               v-if="row.source1 || row.source2"
               class="flex gap-2 mt-3 pt-2 border-t border-base-300"
             >
-              <a
-                v-if="row.source1"
-                :href="row.source1"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="link text-xs"
-              >
-                Source 1
-              </a>
-              <a
-                v-if="row.source2"
-                :href="row.source2"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="link text-xs"
-              >
-                Source 2
-              </a>
+              <template v-if="row.source1">
+                <a
+                  v-if="isUrl(row.source1)"
+                  :href="row.source1"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="link text-xs"
+                >Source 1</a>
+                <span v-else class="text-xs text-base-content/60">{{ row.source1 }}</span>
+              </template>
+              <template v-if="row.source2">
+                <a
+                  v-if="isUrl(row.source2)"
+                  :href="row.source2"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="link text-xs"
+                >Source 2</a>
+                <span v-else class="text-xs text-base-content/60">{{ row.source2 }}</span>
+              </template>
             </div>
           </div>
 
@@ -282,26 +288,36 @@ const categories: { key: EmportCategory; label: string }[] = [
               <td class="text-sm" v-html="row.regle_nondemonte ?? '–'"></td>
               <td class="whitespace-nowrap">
                 <div class="flex gap-1">
-                  <a
-                    v-if="row.source1"
-                    :href="row.source1"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="tooltip tooltip-left badge badge-outline badge-sm cursor-pointer"
-                    :data-tip="row.source1"
-                  >
-                    1
-                  </a>
-                  <a
-                    v-if="row.source2"
-                    :href="row.source2"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="tooltip tooltip-left badge badge-outline badge-sm cursor-pointer"
-                    :data-tip="row.source2"
-                  >
-                    2
-                  </a>
+                  <template v-if="row.source1">
+                    <a
+                      v-if="isUrl(row.source1)"
+                      :href="row.source1"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="tooltip tooltip-left badge badge-outline badge-sm cursor-pointer"
+                      :data-tip="row.source1"
+                    >1</a>
+                    <span
+                      v-else
+                      class="tooltip tooltip-left badge badge-outline badge-sm"
+                      :data-tip="row.source1"
+                    >1</span>
+                  </template>
+                  <template v-if="row.source2">
+                    <a
+                      v-if="isUrl(row.source2)"
+                      :href="row.source2"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="tooltip tooltip-left badge badge-outline badge-sm cursor-pointer"
+                      :data-tip="row.source2"
+                    >2</a>
+                    <span
+                      v-else
+                      class="tooltip tooltip-left badge badge-outline badge-sm"
+                      :data-tip="row.source2"
+                    >2</span>
+                  </template>
                 </div>
               </td>
             </tr>
