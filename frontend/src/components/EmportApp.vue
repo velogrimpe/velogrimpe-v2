@@ -7,7 +7,7 @@ const error = ref<string | null>(null);
 const allRows = ref<EmportRow[]>([]);
 
 const selectedCategory = ref<EmportCategory>("all");
-const selectedRegion = ref<string>("all");
+const selectedSub = ref<string>("all");
 
 onMounted(async () => {
   try {
@@ -28,41 +28,57 @@ function getCategory(typeTrain: string): "GV" | "Intercité" | "Régional" {
   return "Régional";
 }
 
-const availableRegions = computed(() => {
-  const regions = new Set<string>();
+// Sous-options disponibles pour le 2e select (compagnies GV ou régions TER)
+const availableSubOptions = computed(() => {
+  const cat = selectedCategory.value;
+  if (cat === "all" || cat === "Intercité") return [];
+  const opts = new Set<string>();
   for (const row of allRows.value) {
-    if (getCategory(row.type_train) === "Régional") {
-      regions.add(row.compagnie_region);
+    if (getCategory(row.type_train) === cat) {
+      opts.add(row.compagnie_region);
     }
   }
-  return [...regions].sort();
+  return [...opts].sort();
 });
 
+// Label du 2e select
+const subSelectLabel = computed(() => {
+  if (selectedCategory.value === "GV") return "Compagnie";
+  return "Région";
+});
+
+// Le 2e select est-il nécessaire ?
+const needsSubSelect = computed(() => {
+  return (
+    selectedCategory.value === "GV" ||
+    selectedCategory.value === "Régional"
+  );
+});
+
+// Lignes filtrées
 const filteredRows = computed(() => {
   if (selectedCategory.value === "all") return allRows.value;
   return allRows.value.filter((r) => {
     const cat = getCategory(r.type_train);
     if (cat !== selectedCategory.value) return false;
-    if (
-      selectedCategory.value === "Régional" &&
-      selectedRegion.value !== "all" &&
-      r.compagnie_region !== selectedRegion.value
-    )
-      return false;
+    if (needsSubSelect.value && selectedSub.value !== "all") {
+      if (r.compagnie_region !== selectedSub.value) return false;
+    }
     return true;
   });
 });
 
+// Mobile : prêt à afficher ?
 const mobileReady = computed(() => {
   if (selectedCategory.value === "all") return false;
-  if (selectedCategory.value === "Régional" && selectedRegion.value === "all")
-    return false;
-  return true;
+  if (selectedCategory.value === "Intercité") return true;
+  if (selectedSub.value !== "all") return true;
+  return false;
 });
 
 function onCategoryChange(cat: EmportCategory) {
   selectedCategory.value = cat;
-  selectedRegion.value = "all";
+  selectedSub.value = "all";
 }
 
 const categories: { key: EmportCategory; label: string }[] = [
@@ -86,9 +102,9 @@ const categories: { key: EmportCategory; label: string }[] = [
     </div>
 
     <div v-else>
-      <!-- ===== FILTRES ===== -->
+      <!-- ===== FILTRES DESKTOP (boutons) ===== -->
       <div
-        class="bg-base-200 rounded-lg p-4 shadow mb-6 flex flex-col md:flex-row gap-3 items-start md:items-center"
+        class="hidden md:flex bg-base-200 rounded-lg p-4 shadow mb-6 flex-row gap-3 items-center"
       >
         <div class="flex gap-2 flex-wrap">
           <button
@@ -104,98 +120,134 @@ const categories: { key: EmportCategory; label: string }[] = [
           </button>
         </div>
 
-        <!-- Sous-filtre région -->
-        <div
-          v-if="selectedCategory === 'Régional'"
-          class="flex items-center gap-2"
-        >
-          <label class="text-sm font-medium" for="region-select"
-            >Région :</label
-          >
+        <div v-if="needsSubSelect" class="flex items-center gap-2">
+          <label class="text-sm font-medium" for="sub-select-desktop">
+            {{ subSelectLabel }} :
+          </label>
           <select
-            id="region-select"
-            v-model="selectedRegion"
+            id="sub-select-desktop"
+            v-model="selectedSub"
             class="select select-primary select-sm"
           >
-            <option value="all">Toutes</option>
+            <option value="all">
+              {{ needsSubSelect ? "Toutes" : "–" }}
+            </option>
             <option
-              v-for="region in availableRegions"
-              :key="region"
-              :value="region"
+              v-for="opt in availableSubOptions"
+              :key="opt"
+              :value="opt"
             >
-              {{ region }}
+              {{ opt }}
             </option>
           </select>
         </div>
       </div>
 
-      <!-- ===== VUE MOBILE ===== -->
+      <!-- ===== FILTRES MOBILE (2 selects) ===== -->
+      <div class="md:hidden flex flex-col gap-3 mb-6">
+        <label class="form-control w-full">
+          <div class="label">
+            <span class="label-text font-medium">Type de train</span>
+          </div>
+          <select
+            v-model="selectedCategory"
+            class="select select-bordered w-full"
+            @change="selectedSub = 'all'"
+          >
+            <option value="all" disabled>Choisir un type</option>
+            <option value="GV">Grande vitesse</option>
+            <option value="Intercité">Intercités</option>
+            <option value="Régional">Régional / TER</option>
+          </select>
+        </label>
+
+        <label class="form-control w-full">
+          <div class="label">
+            <span
+              class="label-text font-medium"
+              :class="{ 'opacity-40': !needsSubSelect }"
+            >
+              {{ needsSubSelect ? subSelectLabel : "Compagnie / Région" }}
+            </span>
+          </div>
+          <select
+            v-model="selectedSub"
+            class="select select-bordered w-full"
+            :disabled="!needsSubSelect"
+          >
+            <option value="all" disabled>
+              Choisir {{ subSelectLabel === "Compagnie" ? "une compagnie" : "une région" }}
+            </option>
+            <option
+              v-for="opt in availableSubOptions"
+              :key="opt"
+              :value="opt"
+            >
+              {{ opt }}
+            </option>
+          </select>
+        </label>
+      </div>
+
+      <!-- ===== VUE MOBILE (cards) ===== -->
       <div class="md:hidden">
-        <!-- Invitation à filtrer -->
         <div
           v-if="!mobileReady"
           class="text-center text-base-content/60 py-8"
         >
-          <p class="text-lg font-medium">
+          <p class="text-sm">
             Sélectionnez un type de train
-          </p>
-          <p
-            v-if="selectedCategory === 'Régional'"
-            class="text-sm mt-1"
-          >
-            puis une région
+            <span v-if="needsSubSelect">
+              puis {{ subSelectLabel === "Compagnie" ? "une compagnie" : "une région" }}
+            </span>
           </p>
         </div>
 
-        <!-- Cards résultats -->
         <div v-else class="flex flex-col gap-4">
           <div
             v-for="row in filteredRows"
             :key="row.emport_id"
-            class="card bg-base-100 shadow-lg"
+            class="border border-base-300 rounded-lg p-4"
           >
-            <div class="card-body p-4">
-              <h3 class="card-title text-base">
-                {{ row.compagnie_region }}
-              </h3>
-              <div class="grid grid-cols-1 gap-3">
-                <div v-if="row.regle_demonte" class="bg-success/10 rounded p-3">
-                  <div class="font-semibold text-sm mb-1">
-                    Vélo démonté / plié
-                  </div>
-                  <p class="text-sm" v-html="row.regle_demonte"></p>
+            <h3 class="font-semibold text-base mb-3">
+              {{ row.compagnie_region }}
+            </h3>
+            <div class="flex flex-col gap-3">
+              <div v-if="row.regle_demonte" class="border border-base-300 rounded p-3">
+                <div class="text-xs font-semibold text-base-content/60 uppercase mb-1">
+                  Vélo démonté / plié
                 </div>
-                <div v-if="row.regle_nondemonte" class="bg-info/10 rounded p-3">
-                  <div class="font-semibold text-sm mb-1">
-                    Vélo non démonté
-                  </div>
-                  <p class="text-sm" v-html="row.regle_nondemonte"></p>
-                </div>
+                <p class="text-sm" v-html="row.regle_demonte"></p>
               </div>
-              <!-- Sources -->
-              <div
-                v-if="row.source1 || row.source2"
-                class="flex gap-2 mt-2"
+              <div v-if="row.regle_nondemonte" class="border border-base-300 rounded p-3">
+                <div class="text-xs font-semibold text-base-content/60 uppercase mb-1">
+                  Vélo non démonté
+                </div>
+                <p class="text-sm" v-html="row.regle_nondemonte"></p>
+              </div>
+            </div>
+            <div
+              v-if="row.source1 || row.source2"
+              class="flex gap-2 mt-3 pt-2 border-t border-base-300"
+            >
+              <a
+                v-if="row.source1"
+                :href="row.source1"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="link text-xs"
               >
-                <a
-                  v-if="row.source1"
-                  :href="row.source1"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="link link-primary text-xs"
-                >
-                  Source 1
-                </a>
-                <a
-                  v-if="row.source2"
-                  :href="row.source2"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="link link-primary text-xs"
-                >
-                  Source 2
-                </a>
-              </div>
+                Source 1
+              </a>
+              <a
+                v-if="row.source2"
+                :href="row.source2"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="link text-xs"
+              >
+                Source 2
+              </a>
             </div>
           </div>
 
