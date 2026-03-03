@@ -246,38 +246,47 @@ function hasMultipleSources(row: EmportRow): boolean {
           <div
             v-for="row in filteredRows"
             :key="row.emport_id"
-            class="border border-base-300 rounded-lg p-4"
+            class="bg-base-100 shadow rounded-lg p-4"
           >
             <h3 class="font-semibold text-base mb-3">
               {{ row.compagnie_region }}
             </h3>
-            <div class="flex flex-col gap-3">
+            <div class="join join-vertical w-full">
               <div
                 v-if="row.regle_demonte"
-                class="border border-base-300 rounded p-3"
+                class="collapse collapse-arrow join-item border border-base-content/20"
               >
-                <div
-                  class="text-xs font-semibold text-base-content/60 uppercase mb-1"
-                >
+                <input
+                  type="radio"
+                  :name="'accordion-' + row.emport_id"
+                  checked
+                />
+                <div class="collapse-title text-xs font-semibold text-base-content/60 uppercase">
                   Vélo démonté / plié
                 </div>
-                <p class="text-sm" v-html="row.regle_demonte"></p>
+                <div class="collapse-content">
+                  <p class="text-sm" v-html="row.regle_demonte"></p>
+                </div>
               </div>
               <div
                 v-if="row.regle_nondemonte"
-                class="border border-base-300 rounded p-3"
+                class="collapse collapse-arrow join-item border border-base-content/20"
               >
-                <div
-                  class="text-xs font-semibold text-base-content/60 uppercase mb-1"
-                >
+                <input
+                  type="radio"
+                  :name="'accordion-' + row.emport_id"
+                />
+                <div class="collapse-title text-xs font-semibold text-base-content/60 uppercase">
                   Vélo non démonté
                 </div>
-                <p class="text-sm" v-html="row.regle_nondemonte"></p>
+                <div class="collapse-content">
+                  <p class="text-sm" v-html="row.regle_nondemonte"></p>
+                </div>
               </div>
             </div>
             <div
               v-if="row.source1 || row.source2"
-              class="flex gap-2 mt-3 pt-2 border-t border-base-300"
+              class="flex gap-2 mt-3 pt-2 border-t border-base-content/20"
             >
               <template v-if="row.source1">
                 <a
