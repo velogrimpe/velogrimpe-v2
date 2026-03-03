@@ -18,8 +18,11 @@ $result = $mysqli->query("SELECT
     source2
   FROM cartotrain_emport
   ORDER BY
-    FIELD(type_train, 'GRANDE VITESSE', 'INTERCITÉS') DESC,
-    type_train ASC,
+    CASE type_train
+      WHEN 'GRANDE VITESSE' THEN 1
+      WHEN 'INTERCITÉS' THEN 2
+      ELSE 3
+    END,
     compagnie_region ASC");
 
 if (!$result) {

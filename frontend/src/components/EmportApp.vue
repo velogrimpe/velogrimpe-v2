@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import type { EmportRow, EmportCategory } from "@/types/emport";
 
 const isLoading = ref(true);
@@ -8,6 +8,11 @@ const allRows = ref<EmportRow[]>([]);
 
 const selectedCategory = ref<EmportCategory>("all");
 const selectedSub = ref<string>("all");
+
+// Reset sub-filter when category changes
+watch(selectedCategory, () => {
+  selectedSub.value = "all";
+});
 
 onMounted(async () => {
   try {
@@ -26,6 +31,19 @@ function getCategory(typeTrain: string): "GV" | "Intercité" | "Régional" {
   if (typeTrain === "GRANDE VITESSE") return "GV";
   if (typeTrain === "INTERCITÉS") return "Intercité";
   return "Régional";
+}
+
+function typeLabel(typeTrain: string): string {
+  if (typeTrain === "GRANDE VITESSE") return "Grande vitesse";
+  if (typeTrain === "INTERCITÉS") return "Intercités";
+  return "Régional / TER";
+}
+
+function typeBgClass(typeTrain: string): string {
+  const cat = getCategory(typeTrain);
+  if (cat === "GV") return "bg-violet-300/10";
+  if (cat === "Intercité") return "bg-amber-300/10";
+  return "bg-emerald-300/10";
 }
 
 // Sous-options disponibles pour le 2e select (compagnies GV ou régions TER)
@@ -50,8 +68,7 @@ const subSelectLabel = computed(() => {
 // Le 2e select est-il nécessaire ?
 const needsSubSelect = computed(() => {
   return (
-    selectedCategory.value === "GV" ||
-    selectedCategory.value === "Régional"
+    selectedCategory.value === "GV" || selectedCategory.value === "Régional"
   );
 });
 
@@ -68,6 +85,37 @@ const filteredRows = computed(() => {
   });
 });
 
+// Desktop : lignes avec info de rowspan pour fusionner la colonne Type
+interface DesktopRow extends EmportRow {
+  isFirstInGroup: boolean;
+  rowspan: number;
+}
+
+const desktopTableRows = computed<DesktopRow[]>(() => {
+  const rows = filteredRows.value;
+  const result: DesktopRow[] = [];
+  let i = 0;
+  while (i < rows.length) {
+    const typeTrain = rows[i].type_train;
+    let count = 1;
+    while (
+      i + count < rows.length &&
+      rows[i + count].type_train === typeTrain
+    ) {
+      count++;
+    }
+    for (let j = 0; j < count; j++) {
+      result.push({
+        ...rows[i + j],
+        isFirstInGroup: j === 0,
+        rowspan: count,
+      });
+    }
+    i += count;
+  }
+  return result;
+});
+
 // Mobile : prêt à afficher ?
 const mobileReady = computed(() => {
   if (selectedCategory.value === "all") return false;
@@ -76,21 +124,13 @@ const mobileReady = computed(() => {
   return false;
 });
 
-function onCategoryChange(cat: EmportCategory) {
-  selectedCategory.value = cat;
-  selectedSub.value = "all";
-}
-
 function isUrl(s: string | null): boolean {
   return !!s && s.startsWith("http");
 }
 
-const categories: { key: EmportCategory; label: string }[] = [
-  { key: "all", label: "Tous" },
-  { key: "GV", label: "Grande vitesse" },
-  { key: "Intercité", label: "Intercités" },
-  { key: "Régional", label: "Régional / TER" },
-];
+function hasMultipleSources(row: EmportRow): boolean {
+  return !!(row.source1 && row.source2);
+}
 </script>
 
 <template>
@@ -106,45 +146,42 @@ const categories: { key: EmportCategory; label: string }[] = [
     </div>
 
     <div v-else>
-      <!-- ===== FILTRES DESKTOP (boutons) ===== -->
+      <!-- ===== FILTRE DESKTOP (phrase à trous) ===== -->
       <div
-        class="hidden md:flex bg-base-200 rounded-lg p-4 shadow mb-6 flex-row gap-3 items-center"
+        class="hidden md:flex bg-base-200 rounded-lg p-4 shadow mb-6 font-bold items-center gap-2 text-base flex-wrap"
       >
-        <div class="flex gap-2 flex-wrap">
-          <button
-            v-for="cat in categories"
-            :key="cat.key"
-            class="btn btn-sm"
-            :class="
-              selectedCategory === cat.key ? 'btn-primary' : 'btn-ghost'
-            "
-            @click="onCategoryChange(cat.key)"
-          >
-            {{ cat.label }}
-          </button>
-        </div>
-
-        <div v-if="needsSubSelect" class="flex items-center gap-2">
-          <label class="text-sm font-medium" for="sub-select-desktop">
-            {{ subSelectLabel }} :
-          </label>
-          <select
-            id="sub-select-desktop"
-            v-model="selectedSub"
-            class="select select-primary select-sm"
-          >
-            <option value="all">
-              {{ needsSubSelect ? "Toutes" : "–" }}
-            </option>
-            <option
-              v-for="opt in availableSubOptions"
-              :key="opt"
-              :value="opt"
-            >
+        <span>Je vais prendre un train</span>
+        <select v-model="selectedCategory" class="select select-bordered">
+          <option value="all">(choisir un type de train)</option>
+          <option value="GV">Grande vitesse</option>
+          <option value="Intercité">Intercités</option>
+          <option value="Régional">Régional / TER</option>
+        </select>
+        <template v-if="selectedCategory === 'GV'">
+          <span>via</span>
+          <select v-model="selectedSub" class="select select-bordered">
+            <option value="all">toutes compagnies</option>
+            <option v-for="opt in availableSubOptions" :key="opt" :value="opt">
               {{ opt }}
             </option>
           </select>
-        </div>
+        </template>
+        <template v-if="selectedCategory === 'Régional'">
+          <span>en région</span>
+          <select v-model="selectedSub" class="select select-bordered">
+            <option value="all">toutes régions</option>
+            <option v-for="opt in availableSubOptions" :key="opt" :value="opt">
+              {{ opt }}
+            </option>
+          </select>
+        </template>
+        <button
+          v-if="selectedCategory !== 'all'"
+          class="btn btn-ghost btn-sm ml-2"
+          @click="selectedCategory = 'all'"
+        >
+          Réinitialiser
+        </button>
       </div>
 
       <!-- ===== FILTRES MOBILE (2 selects) ===== -->
@@ -156,7 +193,6 @@ const categories: { key: EmportCategory; label: string }[] = [
           <select
             v-model="selectedCategory"
             class="select select-bordered w-full"
-            @change="selectedSub = 'all'"
           >
             <option value="all" disabled>Choisir un type</option>
             <option value="GV">Grande vitesse</option>
@@ -180,13 +216,12 @@ const categories: { key: EmportCategory; label: string }[] = [
             :disabled="!needsSubSelect"
           >
             <option value="all" disabled>
-              Choisir {{ subSelectLabel === "Compagnie" ? "une compagnie" : "une région" }}
+              Choisir
+              {{
+                subSelectLabel === "Compagnie" ? "une compagnie" : "une région"
+              }}
             </option>
-            <option
-              v-for="opt in availableSubOptions"
-              :key="opt"
-              :value="opt"
-            >
+            <option v-for="opt in availableSubOptions" :key="opt" :value="opt">
               {{ opt }}
             </option>
           </select>
@@ -195,14 +230,14 @@ const categories: { key: EmportCategory; label: string }[] = [
 
       <!-- ===== VUE MOBILE (cards) ===== -->
       <div class="md:hidden">
-        <div
-          v-if="!mobileReady"
-          class="text-center text-base-content/60 py-8"
-        >
+        <div v-if="!mobileReady" class="text-center text-base-content/60 py-8">
           <p class="text-sm">
             Sélectionnez un type de train
             <span v-if="needsSubSelect">
-              puis {{ subSelectLabel === "Compagnie" ? "une compagnie" : "une région" }}
+              puis
+              {{
+                subSelectLabel === "Compagnie" ? "une compagnie" : "une région"
+              }}
             </span>
           </p>
         </div>
@@ -217,14 +252,24 @@ const categories: { key: EmportCategory; label: string }[] = [
               {{ row.compagnie_region }}
             </h3>
             <div class="flex flex-col gap-3">
-              <div v-if="row.regle_demonte" class="border border-base-300 rounded p-3">
-                <div class="text-xs font-semibold text-base-content/60 uppercase mb-1">
+              <div
+                v-if="row.regle_demonte"
+                class="border border-base-300 rounded p-3"
+              >
+                <div
+                  class="text-xs font-semibold text-base-content/60 uppercase mb-1"
+                >
                   Vélo démonté / plié
                 </div>
                 <p class="text-sm" v-html="row.regle_demonte"></p>
               </div>
-              <div v-if="row.regle_nondemonte" class="border border-base-300 rounded p-3">
-                <div class="text-xs font-semibold text-base-content/60 uppercase mb-1">
+              <div
+                v-if="row.regle_nondemonte"
+                class="border border-base-300 rounded p-3"
+              >
+                <div
+                  class="text-xs font-semibold text-base-content/60 uppercase mb-1"
+                >
                   Vélo non démonté
                 </div>
                 <p class="text-sm" v-html="row.regle_nondemonte"></p>
@@ -241,8 +286,11 @@ const categories: { key: EmportCategory; label: string }[] = [
                   target="_blank"
                   rel="noopener noreferrer"
                   class="link text-xs"
-                >Source 1</a>
-                <span v-else class="text-xs text-base-content/60">{{ row.source1 }}</span>
+                  >Source 1</a
+                >
+                <span v-else class="text-xs text-base-content/60">{{
+                  row.source1
+                }}</span>
               </template>
               <template v-if="row.source2">
                 <a
@@ -251,8 +299,11 @@ const categories: { key: EmportCategory; label: string }[] = [
                   target="_blank"
                   rel="noopener noreferrer"
                   class="link text-xs"
-                >Source 2</a>
-                <span v-else class="text-xs text-base-content/60">{{ row.source2 }}</span>
+                  >Source 2</a
+                >
+                <span v-else class="text-xs text-base-content/60">{{
+                  row.source2
+                }}</span>
               </template>
             </div>
           </div>
@@ -279,29 +330,38 @@ const categories: { key: EmportCategory; label: string }[] = [
             </tr>
           </thead>
           <tbody>
-            <tr v-for="row in filteredRows" :key="row.emport_id">
-              <td class="font-medium whitespace-nowrap">
-                {{ row.type_train }}
+            <tr v-for="row in desktopTableRows" :key="row.emport_id">
+              <td
+                v-if="row.isFirstInGroup"
+                :rowspan="row.rowspan"
+                class="font-bold whitespace-nowrap uppercase align-middle text-center"
+                :class="typeBgClass(row.type_train)"
+              >
+                <span
+                  class="inline-block [writing-mode:vertical-rl] rotate-180"
+                  >{{ typeLabel(row.type_train) }}</span
+                >
               </td>
-              <td>{{ row.compagnie_region }}</td>
+              <td class="font-bold" :class="typeBgClass(row.type_train)">
+                {{ row.compagnie_region }}
+              </td>
               <td class="text-sm" v-html="row.regle_demonte ?? '–'"></td>
               <td class="text-sm" v-html="row.regle_nondemonte ?? '–'"></td>
-              <td class="whitespace-nowrap">
-                <div class="flex gap-1">
+              <td>
+                <div class="flex flex-col gap-1">
                   <template v-if="row.source1">
                     <a
                       v-if="isUrl(row.source1)"
                       :href="row.source1"
                       target="_blank"
                       rel="noopener noreferrer"
-                      class="tooltip tooltip-left badge badge-outline badge-sm cursor-pointer"
+                      class="link link-hover text-xs font-normal tooltip tooltip-left"
                       :data-tip="row.source1"
-                    >1</a>
-                    <span
-                      v-else
-                      class="tooltip tooltip-left badge badge-outline badge-sm"
-                      :data-tip="row.source1"
-                    >1</span>
+                      >{{ hasMultipleSources(row) ? "source 1" : "source" }}</a
+                    >
+                    <span v-else class="text-xs text-base-content/60">{{
+                      row.source1
+                    }}</span>
                   </template>
                   <template v-if="row.source2">
                     <a
@@ -309,19 +369,18 @@ const categories: { key: EmportCategory; label: string }[] = [
                       :href="row.source2"
                       target="_blank"
                       rel="noopener noreferrer"
-                      class="tooltip tooltip-left badge badge-outline badge-sm cursor-pointer"
+                      class="link link-hover text-xs font-normal tooltip tooltip-left"
                       :data-tip="row.source2"
-                    >2</a>
-                    <span
-                      v-else
-                      class="tooltip tooltip-left badge badge-outline badge-sm"
-                      :data-tip="row.source2"
-                    >2</span>
+                      >source 2</a
+                    >
+                    <span v-else class="text-xs text-base-content/60">{{
+                      row.source2
+                    }}</span>
                   </template>
                 </div>
               </td>
             </tr>
-            <tr v-if="filteredRows.length === 0">
+            <tr v-if="desktopTableRows.length === 0">
               <td colspan="5" class="text-center text-base-content/60 py-8">
                 Aucune donnée
               </td>
