@@ -5,3 +5,8 @@ Authorization: Bearer FyiloYmSAGkdaleukfEDrivTesxviYyc
 ###
 GET http://localhost:4002/api/private/crons/ingest_cartotrain.php
 Authorization: Bearer FyiloYmSAGkdaleukfEDrivTesxviYyc
+
+
+###
+GET https://velogrimpe.fr/api/private/crons/ingest_cartotrain.php
+Authorization: Bearer FyiloYmSAGkdaleukfEDrivTesxviYyc
