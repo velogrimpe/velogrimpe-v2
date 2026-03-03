@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
+import Icon from "@/components/shared/Icon.vue";
 import type { EmportRow, EmportCategory } from "@/types/emport";
 
 const isLoading = ref(true);
@@ -180,7 +181,7 @@ function hasMultipleSources(row: EmportRow): boolean {
           class="btn btn-ghost btn-sm ml-2"
           @click="selectedCategory = 'all'"
         >
-          Réinitialiser
+          <Icon name="x-circle" />
         </button>
       </div>
 
