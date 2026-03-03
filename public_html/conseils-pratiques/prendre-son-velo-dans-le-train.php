@@ -39,7 +39,7 @@ $description = 'Conseils pratiques pour le vélogrimpe : comment équiper son v�
     </div>
   </div>
   <?php include $_SERVER['DOCUMENT_ROOT'] . "/components/nav-conseils-pratiques.php"; ?>
-  <main class="grow max-w-(--breakpoint-xl) mx-auto p-4 pb-8 w-full">
+  <main class="grow max-w-(--breakpoint-lg) mx-auto p-4 pb-8 w-full prose">
     <p>Prendre son vélo dans un train, c'est possible, et ça a même un nom savant : l'intermodalité (wahou !). </p>
     <p>Parfois, il faut démonter son vélo. Parfois, faut réserver... Et les règles varient beaucoup suivant les régions,
       les compagnies et les années ! Alors comment savoir ??</p>

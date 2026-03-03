@@ -23,6 +23,12 @@ $result = $mysqli->query("SELECT
       WHEN 'INTERCITÉS' THEN 2
       ELSE 3
     END,
+    CASE
+      WHEN compagnie_region LIKE '%TGV Inoui%' THEN 1
+      WHEN compagnie_region LIKE '%TGV Lyria%' THEN 2
+      WHEN compagnie_region LIKE '%Ouigo%' THEN 3
+      ELSE 4
+    END,
     compagnie_region ASC");
 
 if (!$result) {

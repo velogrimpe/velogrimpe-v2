@@ -261,7 +261,9 @@ function hasMultipleSources(row: EmportRow): boolean {
                   :name="'accordion-' + row.emport_id"
                   checked
                 />
-                <div class="collapse-title text-xs font-semibold text-base-content/60 uppercase">
+                <div
+                  class="collapse-title text-xs font-semibold text-base-content/60 uppercase"
+                >
                   Vélo démonté / plié
                 </div>
                 <div class="collapse-content">
@@ -272,11 +274,10 @@ function hasMultipleSources(row: EmportRow): boolean {
                 v-if="row.regle_nondemonte"
                 class="collapse collapse-arrow join-item border border-base-content/20"
               >
-                <input
-                  type="radio"
-                  :name="'accordion-' + row.emport_id"
-                />
-                <div class="collapse-title text-xs font-semibold text-base-content/60 uppercase">
+                <input type="radio" :name="'accordion-' + row.emport_id" />
+                <div
+                  class="collapse-title text-xs font-semibold text-base-content/60 uppercase"
+                >
                   Vélo non démonté
                 </div>
                 <div class="collapse-content">
