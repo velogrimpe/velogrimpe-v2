@@ -36,7 +36,7 @@ function getCategory(typeTrain: string): "GV" | "Intercité" | "Régional" {
 
 function typeLabel(typeTrain: string): string {
   if (typeTrain === "GRANDE VITESSE") return "Grande vitesse";
-  if (typeTrain === "INTERCITÉS") return "Trains type Intercités";
+  if (typeTrain === "INTERCITÉS") return "Interrégionaux";
   return "Régional / TER";
 }
 
@@ -305,9 +305,39 @@ function firstLine(s: string): string {
             :key="row.emport_id"
             class="bg-base-100 shadow rounded-lg p-4"
           >
-            <h3 class="font-semibold text-base mb-3 whitespace-pre-line">
-              {{ row.compagnie_region }}
-            </h3>
+            <div class="flex justify-between">
+              <h3 class="font-semibold text-base mb-3 whitespace-pre-line grow">
+                {{ row.compagnie_region }}
+              </h3>
+              <div v-if="row.source1 || row.source2" class="text-xs text-right">
+                (<template v-if="row.source1">
+                  <a
+                    v-if="isUrl(row.source1)"
+                    :href="row.source1"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="link"
+                    >{{ hasMultipleSources(row) ? "Source 1" : "Source" }}</a
+                  >
+                  <span v-else class="text-base-content/60">{{
+                    row.source1
+                  }}</span></template
+                ><template v-if="row.source2"
+                  >,
+                  <a
+                    v-if="isUrl(row.source2)"
+                    :href="row.source2"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="link"
+                    >Source 2</a
+                  >
+                  <span v-else class="text-base-content/60">{{
+                    row.source2
+                  }}</span></template
+                >)
+              </div>
+            </div>
             <div class="flex flex-col gap-4">
               <div
                 v-if="row.regle_demonte"
@@ -331,34 +361,6 @@ function firstLine(s: string): string {
                 </div>
                 <p class="text-sm p-2" v-html="row.regle_nondemonte"></p>
               </div>
-            </div>
-            <div v-if="row.source1 || row.source2" class="flex gap-2 mt-1">
-              <template v-if="row.source1">
-                <a
-                  v-if="isUrl(row.source1)"
-                  :href="row.source1"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="link text-xs"
-                  >{{ hasMultipleSources(row) ? "Source 1" : "Source" }}</a
-                >
-                <span v-else class="text-xs text-base-content/60">{{
-                  row.source1
-                }}</span>
-              </template>
-              <template v-if="row.source2">
-                <a
-                  v-if="isUrl(row.source2)"
-                  :href="row.source2"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="link text-xs"
-                  >Source 2</a
-                >
-                <span v-else class="text-xs text-base-content/60">{{
-                  row.source2
-                }}</span>
-              </template>
             </div>
           </div>
 
