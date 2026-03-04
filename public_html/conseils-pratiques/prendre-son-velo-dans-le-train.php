@@ -48,7 +48,6 @@ $description = 'Conseils pratiques pour le vélogrimpe : comment équiper son v�
     <img src="/images/pages/logistique/logo-cartotrain.png" alt="Logo Cartotrain" class="w-96 mx-auto" />
     <h2>Règles d'emport des vélos dans les trains</h2>
     <div id="vue-emport"></div>
-    <hr />
     <h2>Quelques conseils supplémentaires</h2>
     <ul>
       <li>De nombreux trains ont des wagons prévus pour accrocher les vélos, qui sont généralement indiqués par des
