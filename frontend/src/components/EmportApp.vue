@@ -10,9 +10,10 @@ const allRows = ref<EmportRow[]>([]);
 const selectedCategory = ref<EmportCategory>("all");
 const selectedSub = ref<string[]>([]);
 
-// Reset sub-filter when category changes
+// Reset sub-filters when category changes
 watch(selectedCategory, () => {
   selectedSub.value = [];
+  selectedSubMobile.value = "";
 });
 
 onMounted(async () => {
@@ -47,11 +48,11 @@ function typeBgClass(typeTrain: string): string {
   return "bg-emerald-300/10";
 }
 
-// Sous-options disponibles pour le 2e select (compagnies GV ou régions TER)
+// Sous-options disponibles pour le 2e select (compagnies GV, lignes Intercité, régions TER)
 // Ordre préservé depuis l'API (pas de tri alphabétique)
 const availableSubOptions = computed(() => {
   const cat = selectedCategory.value;
-  if (cat === "all" || cat === "Intercité") return [];
+  if (cat === "all") return [];
   const seen = new Set<string>();
   const opts: string[] = [];
   for (const row of allRows.value) {
@@ -69,20 +70,19 @@ const availableSubOptions = computed(() => {
 // Label du 2e select
 const subSelectLabel = computed(() => {
   if (selectedCategory.value === "GV") return "Compagnie";
+  if (selectedCategory.value === "Intercité") return "Ligne";
   return "Région";
 });
 
-// Le 2e select est-il nécessaire ?
-const needsSubSelect = computed(() => {
-  return (
-    selectedCategory.value === "GV" || selectedCategory.value === "Régional"
-  );
-});
-
-// Label du dropdown multi-select
+// Label du dropdown multi-select (desktop)
 const subDropdownLabel = computed(() => {
+  const cat = selectedCategory.value;
   const allLabel =
-    selectedCategory.value === "GV" ? "toutes compagnies" : "toutes régions";
+    cat === "GV"
+      ? "toutes compagnies"
+      : cat === "Intercité"
+        ? "toutes lignes"
+        : "toutes régions";
   if (
     selectedSub.value.length === 0 ||
     selectedSub.value.length === availableSubOptions.value.length
@@ -93,13 +93,20 @@ const subDropdownLabel = computed(() => {
   return `${selectedSub.value.length} sélectionnés`;
 });
 
+// Mobile : valeur unique du 2e select
+const selectedSubMobile = ref("");
+
+watch(selectedSubMobile, (val) => {
+  selectedSub.value = val ? [val] : [];
+});
+
 // Lignes filtrées
 const filteredRows = computed(() => {
   if (selectedCategory.value === "all") return allRows.value;
   return allRows.value.filter((r) => {
     const cat = getCategory(r.type_train);
     if (cat !== selectedCategory.value) return false;
-    if (needsSubSelect.value && selectedSub.value.length > 0) {
+    if (selectedSub.value.length > 0) {
       if (!selectedSub.value.includes(r.compagnie_region)) return false;
     }
     return true;
@@ -137,9 +144,9 @@ const desktopTableRows = computed<DesktopRow[]>(() => {
   return result;
 });
 
-// Mobile : prêt à afficher ?
+// Mobile : prêt à afficher ? (les deux niveaux de filtre sont requis)
 const mobileReady = computed(() => {
-  return selectedCategory.value !== "all";
+  return selectedCategory.value !== "all" && selectedSubMobile.value !== "";
 });
 
 function isUrl(s: string | null): boolean {
@@ -210,6 +217,33 @@ function firstLine(s: string): string {
             </div>
           </details>
         </template>
+        <template v-if="selectedCategory === 'Intercité'">
+          <span>ligne</span>
+          <details class="dropdown">
+            <summary
+              class="select select-bordered flex items-center cursor-pointer font-bold"
+            >
+              {{ subDropdownLabel }}
+            </summary>
+            <div
+              class="dropdown-content z-[1] bg-base-100 rounded-box shadow-lg p-2 w-64 mt-1"
+            >
+              <label
+                v-for="opt in availableSubOptions"
+                :key="opt"
+                class="flex items-center gap-2 px-3 py-1.5 rounded hover:bg-base-200 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  :value="opt"
+                  v-model="selectedSub"
+                  class="checkbox checkbox-sm"
+                />
+                <span class="text-sm font-normal">{{ firstLine(opt) }}</span>
+              </label>
+            </div>
+          </details>
+        </template>
         <template v-if="selectedCategory === 'Régional'">
           <span>en région</span>
           <details class="dropdown">
@@ -246,7 +280,7 @@ function firstLine(s: string): string {
         </button>
       </div>
 
-      <!-- ===== FILTRES MOBILE (selects + checkboxes) ===== -->
+      <!-- ===== FILTRES MOBILE (deux selects) ===== -->
       <div class="md:hidden flex flex-col gap-3 mb-6">
         <label class="form-control w-full">
           <div class="label">
@@ -258,59 +292,57 @@ function firstLine(s: string): string {
           >
             <option value="all" disabled>Choisir un type</option>
             <option value="GV">Grande vitesse</option>
-            <option value="Intercité">Trains type Intercités</option>
+            <option value="Intercité">Interrégionaux</option>
             <option value="Régional">Régional / TER</option>
           </select>
         </label>
 
-        <details
-          v-if="needsSubSelect"
-          class="border rounded-lg border-base-content/20 bg-base-100"
-        >
-          <summary
-            class="p-3 cursor-pointer font-medium text-sm flex items-center justify-between"
-          >
-            <span>{{ subSelectLabel }}</span>
-            <span
-              v-if="selectedSub.length > 0"
-              class="badge badge-sm badge-primary"
-              >{{ selectedSub.length }}</span
-            >
-          </summary>
-          <div class="px-3 pb-3 flex flex-col gap-1 max-h-64 overflow-y-auto">
-            <label
-              v-for="opt in availableSubOptions"
-              :key="opt"
-              class="flex items-center gap-2 py-1.5 cursor-pointer text-sm"
-            >
-              <input
-                type="checkbox"
-                :value="opt"
-                v-model="selectedSub"
-                class="checkbox checkbox-sm"
-              />
-              {{ firstLine(opt) }}
-            </label>
+        <label v-if="selectedCategory !== 'all'" class="form-control w-full">
+          <div class="label">
+            <span class="label-text font-medium">{{ subSelectLabel }}</span>
           </div>
-        </details>
+          <select
+            v-model="selectedSubMobile"
+            class="select select-bordered w-full"
+          >
+            <option value="" disabled>Choisir</option>
+            <option v-for="opt in availableSubOptions" :key="opt" :value="opt">
+              {{ firstLine(opt) }}
+            </option>
+          </select>
+        </label>
       </div>
 
       <!-- ===== VUE MOBILE (cards) ===== -->
       <div class="md:hidden">
-        <div class="font-bold">Règles d'emport dans les trains</div>
         <div v-if="!mobileReady"></div>
         <div v-else class="flex flex-col gap-4">
-          <div
-            v-for="row in filteredRows"
-            :key="row.emport_id"
-            class="bg-base-100 shadow rounded-lg p-4"
-          >
-            <div class="flex justify-between">
-              <h3 class="font-semibold text-base mb-3 whitespace-pre-line grow">
-                {{ row.compagnie_region }}
-              </h3>
+          <div v-for="row in filteredRows" :key="row.emport_id">
+            <div class="flex flex-col gap-4">
+              <div
+                v-if="row.regle_demonte"
+                class="border rounded-md border-base-content/20 overflow-hidden"
+              >
+                <div
+                  class="w-full p-2 border-b border-base-content/20 text-xs font-semibold text-primary uppercase"
+                >
+                  Vélo démonté / plié
+                </div>
+                <p class="text-sm p-2" v-html="row.regle_demonte"></p>
+              </div>
+              <div
+                v-if="row.regle_nondemonte"
+                class="border rounded-md border-base-content/20 overflow-hidden"
+              >
+                <div
+                  class="w-full p-2 border-b border-base-content/20 text-xs font-semibold text-primary uppercase"
+                >
+                  Vélo non démonté
+                </div>
+                <p class="text-sm p-2" v-html="row.regle_nondemonte"></p>
+              </div>
               <div v-if="row.source1 || row.source2" class="text-xs text-right">
-                (<template v-if="row.source1">
+                <template v-if="row.source1">
                   <a
                     v-if="isUrl(row.source1)"
                     :href="row.source1"
@@ -335,31 +367,7 @@ function firstLine(s: string): string {
                   <span v-else class="text-base-content/60">{{
                     row.source2
                   }}</span></template
-                >)
-              </div>
-            </div>
-            <div class="flex flex-col gap-4">
-              <div
-                v-if="row.regle_demonte"
-                class="border rounded-md border-base-content/20 overflow-hidden"
-              >
-                <div
-                  class="w-full p-2 border-b border-base-content/20 text-xs font-semibold text-base-content/60 uppercase"
                 >
-                  Vélo démonté / plié
-                </div>
-                <p class="text-sm p-2" v-html="row.regle_demonte"></p>
-              </div>
-              <div
-                v-if="row.regle_nondemonte"
-                class="border rounded-md border-base-content/20 overflow-hidden"
-              >
-                <div
-                  class="w-full p-2 border-b border-base-content/20 text-xs font-semibold text-base-content/60 uppercase"
-                >
-                  Vélo non démonté
-                </div>
-                <p class="text-sm p-2" v-html="row.regle_nondemonte"></p>
               </div>
             </div>
           </div>
@@ -448,11 +456,9 @@ function firstLine(s: string): string {
         </table>
       </div>
 
-      <div class="text-sm text-base-content/60 -mb-2 mt-4">
-        <span class="underline">Credits</span>: Merci à
-        <a href="https://cartotrain.fr">Cartotrain</a> pour les données.
+      <!-- <div class="text-sm text-base-content/60 -mb-2 mt-4">
         Dernière mise à jour: Mars 2026.
-      </div>
+      </div> -->
     </div>
   </div>
 </template>

@@ -42,14 +42,14 @@ $description = 'Conseils pratiques pour le vélogrimpe : comment équiper son v�
   <main class="grow max-w-(--breakpoint-lg) mx-auto p-4 pb-8 w-full prose">
     <p>Prendre son vélo dans un train, c'est possible, et ça a même un nom savant : l'intermodalité (wahou !). </p>
     <p>Parfois, il faut démonter son vélo. Parfois, faut réserver... Et les règles varient beaucoup suivant les régions,
-      les compagnies et les années ! Alors comment savoir ??</p>
+      les compagnies et les années. Alors comment savoir ??</p>
     <p>C'est là qu'arrive Jean-Luc Levoux, du projet <a href="https://cartotrain.fr">Cartotrain</a> : grâce aux
       informations qu'il a patiemment collectées, nous pouvons répondre à cette question ! </p>
     <img src="/images/pages/logistique/logo-cartotrain.png" alt="Logo Cartotrain" class="w-96 mx-auto" />
     <h2>Règles d'emport des vélos dans les trains</h2>
     <div id="vue-emport"></div>
     <hr />
-    <p>Quelques conseils supplémentaires : </p>
+    <h2>Quelques conseils supplémentaires</h2>
     <ul>
       <li>De nombreux trains ont des wagons prévus pour accrocher les vélos, qui sont généralement indiqués par des
         autocollants de vélos sur les portes correspondantes. On trouve souvent des crochets pour la roue avant, afin de
