@@ -8,11 +8,11 @@ const error = ref<string | null>(null);
 const allRows = ref<EmportRow[]>([]);
 
 const selectedCategory = ref<EmportCategory>("all");
-const selectedSub = ref<string>("all");
+const selectedSub = ref<string[]>([]);
 
 // Reset sub-filter when category changes
 watch(selectedCategory, () => {
-  selectedSub.value = "all";
+  selectedSub.value = [];
 });
 
 onMounted(async () => {
@@ -36,7 +36,7 @@ function getCategory(typeTrain: string): "GV" | "Intercité" | "Régional" {
 
 function typeLabel(typeTrain: string): string {
   if (typeTrain === "GRANDE VITESSE") return "Grande vitesse";
-  if (typeTrain === "INTERCITÉS") return "Intercités";
+  if (typeTrain === "INTERCITÉS") return "Trains type Intercités";
   return "Régional / TER";
 }
 
@@ -48,16 +48,22 @@ function typeBgClass(typeTrain: string): string {
 }
 
 // Sous-options disponibles pour le 2e select (compagnies GV ou régions TER)
+// Ordre préservé depuis l'API (pas de tri alphabétique)
 const availableSubOptions = computed(() => {
   const cat = selectedCategory.value;
   if (cat === "all" || cat === "Intercité") return [];
-  const opts = new Set<string>();
+  const seen = new Set<string>();
+  const opts: string[] = [];
   for (const row of allRows.value) {
-    if (getCategory(row.type_train) === cat) {
-      opts.add(row.compagnie_region);
+    if (
+      getCategory(row.type_train) === cat &&
+      !seen.has(row.compagnie_region)
+    ) {
+      seen.add(row.compagnie_region);
+      opts.push(row.compagnie_region);
     }
   }
-  return [...opts].sort();
+  return opts;
 });
 
 // Label du 2e select
@@ -73,14 +79,28 @@ const needsSubSelect = computed(() => {
   );
 });
 
+// Label du dropdown multi-select
+const subDropdownLabel = computed(() => {
+  const allLabel =
+    selectedCategory.value === "GV" ? "toutes compagnies" : "toutes régions";
+  if (
+    selectedSub.value.length === 0 ||
+    selectedSub.value.length === availableSubOptions.value.length
+  )
+    return allLabel;
+  if (selectedSub.value.length <= 2)
+    return selectedSub.value.map(firstLine).join(", ");
+  return `${selectedSub.value.length} sélectionnés`;
+});
+
 // Lignes filtrées
 const filteredRows = computed(() => {
   if (selectedCategory.value === "all") return allRows.value;
   return allRows.value.filter((r) => {
     const cat = getCategory(r.type_train);
     if (cat !== selectedCategory.value) return false;
-    if (needsSubSelect.value && selectedSub.value !== "all") {
-      if (r.compagnie_region !== selectedSub.value) return false;
+    if (needsSubSelect.value && selectedSub.value.length > 0) {
+      if (!selectedSub.value.includes(r.compagnie_region)) return false;
     }
     return true;
   });
@@ -119,10 +139,7 @@ const desktopTableRows = computed<DesktopRow[]>(() => {
 
 // Mobile : prêt à afficher ?
 const mobileReady = computed(() => {
-  if (selectedCategory.value === "all") return false;
-  if (selectedCategory.value === "Intercité") return true;
-  if (selectedSub.value !== "all") return true;
-  return false;
+  return selectedCategory.value !== "all";
 });
 
 function isUrl(s: string | null): boolean {
@@ -131,6 +148,11 @@ function isUrl(s: string | null): boolean {
 
 function hasMultipleSources(row: EmportRow): boolean {
   return !!(row.source1 && row.source2);
+}
+
+// Première ligne d'une chaîne (pour les libellés de filtre)
+function firstLine(s: string): string {
+  return s.split("\n")[0];
 }
 </script>
 
@@ -146,46 +168,85 @@ function hasMultipleSources(row: EmportRow): boolean {
       <span>{{ error }}</span>
     </div>
 
-    <div v-else>
+    <div v-else class="rounded-lg p-4 shadow bg-base-200 not-prose">
       <!-- ===== FILTRE DESKTOP (phrase à trous) ===== -->
       <div
-        class="hidden md:flex bg-base-200 rounded-lg p-4 shadow mb-6 font-bold items-center gap-2 text-base flex-wrap"
+        class="hidden md:flex mb-2 font-bold items-center gap-2 text-base flex-wrap"
       >
         <span>Je vais prendre un train</span>
-        <select v-model="selectedCategory" class="select select-bordered">
+        <select
+          v-model="selectedCategory"
+          class="select select-bordered w-content"
+        >
           <option value="all">(choisir un type de train)</option>
           <option value="GV">Grande vitesse</option>
-          <option value="Intercité">Intercités</option>
+          <option value="Intercité">Trains type Intercités</option>
           <option value="Régional">Régional / TER</option>
         </select>
         <template v-if="selectedCategory === 'GV'">
           <span>via</span>
-          <select v-model="selectedSub" class="select select-bordered">
-            <option value="all">toutes compagnies</option>
-            <option v-for="opt in availableSubOptions" :key="opt" :value="opt">
-              {{ opt }}
-            </option>
-          </select>
+          <details class="dropdown">
+            <summary
+              class="select select-bordered flex items-center cursor-pointer font-bold"
+            >
+              {{ subDropdownLabel }}
+            </summary>
+            <div
+              class="dropdown-content z-[1] bg-base-100 rounded-box shadow-lg p-2 w-64 mt-1"
+            >
+              <label
+                v-for="opt in availableSubOptions"
+                :key="opt"
+                class="flex items-center gap-2 px-3 py-1.5 rounded hover:bg-base-200 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  :value="opt"
+                  v-model="selectedSub"
+                  class="checkbox checkbox-sm"
+                />
+                <span class="text-sm font-normal">{{ firstLine(opt) }}</span>
+              </label>
+            </div>
+          </details>
         </template>
         <template v-if="selectedCategory === 'Régional'">
           <span>en région</span>
-          <select v-model="selectedSub" class="select select-bordered">
-            <option value="all">toutes régions</option>
-            <option v-for="opt in availableSubOptions" :key="opt" :value="opt">
-              {{ opt }}
-            </option>
-          </select>
+          <details class="dropdown">
+            <summary
+              class="select select-bordered flex items-center cursor-pointer font-bold"
+            >
+              {{ subDropdownLabel }}
+            </summary>
+            <div
+              class="dropdown-content z-[1] bg-base-100 rounded-box shadow-lg p-2 w-64 mt-1"
+            >
+              <label
+                v-for="opt in availableSubOptions"
+                :key="opt"
+                class="flex items-center gap-2 px-3 py-1.5 rounded hover:bg-base-200 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  :value="opt"
+                  v-model="selectedSub"
+                  class="checkbox checkbox-sm"
+                />
+                <span class="text-sm font-normal">{{ firstLine(opt) }}</span>
+              </label>
+            </div>
+          </details>
         </template>
         <button
           v-if="selectedCategory !== 'all'"
-          class="btn btn-ghost btn-sm ml-2"
+          class="btn btn-ghost btn-square ml-2"
           @click="selectedCategory = 'all'"
         >
-          <Icon name="x-circle" />
+          <Icon name="x-circle" class="h-8 w-8" />
         </button>
       </div>
 
-      <!-- ===== FILTRES MOBILE (2 selects) ===== -->
+      <!-- ===== FILTRES MOBILE (selects + checkboxes) ===== -->
       <div class="md:hidden flex flex-col gap-3 mb-6">
         <label class="form-control w-full">
           <div class="label">
@@ -197,99 +258,81 @@ function hasMultipleSources(row: EmportRow): boolean {
           >
             <option value="all" disabled>Choisir un type</option>
             <option value="GV">Grande vitesse</option>
-            <option value="Intercité">Intercités</option>
+            <option value="Intercité">Trains type Intercités</option>
             <option value="Régional">Régional / TER</option>
           </select>
         </label>
 
-        <label class="form-control w-full">
-          <div class="label">
-            <span
-              class="label-text font-medium"
-              :class="{ 'opacity-40': !needsSubSelect }"
-            >
-              {{ needsSubSelect ? subSelectLabel : "Compagnie / Région" }}
-            </span>
-          </div>
-          <select
-            v-model="selectedSub"
-            class="select select-bordered w-full"
-            :disabled="!needsSubSelect"
+        <details
+          v-if="needsSubSelect"
+          class="border rounded-lg border-base-content/20 bg-base-100"
+        >
+          <summary
+            class="p-3 cursor-pointer font-medium text-sm flex items-center justify-between"
           >
-            <option value="all" disabled>
-              Choisir
-              {{
-                subSelectLabel === "Compagnie" ? "une compagnie" : "une région"
-              }}
-            </option>
-            <option v-for="opt in availableSubOptions" :key="opt" :value="opt">
-              {{ opt }}
-            </option>
-          </select>
-        </label>
+            <span>{{ subSelectLabel }}</span>
+            <span
+              v-if="selectedSub.length > 0"
+              class="badge badge-sm badge-primary"
+              >{{ selectedSub.length }}</span
+            >
+          </summary>
+          <div class="px-3 pb-3 flex flex-col gap-1 max-h-64 overflow-y-auto">
+            <label
+              v-for="opt in availableSubOptions"
+              :key="opt"
+              class="flex items-center gap-2 py-1.5 cursor-pointer text-sm"
+            >
+              <input
+                type="checkbox"
+                :value="opt"
+                v-model="selectedSub"
+                class="checkbox checkbox-sm"
+              />
+              {{ firstLine(opt) }}
+            </label>
+          </div>
+        </details>
       </div>
 
       <!-- ===== VUE MOBILE (cards) ===== -->
       <div class="md:hidden">
-        <div v-if="!mobileReady" class="text-center text-base-content/60 py-8">
-          <p class="text-sm">
-            Sélectionnez un type de train
-            <span v-if="needsSubSelect">
-              puis
-              {{
-                subSelectLabel === "Compagnie" ? "une compagnie" : "une région"
-              }}
-            </span>
-          </p>
-        </div>
-
+        <div class="font-bold">Règles d'emport dans les trains</div>
+        <div v-if="!mobileReady"></div>
         <div v-else class="flex flex-col gap-4">
           <div
             v-for="row in filteredRows"
             :key="row.emport_id"
             class="bg-base-100 shadow rounded-lg p-4"
           >
-            <h3 class="font-semibold text-base mb-3">
+            <h3 class="font-semibold text-base mb-3 whitespace-pre-line">
               {{ row.compagnie_region }}
             </h3>
-            <div class="join join-vertical w-full">
+            <div class="flex flex-col gap-4">
               <div
                 v-if="row.regle_demonte"
-                class="collapse collapse-arrow join-item border border-base-content/20"
+                class="border rounded-md border-base-content/20 overflow-hidden"
               >
-                <input
-                  type="radio"
-                  :name="'accordion-' + row.emport_id"
-                  checked
-                />
                 <div
-                  class="collapse-title text-xs font-semibold text-base-content/60 uppercase"
+                  class="w-full p-2 border-b border-base-content/20 text-xs font-semibold text-base-content/60 uppercase"
                 >
                   Vélo démonté / plié
                 </div>
-                <div class="collapse-content">
-                  <p class="text-sm" v-html="row.regle_demonte"></p>
-                </div>
+                <p class="text-sm p-2" v-html="row.regle_demonte"></p>
               </div>
               <div
                 v-if="row.regle_nondemonte"
-                class="collapse collapse-arrow join-item border border-base-content/20"
+                class="border rounded-md border-base-content/20 overflow-hidden"
               >
-                <input type="radio" :name="'accordion-' + row.emport_id" />
                 <div
-                  class="collapse-title text-xs font-semibold text-base-content/60 uppercase"
+                  class="w-full p-2 border-b border-base-content/20 text-xs font-semibold text-base-content/60 uppercase"
                 >
                   Vélo non démonté
                 </div>
-                <div class="collapse-content">
-                  <p class="text-sm" v-html="row.regle_nondemonte"></p>
-                </div>
+                <p class="text-sm p-2" v-html="row.regle_nondemonte"></p>
               </div>
             </div>
-            <div
-              v-if="row.source1 || row.source2"
-              class="flex gap-2 mt-3 pt-2 border-t border-base-content/20"
-            >
+            <div v-if="row.source1 || row.source2" class="flex gap-2 mt-1">
               <template v-if="row.source1">
                 <a
                   v-if="isUrl(row.source1)"
@@ -297,7 +340,7 @@ function hasMultipleSources(row: EmportRow): boolean {
                   target="_blank"
                   rel="noopener noreferrer"
                   class="link text-xs"
-                  >Source 1</a
+                  >{{ hasMultipleSources(row) ? "Source 1" : "Source" }}</a
                 >
                 <span v-else class="text-xs text-base-content/60">{{
                   row.source1
@@ -333,11 +376,11 @@ function hasMultipleSources(row: EmportRow): boolean {
         <table class="table table-zebra w-full">
           <thead>
             <tr>
-              <th>Type</th>
-              <th>Compagnie / Région</th>
-              <th>Vélo démonté / plié</th>
-              <th>Vélo non démonté</th>
-              <th>Sources</th>
+              <th class="text-center">Type</th>
+              <th class="text-center">Compagnie / Région</th>
+              <th class="text-center">Vélo démonté / plié</th>
+              <th class="text-center">Vélo non démonté</th>
+              <th class="text-center">Sources</th>
             </tr>
           </thead>
           <tbody>
@@ -353,24 +396,27 @@ function hasMultipleSources(row: EmportRow): boolean {
                   >{{ typeLabel(row.type_train) }}</span
                 >
               </td>
-              <td class="font-bold" :class="typeBgClass(row.type_train)">
+              <td
+                class="font-bold align-middle whitespace-pre-line"
+                :class="typeBgClass(row.type_train)"
+              >
                 {{ row.compagnie_region }}
               </td>
               <td class="text-sm" v-html="row.regle_demonte ?? '–'"></td>
               <td class="text-sm" v-html="row.regle_nondemonte ?? '–'"></td>
               <td>
-                <div class="flex flex-col gap-1">
+                <div class="flex flex-col gap-1 items-center text-primary">
                   <template v-if="row.source1">
                     <a
                       v-if="isUrl(row.source1)"
                       :href="row.source1"
                       target="_blank"
                       rel="noopener noreferrer"
-                      class="link link-hover text-xs font-normal tooltip tooltip-left"
+                      class="link link-hover text-sm font-normal tooltip tooltip-left"
                       :data-tip="row.source1"
-                      >{{ hasMultipleSources(row) ? "source 1" : "source" }}</a
+                      >{{ hasMultipleSources(row) ? "Source 1" : "Source" }}</a
                     >
-                    <span v-else class="text-xs text-base-content/60">{{
+                    <span v-else class="text-sm text-base-content/60">{{
                       row.source1
                     }}</span>
                   </template>
@@ -380,11 +426,11 @@ function hasMultipleSources(row: EmportRow): boolean {
                       :href="row.source2"
                       target="_blank"
                       rel="noopener noreferrer"
-                      class="link link-hover text-xs font-normal tooltip tooltip-left"
+                      class="link link-hover text-sm font-normal tooltip tooltip-left"
                       :data-tip="row.source2"
-                      >source 2</a
+                      >Source 2</a
                     >
-                    <span v-else class="text-xs text-base-content/60">{{
+                    <span v-else class="text-sm text-base-content/60">{{
                       row.source2
                     }}</span>
                   </template>
@@ -398,6 +444,12 @@ function hasMultipleSources(row: EmportRow): boolean {
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <div class="text-sm text-base-content/60 -mb-2 mt-4">
+        <span class="underline">Credits</span>: Merci à
+        <a href="https://cartotrain.fr">Cartotrain</a> pour les données.
+        Dernière mise à jour: Mars 2026.
       </div>
     </div>
   </div>
