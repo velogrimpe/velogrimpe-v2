@@ -3,12 +3,13 @@ import { spawn, type Subprocess } from "bun";
 import { join } from "path";
 
 const PUBLIC_HTML = join(import.meta.dir, "../public_html");
+const SRC_DIR = join(import.meta.dir, "src");
 const DEBOUNCE_MS = 300;
 
 let buildProcess: Subprocess | null = null;
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-function triggerBuild() {
+function triggerBuild(reason: string) {
   if (debounceTimer) clearTimeout(debounceTimer);
 
   debounceTimer = setTimeout(async () => {
@@ -16,7 +17,7 @@ function triggerBuild() {
       buildProcess.kill();
     }
 
-    console.log("\n🔄 PHP file changed, rebuilding...");
+    console.log(`\n🔄 ${reason}, rebuilding...`);
 
     buildProcess = spawn(["sh", "-c", "bun run build"], {
       cwd: import.meta.dir,
@@ -24,14 +25,18 @@ function triggerBuild() {
       stderr: "inherit",
     });
 
-    await buildProcess.exited;
-    console.log("✅ Build complete");
+    const exitCode = await buildProcess.exited;
+    console.log(`✅ Build complete (${exitCode}) `);
+    if (exitCode === 0) {
+      spawn(["afplay", "/System/Library/Sounds/Funk.aiff"]);
+    }
   }, DEBOUNCE_MS);
 }
 
 // Watch public_html for PHP/HTML changes
 console.log("👀 Watching PHP files in public_html...");
-console.log("   (Changes will trigger CSS rebuild for new Tailwind classes)\n");
+console.log("👀 Watching Vue/TS/CSS files in frontend/src/...");
+console.log("   (Changes will trigger a full rebuild)\n");
 
 watch(PUBLIC_HTML, { recursive: true }, (event, filename) => {
   if (!filename) return;
@@ -40,8 +45,18 @@ watch(PUBLIC_HTML, { recursive: true }, (event, filename) => {
   if (filename.startsWith("dist/")) return;
   if (!/\.(php|html)$/.test(filename)) return;
 
-  console.log(`📝 ${event}: ${filename}`);
-  triggerBuild();
+  console.log(`📝 ${event}: public_html/${filename}`);
+  triggerBuild("PHP file changed");
+});
+
+// Watch frontend/src for Vue/TS/CSS changes
+watch(SRC_DIR, { recursive: true }, (event, filename) => {
+  if (!filename) return;
+
+  if (!/\.(vue|ts|css)$/.test(filename)) return;
+
+  console.log(`📝 ${event}: src/${filename}`);
+  triggerBuild("Source file changed");
 });
 
 // Keep process alive

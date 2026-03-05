@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import Icon from "@/components/shared/Icon.vue";
 import type { EmportRow, EmportCategory } from "@/types/emport";
 
@@ -17,6 +17,7 @@ watch(selectedCategory, () => {
 });
 
 onMounted(async () => {
+  document.addEventListener("click", onClickOutside);
   try {
     const res = await fetch("/api/fetch_emport.php");
     const json = await res.json();
@@ -29,6 +30,10 @@ onMounted(async () => {
   }
 });
 
+onUnmounted(() => {
+  document.removeEventListener("click", onClickOutside);
+});
+
 function getCategory(typeTrain: string): "GV" | "Intercité" | "Régional" {
   if (typeTrain === "GRANDE VITESSE") return "GV";
   if (typeTrain === "INTERCITÉS") return "Intercité";
@@ -37,7 +42,7 @@ function getCategory(typeTrain: string): "GV" | "Intercité" | "Régional" {
 
 function typeLabel(typeTrain: string): string {
   if (typeTrain === "GRANDE VITESSE") return "Grande vitesse";
-  if (typeTrain === "INTERCITÉS") return "Interrégionaux";
+  if (typeTrain === "INTERCITÉS") return "Inter-régionaux";
   return "Régional / TER";
 }
 
@@ -74,6 +79,25 @@ const subSelectLabel = computed(() => {
   return "Région";
 });
 
+// Mot de liaison entre le 1er et le 2e filtre desktop
+const subConnector = computed(() => {
+  if (selectedCategory.value === "GV") return "via";
+  if (selectedCategory.value === "Intercité") return "ligne";
+  return "en région";
+});
+
+// Click-outside pour fermer le dropdown multi-select
+const subDropdownRef = ref<HTMLDetailsElement | null>(null);
+
+function onClickOutside(e: MouseEvent) {
+  if (
+    subDropdownRef.value &&
+    !subDropdownRef.value.contains(e.target as Node)
+  ) {
+    subDropdownRef.value.open = false;
+  }
+}
+
 // Label du dropdown multi-select (desktop)
 const subDropdownLabel = computed(() => {
   const cat = selectedCategory.value;
@@ -88,7 +112,7 @@ const subDropdownLabel = computed(() => {
     selectedSub.value.length === availableSubOptions.value.length
   )
     return allLabel;
-  if (selectedSub.value.length <= 2)
+  if (selectedSub.value.length === 1)
     return selectedSub.value.map(firstLine).join(", ");
   return `${selectedSub.value.length} sélectionnés`;
 });
@@ -161,6 +185,15 @@ function hasMultipleSources(row: EmportRow): boolean {
 function firstLine(s: string): string {
   return s.split("\n")[0];
 }
+// Seconde ligne d'une chaîne (pour les libellés de filtre)
+function secondLine(s: string): string {
+  const parts = s.split("\n");
+  return parts.length > 1 ? parts.slice(1).join("\n") : "";
+}
+
+function centerIfInterdit(text: string | null): string {
+  return text && text.toLowerCase() === "interdit" ? "text-center" : "";
+}
 </script>
 
 <template>
@@ -178,79 +211,25 @@ function firstLine(s: string): string {
     <div v-else class="rounded-lg p-4 shadow bg-base-200 not-prose">
       <!-- ===== FILTRE DESKTOP (phrase à trous) ===== -->
       <div
-        class="hidden md:flex mb-2 font-bold items-center gap-2 text-base flex-wrap"
+        class="hidden md:flex mb-2 font-bold items-center gap-2 text-base max-w-full"
       >
-        <span>Je vais prendre un train</span>
+        <span class="shrink-0">Je vais prendre un train</span>
         <select
           v-model="selectedCategory"
-          class="select select-bordered w-content"
+          class="select select-bordered select-primary w-1/4"
         >
           <option value="all">(choisir un type de train)</option>
           <option value="GV">Grande vitesse</option>
           <option value="Intercité">Trains type Intercités</option>
           <option value="Régional">Régional / TER</option>
         </select>
-        <template v-if="selectedCategory === 'GV'">
-          <span>via</span>
-          <details class="dropdown">
+        <template v-if="selectedCategory !== 'all'">
+          <span class="shrink-0">{{ subConnector }}</span>
+          <details ref="subDropdownRef" class="dropdown w-1/4">
             <summary
-              class="select select-bordered flex items-center cursor-pointer font-bold"
+              class="select select-bordered select-primary w-full flex items-center cursor-pointer font-bold min-w-0"
             >
-              {{ subDropdownLabel }}
-            </summary>
-            <div
-              class="dropdown-content z-[1] bg-base-100 rounded-box shadow-lg p-2 w-64 mt-1"
-            >
-              <label
-                v-for="opt in availableSubOptions"
-                :key="opt"
-                class="flex items-center gap-2 px-3 py-1.5 rounded hover:bg-base-200 cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  :value="opt"
-                  v-model="selectedSub"
-                  class="checkbox checkbox-sm"
-                />
-                <span class="text-sm font-normal">{{ firstLine(opt) }}</span>
-              </label>
-            </div>
-          </details>
-        </template>
-        <template v-if="selectedCategory === 'Intercité'">
-          <span>ligne</span>
-          <details class="dropdown">
-            <summary
-              class="select select-bordered flex items-center cursor-pointer font-bold"
-            >
-              {{ subDropdownLabel }}
-            </summary>
-            <div
-              class="dropdown-content z-[1] bg-base-100 rounded-box shadow-lg p-2 w-64 mt-1"
-            >
-              <label
-                v-for="opt in availableSubOptions"
-                :key="opt"
-                class="flex items-center gap-2 px-3 py-1.5 rounded hover:bg-base-200 cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  :value="opt"
-                  v-model="selectedSub"
-                  class="checkbox checkbox-sm"
-                />
-                <span class="text-sm font-normal">{{ firstLine(opt) }}</span>
-              </label>
-            </div>
-          </details>
-        </template>
-        <template v-if="selectedCategory === 'Régional'">
-          <span>en région</span>
-          <details class="dropdown">
-            <summary
-              class="select select-bordered flex items-center cursor-pointer font-bold"
-            >
-              {{ subDropdownLabel }}
+              <span class="truncate">{{ subDropdownLabel }}</span>
             </summary>
             <div
               class="dropdown-content z-[1] bg-base-100 rounded-box shadow-lg p-2 w-64 mt-1"
@@ -288,11 +267,11 @@ function firstLine(s: string): string {
           </div>
           <select
             v-model="selectedCategory"
-            class="select select-bordered w-full"
+            class="select select-bordered select-primary w-full"
           >
             <option value="all" disabled>Choisir un type</option>
             <option value="GV">Grande vitesse</option>
-            <option value="Intercité">Interrégionaux</option>
+            <option value="Intercité">Inter-régionaux</option>
             <option value="Régional">Régional / TER</option>
           </select>
         </label>
@@ -303,7 +282,7 @@ function firstLine(s: string): string {
           </div>
           <select
             v-model="selectedSubMobile"
-            class="select select-bordered w-full"
+            class="select select-bordered select-primary w-full"
           >
             <option value="" disabled>Choisir</option>
             <option v-for="opt in availableSubOptions" :key="opt" :value="opt">
@@ -407,13 +386,28 @@ function firstLine(s: string): string {
                 >
               </td>
               <td
-                class="font-bold align-middle whitespace-pre-line"
+                class="align-middle whitespace-pre-line text-center"
                 :class="typeBgClass(row.type_train)"
               >
-                {{ row.compagnie_region }}
+                <span class="font-bold">{{
+                  firstLine(row.compagnie_region)
+                }}</span>
+                {{
+                  secondLine(row.compagnie_region)
+                    ? `\n${secondLine(row.compagnie_region)}`
+                    : ""
+                }}
               </td>
-              <td class="text-sm" v-html="row.regle_demonte ?? '–'"></td>
-              <td class="text-sm" v-html="row.regle_nondemonte ?? '–'"></td>
+              <td
+                class="text-sm"
+                :class="centerIfInterdit(row.regle_demonte)"
+                v-html="row.regle_demonte ?? '–'"
+              ></td>
+              <td
+                class="text-sm"
+                :class="centerIfInterdit(row.regle_nondemonte)"
+                v-html="row.regle_nondemonte ?? '–'"
+              ></td>
               <td>
                 <div class="flex flex-col gap-1 items-center text-primary">
                   <template v-if="row.source1">
@@ -426,9 +420,11 @@ function firstLine(s: string): string {
                       :data-tip="row.source1"
                       >{{ hasMultipleSources(row) ? "Source 1" : "Source" }}</a
                     >
-                    <span v-else class="text-sm text-base-content/60">{{
-                      row.source1
-                    }}</span>
+                    <span
+                      v-else
+                      class="text-sm text-base-content/60 text-center"
+                      >{{ row.source1 }}</span
+                    >
                   </template>
                   <template v-if="row.source2">
                     <a
@@ -440,9 +436,11 @@ function firstLine(s: string): string {
                       :data-tip="row.source2"
                       >Source 2</a
                     >
-                    <span v-else class="text-sm text-base-content/60">{{
-                      row.source2
-                    }}</span>
+                    <span
+                      v-else
+                      class="text-sm text-base-content/60 text-center"
+                      >{{ row.source2 }}</span
+                    >
                   </template>
                 </div>
               </td>

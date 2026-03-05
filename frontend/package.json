@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "watch:php": "bun run watch.ts",
+    "watch": "bun run watch.ts",
     "build": "vue-tsc --noEmit && vite build && bun run build:map && bun run build:icons",
     "build:map": "bun run build-map.ts",
     "build:icons": "bun run build-icons.ts",
