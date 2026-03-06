@@ -36,13 +36,14 @@ onUnmounted(() => {
 
 function getCategory(typeTrain: string): "GV" | "Intercité" | "Régional" {
   if (typeTrain === "GRANDE VITESSE") return "GV";
-  if (typeTrain === "INTERCITÉS") return "Intercité";
+  if (typeTrain === "INTERCITES / OUIGO TRAIN CLASSIQUE") return "Intercité";
   return "Régional";
 }
 
 function typeLabel(typeTrain: string): string {
   if (typeTrain === "GRANDE VITESSE") return "Grande vitesse";
-  if (typeTrain === "INTERCITÉS") return "Inter-régionaux";
+  if (typeTrain === "INTERCITES / OUIGO TRAIN CLASSIQUE")
+    return "Inter-régionaux";
   return "Régional / TER";
 }
 
@@ -220,7 +221,7 @@ function centerIfInterdit(text: string | null): string {
         >
           <option value="all">(choisir un type de train)</option>
           <option value="GV">Grande vitesse</option>
-          <option value="Intercité">Trains type Intercités</option>
+          <option value="Intercité">Inter-régionaux</option>
           <option value="Régional">Régional / TER</option>
         </select>
         <template v-if="selectedCategory !== 'all'">
