@@ -58,7 +58,7 @@ foreach ($recipients as $recipient) {
   $mailBodyForRecipient = $mailBody;
   $mailBodyForRecipient = str_replace(
     '<span data-placeholder></span>',
-    "<a style=\"text-align: center; display: block; width: 100%; font-size: 10px; color: #ccc; margin-bottom: 20px; font-weight: normal;\" href=\"$unsubscribeLink\">Se désinscrire</a>",
+    "<a style=\"text-align: center; display: block; margin-top: 20px; width: 100%; font-size: 10px; color: #ccc; margin-bottom: 20px; font-weight: normal;\" href=\"$unsubscribeLink\">Se désinscrire</a>",
     $mailBodyForRecipient
   );
   $data = [
