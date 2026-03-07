@@ -23,7 +23,12 @@ export const useFiltersStore = defineStore("filters", () => {
       f.velo.distMax !== null ||
       f.velo.denivMax !== null ||
       f.velo.apiedPossible ||
-      f.approche.tempsMax !== null
+      f.approche.tempsMax !== null ||
+      f.train.tempsMax !== null ||
+      f.train.correspMax !== null ||
+      f.train.terOnly ||
+      f.total.tempsTV !== null ||
+      f.total.tempsTVA !== null
     );
   });
 

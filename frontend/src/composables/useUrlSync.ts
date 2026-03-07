@@ -15,7 +15,7 @@ const VALID_COTATIONS: Cotation[] = [
 ];
 
 // Preserved params that are not filter-related
-const PRESERVED_PARAMS = ["h"];
+const PRESERVED_PARAMS = ["h", "ville_id"];
 
 function parseNumber(value: string | null): number | null {
   if (value === null) return null;
@@ -187,8 +187,9 @@ export function useUrlSync() {
   }
 
   // 2. Watch store changes → update URL
+  // Use getter to detect both deep changes AND full object replacement (reset)
   watch(
-    store.filters,
+    () => store.filters,
     (newFilters) => {
       updateUrl(filtersToParams(newFilters));
     },

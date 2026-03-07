@@ -4,6 +4,7 @@ import { TableauFilterPanel } from '@/components/filters'
 import { TableauList } from '@/components/tableau'
 import { useTableauStore } from '@/stores'
 import type { TableauFalaise } from '@/types/tableau'
+import { useUrlSync } from '@/composables/useUrlSync'
 
 // Extend window to include the falaises data from PHP
 declare global {
@@ -43,6 +44,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const filtersApp = createApp(TableauFilterPanel)
     filtersApp.use(pinia)
     filtersApp.mount(filtersMountEl)
+
+    // Sync filters ↔ URL query params (after pinia is active)
+    useUrlSync()
+
     console.log('[velogrimpe] Vue tableau filters mounted')
   }
 
