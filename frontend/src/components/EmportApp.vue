@@ -43,7 +43,7 @@ function getCategory(typeTrain: string): "GV" | "Intercité" | "Régional" {
 function typeLabel(typeTrain: string): string {
   if (typeTrain === "GRANDE VITESSE") return "Grande vitesse";
   if (typeTrain === "INTERCITES / OUIGO TRAIN CLASSIQUE")
-    return "Inter-régionaux";
+    return "Intercités / Ouigo Classique";
   return "Régional / TER";
 }
 
@@ -221,7 +221,7 @@ function centerIfInterdit(text: string | null): string {
         >
           <option value="all">(choisir un type de train)</option>
           <option value="GV">Grande vitesse</option>
-          <option value="Intercité">Inter-régionaux</option>
+          <option value="Intercité">Intercités / Ouigo Classique</option>
           <option value="Régional">Régional / TER</option>
         </select>
         <template v-if="selectedCategory !== 'all'">
@@ -272,7 +272,7 @@ function centerIfInterdit(text: string | null): string {
           >
             <option value="all" disabled>Choisir un type</option>
             <option value="GV">Grande vitesse</option>
-            <option value="Intercité">Inter-régionaux</option>
+            <option value="Intercité">Intercités / Ouigo Classique</option>
             <option value="Régional">Régional / TER</option>
           </select>
         </label>
