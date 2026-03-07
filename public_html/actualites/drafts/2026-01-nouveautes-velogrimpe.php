@@ -338,8 +338,10 @@ $nouvellesFalaises = [
           <li>Au Salon de l'Escalade à Paris en Janvier.</li>
         </ul>
 
-        <p>Et voilà, ça fait déja pas mal de nouvelles choses développées en trois mois, et promis, c'est pas fini
-          😉<br />A bientôt !</p>
+        <p>Et voilà, ça fait déja pas mal de nouvelles choses développées en trois mois, et promis, c'est pas fini 😉
+        </p>
+        <p>À bientôt !</p>
+        <p>Florent et Yoann, l'équipe vélogrimpe</p>
       </td>
     </tr>
     <tr>
