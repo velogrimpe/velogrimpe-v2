@@ -118,6 +118,19 @@ export const useFiltersStore = defineStore("filters", () => {
     filters.value = JSON.parse(JSON.stringify(defaultFilters));
   }
 
+  function hydrate(partial: Partial<FilterState>) {
+    const f = filters.value;
+    if (partial.exposition) f.exposition = partial.exposition;
+    if (partial.cotations) f.cotations = partial.cotations;
+    if (partial.typeVoies) f.typeVoies = { ...f.typeVoies, ...partial.typeVoies };
+    if (partial.nbVoiesMin !== undefined) f.nbVoiesMin = partial.nbVoiesMin;
+    if (partial.villeId !== undefined) f.villeId = partial.villeId;
+    if (partial.train) f.train = { ...f.train, ...partial.train };
+    if (partial.velo) f.velo = { ...f.velo, ...partial.velo };
+    if (partial.approche) f.approche = { ...f.approche, ...partial.approche };
+    if (partial.total) f.total = { ...f.total, ...partial.total };
+  }
+
   // Emit changes to non-Vue code via custom event
   watch(
     filters,
@@ -156,5 +169,6 @@ export const useFiltersStore = defineStore("filters", () => {
     setTotalTempsTV,
     setTotalTempsTVA,
     resetFilters,
+    hydrate,
   };
 });

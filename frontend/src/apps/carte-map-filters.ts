@@ -2,6 +2,7 @@ import { createApp } from "vue";
 import { createPinia } from "pinia";
 import CarteMapFilters from "@/components/carte/CarteMapFilters.vue";
 import type { Ville } from "@/types";
+import { useUrlSync } from "@/composables/useUrlSync";
 
 function initApp() {
   const mountEl = document.getElementById("vue-map-filters");
@@ -38,6 +39,10 @@ function initApp() {
 
   // Mount the app
   app.mount(mountEl);
+
+  // Sync filters ↔ URL query params
+  useUrlSync();
+
   console.log("[velogrimpe] Vue map filters app mounted");
 }
 
