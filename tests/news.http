@@ -1,7 +1,7 @@
 
-# @url=http://localhost:4002
-@url=https://velogrimpe.fr
-@slug=2025-10-nouveautes-velogrimpe
+@url=http://localhost:4002
+# @url=https://velogrimpe.fr
+@slug=2026-01-nouveautes-velogrimpe
 
 ###
 GET {{url}}/api/private/send_newsletter.php?slug={{slug}}
