@@ -49,12 +49,21 @@ function handleDropdownFocus(event: FocusEvent) {
 const isDesktop = () => window.innerWidth >= 768;
 const isFiltersExpanded = ref(isDesktop());
 
+function handleCmdK(e: KeyboardEvent) {
+  if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+    e.preventDefault();
+    expandSearch();
+  }
+}
+
 onMounted(() => {
   document.addEventListener("focusin", handleDropdownFocus);
+  document.addEventListener("keydown", handleCmdK);
 });
 
 onUnmounted(() => {
   document.removeEventListener("focusin", handleDropdownFocus);
+  document.removeEventListener("keydown", handleCmdK);
 });
 
 function expandFilters() {
