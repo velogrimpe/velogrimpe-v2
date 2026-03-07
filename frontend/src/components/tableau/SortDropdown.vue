@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useTableauStore } from '@/stores'
 import type { SortKey, SortDir } from '@/types/tableau'
+import Icon from '@/components/shared/Icon.vue'
 
 const store = useTableauStore()
 
@@ -35,6 +36,7 @@ function handleSort(opt: SortOption) {
 <template>
   <div class="dropdown dropdown-end w-fit">
     <div tabindex="0" role="button" class="btn btn-sm text-nowrap focus:pointer-events-none">
+      <Icon :name="store.sort.dir === 'asc' ? 'sort-asc' : 'sort-desc'" />
       Tri
     </div>
     <div class="dropdown-content menu bg-base-200 rounded-box z-1 m-1 w-48 p-2 shadow-lg items-start" tabindex="1">

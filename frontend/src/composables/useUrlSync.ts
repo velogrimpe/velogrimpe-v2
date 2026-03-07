@@ -1,5 +1,6 @@
 import { watch } from "vue";
 import type { FilterState, Exposition, Cotation } from "@/types";
+import type { SortKey, SortDir } from "@/types/tableau";
 import { useFiltersStore } from "@/stores/filters";
 
 const VALID_EXPOSITIONS: Exposition[] = ["N", "E", "S", "O"];
@@ -13,6 +14,11 @@ const VALID_COTATIONS: Cotation[] = [
   "79",
   "80",
 ];
+
+const VALID_SORT_KEYS: SortKey[] = ["total", "train", "velo", "voies", "approche"];
+const VALID_SORT_DIRS: SortDir[] = ["asc", "desc"];
+const DEFAULT_SORT_KEY: SortKey = "total";
+const DEFAULT_SORT_DIR: SortDir = "asc";
 
 // Preserved params that are not filter-related
 const PRESERVED_PARAMS = ["h", "ville_id"];
@@ -174,25 +180,56 @@ function updateUrl(filterParams: URLSearchParams) {
   history.replaceState(null, "", newUrl);
 }
 
+interface SortSync {
+  get: () => { key: SortKey; dir: SortDir };
+  set: (key: SortKey, dir: SortDir) => void;
+}
+
 /** Activate bidirectional sync between filters store and URL */
-export function useUrlSync() {
+export function useUrlSync(options?: { sort?: SortSync }) {
   const store = useFiltersStore();
-
-  // 1. Hydrate store from URL on init
   const params = new URLSearchParams(window.location.search);
-  const initial = paramsToFilters(params);
 
+  // 1. Hydrate filters from URL
+  const initial = paramsToFilters(params);
   if (Object.keys(initial).length > 0) {
     store.hydrate(initial);
   }
 
-  // 2. Watch store changes → update URL
-  // Use getter to detect both deep changes AND full object replacement (reset)
-  watch(
-    () => store.filters,
-    (newFilters) => {
-      updateUrl(filtersToParams(newFilters));
-    },
-    { deep: true },
-  );
+  // 1b. Hydrate sort from URL
+  if (options?.sort) {
+    const triParam = params.get("tri");
+    const ordreParam = params.get("ordre");
+    const tri = VALID_SORT_KEYS.includes(triParam as SortKey)
+      ? (triParam as SortKey)
+      : null;
+    const ordre = VALID_SORT_DIRS.includes(ordreParam as SortDir)
+      ? (ordreParam as SortDir)
+      : null;
+    if (tri || ordre) {
+      const current = options.sort.get();
+      options.sort.set(tri ?? current.key, ordre ?? current.dir);
+    }
+  }
+
+  // 2. Build combined URL on any change
+  function syncUrl() {
+    const filterParams = filtersToParams(store.filters);
+    if (options?.sort) {
+      const { key, dir } = options.sort.get();
+      if (key !== DEFAULT_SORT_KEY || dir !== DEFAULT_SORT_DIR) {
+        filterParams.set("tri", key);
+        filterParams.set("ordre", dir);
+      }
+    }
+    updateUrl(filterParams);
+  }
+
+  // Watch filters
+  watch(() => store.filters, syncUrl, { deep: true });
+
+  // Watch sort
+  if (options?.sort) {
+    watch(options.sort.get, syncUrl, { deep: true });
+  }
 }

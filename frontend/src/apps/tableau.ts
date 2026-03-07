@@ -45,8 +45,13 @@ document.addEventListener('DOMContentLoaded', () => {
     filtersApp.use(pinia)
     filtersApp.mount(filtersMountEl)
 
-    // Sync filters ↔ URL query params (after pinia is active)
-    useUrlSync()
+    // Sync filters + sort ↔ URL query params (after pinia is active)
+    useUrlSync({
+      sort: {
+        get: () => tableauStore.sort,
+        set: (key, dir) => tableauStore.setSort(key, dir),
+      },
+    })
 
     console.log('[velogrimpe] Vue tableau filters mounted')
   }
