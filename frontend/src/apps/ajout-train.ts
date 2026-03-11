@@ -89,6 +89,12 @@ function mountGareAutocomplete() {
         }
       }
 
+      // Re-initialize preset gare fields (inline DOMContentLoaded clears .input-disabled before Vue mounts)
+      if (presetGareNom) {
+        const presetGare = gares.find((g) => g.nom === presetGareNom) ?? null
+        onGareSelect(presetGare)
+      }
+
       // Set up listeners for ville and TGV changes
       setTimeout(() => {
         const villeIdEl = document.getElementById('ville_id')
