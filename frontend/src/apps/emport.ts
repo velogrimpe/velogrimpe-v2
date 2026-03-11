@@ -12,7 +12,6 @@ function init() {
   const app = createApp(EmportApp);
   app.use(createPinia());
   app.mount(mountEl);
-  console.log("[velogrimpe] Vue emport app mounted");
 }
 
 if (document.readyState === "loading") {

@@ -40,7 +40,7 @@ function formatCorrespondances(it: TableauItinerary): string {
       </div>
       <div class="w-full flex flex-row items-center justify-between gap-2">
         <div class="flex flex-col items-start justify-start grow">
-          <div><b>Zone</b> : {{ common.zone_nom }}</div>
+          <div v-if="common.falaise_zonename"><b>Zone</b> : {{ common.falaise_zonename }}</div>
           <div>
             <b title="Cotations (6-: 6a à 6b, 6+: 6b+ à 6c+ etc.)">Cotations</b>
             :

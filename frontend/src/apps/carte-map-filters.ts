@@ -20,9 +20,6 @@ function initApp() {
     falaises = JSON.parse(mountEl.dataset.falaises || "[]");
     gares = JSON.parse(mountEl.dataset.gares || "[]");
     villes = JSON.parse(mountEl.dataset.villes || "[]");
-    console.log(
-      `[velogrimpe] Parsed data: ${falaises.length} falaises, ${gares.length} gares, ${villes.length} villes`,
-    );
   } catch (e) {
     console.error("[velogrimpe] Failed to parse data from PHP:", e);
   }
@@ -42,8 +39,6 @@ function initApp() {
 
   // Sync filters ↔ URL query params
   useUrlSync();
-
-  console.log("[velogrimpe] Vue map filters app mounted");
 }
 
 // Handle both cases: DOM already loaded or not yet

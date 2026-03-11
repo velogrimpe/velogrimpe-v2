@@ -59,7 +59,6 @@ function init() {
 
   // Mount the app
   app.mount(mountEl);
-  console.log("[velogrimpe] Vue sortie form mounted", editMode ? "(edit mode)" : "");
 }
 
 // Run when DOM is ready

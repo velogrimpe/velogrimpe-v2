@@ -26,9 +26,12 @@ function triggerBuild(reason: string) {
     });
 
     const exitCode = await buildProcess.exited;
-    console.log(`✅ Build complete (${exitCode}) `);
     if (exitCode === 0) {
+      console.log(`✅ Build complete`);
       spawn(["afplay", "/System/Library/Sounds/Funk.aiff"]);
+    } else {
+      console.error(`❌ Build failed (exit code ${exitCode})`);
+      spawn(["afplay", "/System/Library/Sounds/Basso.aiff"]);
     }
   }, DEBOUNCE_MS);
 }

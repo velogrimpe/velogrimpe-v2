@@ -30,7 +30,6 @@ function init() {
 
   // Mount the app
   app.mount(mountEl);
-  console.log("[velogrimpe] Vue sortie details mounted");
 }
 
 // Run when DOM is ready
