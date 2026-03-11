@@ -36,6 +36,9 @@ npm-debug.log*
 db_backup.sql
 db_init.sql
 
+# Newsletter uploaded images
+public_html/bdd/images_news/
+
 # Playwright
 playwright-report/
 test-results/
