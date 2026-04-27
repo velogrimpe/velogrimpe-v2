@@ -2,8 +2,7 @@
 $slug = trim($_GET['slug'] ?? '');
 
 if (empty($slug) || !preg_match('/^[a-z0-9-]+(\/[a-z0-9-]+)*$/', $slug)) {
-  http_response_code(404);
-  include $_SERVER['DOCUMENT_ROOT'] . '/404.php';
+  header('Location: /404.php');
   exit;
 }
 
@@ -26,8 +25,7 @@ $stmt->execute();
 $page = $stmt->get_result()->fetch_assoc();
 
 if (!$page) {
-  http_response_code(404);
-  include $_SERVER['DOCUMENT_ROOT'] . '/404.php';
+  header('Location: /404.php');
   exit;
 }
 

@@ -60,8 +60,8 @@ $falaises_topo = array_values(array_filter(
       <a class="btn btn-primary btn-lg text-primary-content"
         href="/ajout/contrib/details_falaise.php?falaise_id=247">Éditeur Falaises</a>
       <a class="btn btn-primary btn-lg text-primary-content" href="/admin/edit_logs.php">Historique des
+        modifications</a>
     </div>
-    modifications</a>
     <h2 class="text-3xl font-bold text-wrap text-center">Communication</h2>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <a class="btn btn-primary btn-lg text-primary-content" href="/admin/newsletter.php">Newsletters</a>
@@ -79,7 +79,8 @@ $falaises_topo = array_values(array_filter(
             <option value="">Sélectionner une falaise</option>
             <?php foreach ($falaises_contrib as $falaise): ?>
               <option value="<?= $falaise['falaise_id'] ?>">
-                <?= htmlspecialchars($falaise['falaise_nom'], ENT_QUOTES, 'UTF-8') ?></option>
+                <?= htmlspecialchars($falaise['falaise_nom'], ENT_QUOTES, 'UTF-8') ?>
+              </option>
             <?php endforeach; ?>
           </select>
         <?php endif; ?>
@@ -91,7 +92,8 @@ $falaises_topo = array_values(array_filter(
           <option value="">Sélectionner une falaise</option>
           <?php foreach ($falaises_topo as $falaise): ?>
             <option value="<?= $falaise['falaise_id'] ?>">
-              <?= htmlspecialchars($falaise['falaise_nom'], ENT_QUOTES, 'UTF-8') ?></option>
+              <?= htmlspecialchars($falaise['falaise_nom'], ENT_QUOTES, 'UTF-8') ?>
+            </option>
           <?php endforeach; ?>
         </select>
       </label>
@@ -102,7 +104,8 @@ $falaises_topo = array_values(array_filter(
           <option value="">Sélectionner une falaise</option>
           <?php foreach ($falaises_ht as $falaise): ?>
             <option value="<?= $falaise['falaise_id'] ?>">
-              <?= htmlspecialchars($falaise['falaise_nom'], ENT_QUOTES, 'UTF-8') ?></option>
+              <?= htmlspecialchars($falaise['falaise_nom'], ENT_QUOTES, 'UTF-8') ?>
+            </option>
           <?php endforeach; ?>
         </select>
       </label>
