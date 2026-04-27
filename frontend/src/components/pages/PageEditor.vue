@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
 import { usePagesStore } from '@/stores/pages'
 import type { CmsPage, PageSection } from '@/types/page'
 import SectionTextEditor from '@/components/newsletter/SectionTextEditor.vue'
+import SectionIframe from './SectionIframe.vue'
 import Icon from '@/components/shared/Icon.vue'
 
 const props = defineProps<{
@@ -78,8 +79,11 @@ async function saveAndUnpublish() {
   await save()
 }
 
-function addSection() {
-  const section: PageSection = { type: 'text', html: '' }
+function addSection(type: 'text' | 'iframe') {
+  const section: PageSection =
+    type === 'text'
+      ? { type: 'text', html: '' }
+      : { type: 'iframe', title: '', intro_html: '', embed_code: '' }
   page.value.sections.push(section)
 }
 
@@ -96,6 +100,10 @@ function moveSection(index: number, direction: -1 | 1) {
 
 function updateSectionHtml(index: number, html: string) {
   page.value.sections[index] = { type: 'text', html }
+}
+
+function updateSection(index: number, section: PageSection) {
+  page.value.sections[index] = section
 }
 
 function openPreview() {
@@ -168,10 +176,16 @@ function goBack() {
       <div
         v-for="(section, i) in page.sections"
         :key="i"
-        class="rounded-lg border-2 p-4 border-primary/40"
+        class="rounded-lg border-2 p-4"
+        :class="section.type === 'text' ? 'border-primary/40' : 'border-secondary/40'"
       >
         <div class="flex justify-between items-center mb-3">
-          <span class="badge badge-soft badge-primary">Texte</span>
+          <span
+            class="badge badge-soft"
+            :class="section.type === 'text' ? 'badge-primary' : 'badge-secondary'"
+          >
+            {{ section.type === 'text' ? 'Texte' : 'Iframe' }}
+          </span>
           <div class="flex gap-1">
             <button
               class="btn btn-xs"
@@ -197,15 +211,26 @@ function goBack() {
         </div>
 
         <SectionTextEditor
+          v-if="section.type === 'text'"
           :html="section.html"
           :upload="(file) => store.uploadImage(file, page.slug)"
           @update:html="updateSectionHtml(i, $event)"
         />
+
+        <SectionIframe
+          v-else-if="section.type === 'iframe'"
+          :section="section"
+          :upload="(file) => store.uploadImage(file, page.slug)"
+          @update:section="updateSection(i, $event)"
+        />
       </div>
 
       <div class="flex gap-2">
-        <button class="btn btn-outline btn-sm" @click="addSection">
+        <button class="btn btn-outline btn-sm" @click="addSection('text')">
           + Section texte
+        </button>
+        <button class="btn btn-outline btn-sm" @click="addSection('iframe')">
+          + Section iframe
         </button>
       </div>
     </div>
