@@ -5,18 +5,15 @@ import Link from '@tiptap/extension-link'
 import Image from '@tiptap/extension-image'
 import { watch, onBeforeUnmount } from 'vue'
 import EditorToolbar from './EditorToolbar.vue'
-import { useNewsletterStore } from '@/stores/newsletter'
 
 const props = defineProps<{
   html: string
-  slug: string
+  upload: (file: File) => Promise<string | null>
 }>()
 
 const emit = defineEmits<{
   'update:html': [html: string]
 }>()
-
-const store = useNewsletterStore()
 
 const editor = useEditor({
   extensions: [
@@ -46,7 +43,7 @@ watch(editor, (ed) => {
         event.preventDefault()
         const file = item.getAsFile()
         if (!file) continue
-        const url = await store.uploadImage(file, props.slug)
+        const url = await props.upload(file)
         if (url) {
           ed.chain().focus().setImage({ src: url }).run()
         }

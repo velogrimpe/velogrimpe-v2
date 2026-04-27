@@ -80,6 +80,15 @@
 /* Link styling is handled in global.css */
 
 /*
+ * TipTap wraps each <li> content in a <p>; .prose's default <p> margins
+ * create large gaps between list items. Collapse those margins.
+ */
+.prose li > p {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+/*
  * DaisyUI v5 compatibility - form-control was removed in v5
  * Re-implemented for backward compatibility (outside @layer to override DaisyUI)
  */

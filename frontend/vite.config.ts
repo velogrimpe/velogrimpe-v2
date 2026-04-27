@@ -30,6 +30,7 @@ export default defineConfig({
         "carte-map-filters": resolve(__dirname, "src/apps/carte-map-filters.ts"),
         emport: resolve(__dirname, "src/apps/emport.ts"),
         "newsletter-admin": resolve(__dirname, "src/apps/newsletter-admin.ts"),
+        "pages-admin": resolve(__dirname, "src/apps/pages-admin.ts"),
       },
       output: {
         entryFileNames: "[name].js",

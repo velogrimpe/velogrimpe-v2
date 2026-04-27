@@ -1,0 +1,61 @@
+@url=http://localhost:4002
+@token=EZkabdP1caAlCbQbdaSE8patAArbbKCakarn5lH4gB2bSublY
+
+###
+# List pages
+GET {{url}}/api/private/pages/list.php
+Authorization: Bearer {{token}}
+
+###
+# Create a page
+POST {{url}}/api/private/pages/save.php
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "slug": "a-propos",
+  "title": "À propos de Velogrimpe",
+  "description": "Présentation du projet Velogrimpe.fr",
+  "status": "draft",
+  "sections": [
+    { "type": "text", "html": "<h2>Bienvenue</h2><p>Texte d'introduction.</p>" }
+  ]
+}
+
+###
+# Get a page (replace 1 with the id returned by save)
+GET {{url}}/api/private/pages/get.php?id=1
+Authorization: Bearer {{token}}
+
+###
+# Update a page (id required)
+POST {{url}}/api/private/pages/save.php
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "id": 1,
+  "slug": "a-propos",
+  "title": "À propos de Velogrimpe",
+  "description": "Présentation mise à jour.",
+  "status": "published",
+  "sections": [
+    { "type": "text", "html": "<h2>Bienvenue</h2><p>Version publiée.</p>" }
+  ]
+}
+
+###
+# Public page (must be published)
+GET {{url}}/p/a-propos
+
+###
+# Admin preview (works on drafts)
+GET {{url}}/p/a-propos?admin={{token}}
+
+###
+# Delete
+POST {{url}}/api/private/pages/delete.php
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "id": 1 }

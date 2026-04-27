@@ -223,7 +223,7 @@ function goBack() {
         <SectionTextEditor
           v-if="section.type === 'text'"
           :html="section.html ?? ''"
-          :slug="newsletter.slug"
+          :upload="(file) => store.uploadImage(file, newsletter.slug)"
           @update:html="updateSectionHtml(i, $event)"
         />
 

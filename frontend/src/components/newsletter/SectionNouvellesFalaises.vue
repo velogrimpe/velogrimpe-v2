@@ -95,7 +95,7 @@ function moveRegion(index: number, direction: -1 | 1) {
       <label class="label font-medium">Introduction (optionnelle)</label>
       <SectionTextEditor
         :html="section.intro_html ?? ''"
-        :slug="slug"
+        :upload="(file) => store.uploadImage(file, slug)"
         @update:html="updateIntroHtml"
       />
     </div>
