@@ -60,7 +60,7 @@ function getVeloReturnTime(it: TableauItinerary): string {
           v-if="common.falaise_zonename && common.falaise_deptcode"
           class="font-normal text-xs"
         >
-          ({{ common.falaise_deptcode }} - {{ common.falaise_zonename }})
+          {{ common.falaise_zonename }} ({{ common.falaise_deptcode }})
         </div>
         <div
           v-if="common.falaise_zonename && !common.falaise_deptcode"
@@ -72,7 +72,7 @@ function getVeloReturnTime(it: TableauItinerary): string {
           v-if="!common.falaise_zonename && common.falaise_deptcode"
           class="font-normal text-xs"
         >
-          ({{ common.falaise_deptcode }})
+          {{ common.falaise_deptname }} ({{ common.falaise_deptcode }})
         </div>
       </div>
     </div>
