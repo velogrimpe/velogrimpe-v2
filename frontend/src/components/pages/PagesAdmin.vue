@@ -50,6 +50,7 @@ onUnmounted(() => {
 
 <template>
   <div>
+    <a href="/admin/" class="link link-hover text-sm">← Retour</a>
     <h1 class="text-3xl font-bold text-center mb-6">
       <span class="text-red-900">Gestion des Pages</span>
     </h1>
