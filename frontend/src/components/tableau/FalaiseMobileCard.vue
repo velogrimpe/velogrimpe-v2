@@ -27,7 +27,7 @@ function formatCorrespondances(it: TableauItinerary): string {
     class="card-link text-base-content hover:no-underline font-normal"
   >
     <div class="flex flex-col rounded-lg shadow-xl bg-base-100 p-2 text-sm">
-      <div class="flex flex-row justify-between gap-1">
+      <div class="flex flex-row justify-start gap-1">
         <h3 class="text-xl font-bold text-primary hover:underline">
           {{ common.falaise_nom }}
           <span v-if="common.falaise_fermee" class="text-error font-normal"
@@ -38,9 +38,17 @@ function formatCorrespondances(it: TableauItinerary): string {
           {{ formatTime(common.temps_total) }}
         </div>
       </div>
-      <div class="w-full flex flex-row items-center justify-between gap-2">
+      <div class="w-full flex flex-row items-center justify-start gap-2">
         <div class="flex flex-col items-start justify-start grow">
-          <div v-if="common.falaise_zonename"><b>Zone</b> : {{ common.falaise_zonename }}</div>
+          <div v-if="common.falaise_zonename && common.falaise_deptcode">
+            {{ common.falaise_zonename }} ({{ common.falaise_deptcode }})
+          </div>
+          <div v-if="common.falaise_zonename && !common.falaise_deptcode">
+            ({{ common.falaise_zonename }})
+          </div>
+          <div v-if="!common.falaise_zonename && common.falaise_deptcode">
+            {{ common.falaise_deptname }} ({{ common.falaise_deptcode }})
+          </div>
           <div>
             <b title="Cotations (6-: 6a à 6b, 6+: 6b+ à 6c+ etc.)">Cotations</b>
             :
