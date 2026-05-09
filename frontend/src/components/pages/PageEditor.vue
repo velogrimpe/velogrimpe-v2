@@ -28,6 +28,13 @@ const fabOpen = ref(false)
 const saveMessage = ref('')
 const hasChanges = ref(false)
 
+// Stable per-section keys for v-for so Vue moves DOM nodes (and TipTap editor
+// instances) on reorder instead of mutating props in place — otherwise the
+// editor content gets out of sync with the data on move.
+const sectionKeys = ref<number[]>([])
+let nextKey = 0
+const newKey = () => ++nextKey
+
 watch(
   page,
   () => {
@@ -47,6 +54,7 @@ onMounted(async () => {
       page.value = { ...store.current }
     }
   }
+  sectionKeys.value = page.value.sections.map(() => newKey())
   await nextTick()
   hasChanges.value = false
   window.addEventListener('beforeunload', handleBeforeUnload)
@@ -85,10 +93,12 @@ function addSection(type: 'text' | 'iframe') {
       ? { type: 'text', html: '' }
       : { type: 'iframe', title: '', intro_html: '', embed_code: '' }
   page.value.sections.push(section)
+  sectionKeys.value.push(newKey())
 }
 
 function removeSection(index: number) {
   page.value.sections.splice(index, 1)
+  sectionKeys.value.splice(index, 1)
 }
 
 function moveSection(index: number, direction: -1 | 1) {
@@ -96,6 +106,8 @@ function moveSection(index: number, direction: -1 | 1) {
   if (newIndex < 0 || newIndex >= page.value.sections.length) return
   const sections = page.value.sections
   ;[sections[index], sections[newIndex]] = [sections[newIndex], sections[index]]
+  const keys = sectionKeys.value
+  ;[keys[index], keys[newIndex]] = [keys[newIndex], keys[index]]
 }
 
 function updateSectionHtml(index: number, html: string) {
@@ -175,7 +187,7 @@ function goBack() {
 
       <div
         v-for="(section, i) in page.sections"
-        :key="i"
+        :key="sectionKeys[i]"
         class="rounded-lg border-2 p-4"
         :class="section.type === 'text' ? 'border-primary/40' : 'border-secondary/40'"
       >

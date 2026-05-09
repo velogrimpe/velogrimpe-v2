@@ -33,6 +33,14 @@ const fabOpen = ref(false);
 const saveMessage = ref("");
 const hasChanges = ref(false);
 
+// Stable per-section keys for v-for so Vue moves DOM nodes (and the TipTap
+// editor instances they contain) instead of reusing them in place when
+// sections are reordered. Without this the editor content gets out of sync
+// with the data model on move.
+const sectionKeys = ref<number[]>([]);
+let nextKey = 0;
+const newKey = () => ++nextKey;
+
 watch(
   newsletter,
   () => {
@@ -52,6 +60,7 @@ onMounted(async () => {
       newsletter.value = { ...store.current };
     }
   }
+  sectionKeys.value = newsletter.value.sections.map(() => newKey());
   await nextTick();
   hasChanges.value = false;
   window.addEventListener("beforeunload", handleBeforeUnload);
@@ -92,10 +101,12 @@ function addSection(type: "text" | "nouvelles_falaises") {
       ? { type: "text", html: "" }
       : { type: "nouvelles_falaises", intro_html: "", regions: [] };
   newsletter.value.sections.push(section);
+  sectionKeys.value.push(newKey());
 }
 
 function removeSection(index: number) {
   newsletter.value.sections.splice(index, 1);
+  sectionKeys.value.splice(index, 1);
 }
 
 function moveSection(index: number, direction: -1 | 1) {
@@ -103,6 +114,8 @@ function moveSection(index: number, direction: -1 | 1) {
   if (newIndex < 0 || newIndex >= newsletter.value.sections.length) return;
   const sections = newsletter.value.sections;
   [sections[index], sections[newIndex]] = [sections[newIndex], sections[index]];
+  const keys = sectionKeys.value;
+  [keys[index], keys[newIndex]] = [keys[newIndex], keys[index]];
 }
 
 function updateSectionHtml(index: number, html: string) {
@@ -181,7 +194,7 @@ function goBack() {
 
       <div
         v-for="(section, i) in newsletter.sections"
-        :key="i"
+        :key="sectionKeys[i]"
         class="rounded-lg border-2 p-4"
         :class="
           section.type === 'text' ? 'border-primary/40' : 'border-secondary/40'
