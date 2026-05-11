@@ -31,6 +31,7 @@ export default defineConfig({
         emport: resolve(__dirname, "src/apps/emport.ts"),
         "newsletter-admin": resolve(__dirname, "src/apps/newsletter-admin.ts"),
         "pages-admin": resolve(__dirname, "src/apps/pages-admin.ts"),
+        "qr-generator": resolve(__dirname, "src/apps/qr-generator.ts"),
       },
       output: {
         entryFileNames: "[name].js",
