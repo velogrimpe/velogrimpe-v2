@@ -1,11 +1,73 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, onMounted, onUnmounted } from "vue";
 import { useFiltersStore } from "@/stores";
 import type { Exposition, Cotation } from "@/types";
 import SortDropdown from "@/components/tableau/SortDropdown.vue";
 import Icon from "@/components/shared/Icon.vue";
 
 const store = useFiltersStore();
+
+// Workaround Chrome Customizable Select : quand on ouvre un <select> dans un
+// .dropdown, le focus passe sur la listbox en top-layer, :focus-within tombe
+// à false, et le dropdown se ferme. On le verrouille via .dropdown-open.
+let lockedDropdown: HTMLElement | null = null;
+
+function lockDropdownForSelect(e: Event) {
+  const target = e.target as HTMLElement;
+  if (target.tagName !== "SELECT") return;
+  const dropdown = target.closest(".dropdown") as HTMLElement | null;
+  if (!dropdown) return;
+  dropdown.classList.add("dropdown-open");
+  lockedDropdown = dropdown;
+}
+
+function unlockAndKeepOpen() {
+  if (!lockedDropdown) return;
+  const trigger = lockedDropdown.querySelector<HTMLElement>(
+    '[tabindex="0"][role="button"]',
+  );
+  lockedDropdown.classList.remove("dropdown-open");
+  lockedDropdown = null;
+  trigger?.focus();
+}
+
+function unlockAndClose() {
+  if (!lockedDropdown) return;
+  lockedDropdown.classList.remove("dropdown-open");
+  lockedDropdown = null;
+}
+
+function handleSelectChange(e: Event) {
+  if ((e.target as HTMLElement).tagName !== "SELECT") return;
+  if (!lockedDropdown) return;
+  setTimeout(unlockAndKeepOpen, 0);
+}
+
+function handleGlobalClick(e: MouseEvent) {
+  if (!lockedDropdown) return;
+  const target = e.target as HTMLElement;
+  if (target.tagName === "OPTION") return;
+  if (lockedDropdown.contains(target)) return;
+  unlockAndClose();
+}
+
+function handleEscape(e: KeyboardEvent) {
+  if (e.key === "Escape" && lockedDropdown) unlockAndClose();
+}
+
+onMounted(() => {
+  document.addEventListener("mousedown", lockDropdownForSelect, true);
+  document.addEventListener("change", handleSelectChange);
+  document.addEventListener("click", handleGlobalClick);
+  document.addEventListener("keydown", handleEscape);
+});
+
+onUnmounted(() => {
+  document.removeEventListener("mousedown", lockDropdownForSelect, true);
+  document.removeEventListener("change", handleSelectChange);
+  document.removeEventListener("click", handleGlobalClick);
+  document.removeEventListener("keydown", handleEscape);
+});
 
 // Exposition
 const expositions: { id: Exposition; label: string; hint: string }[] = [

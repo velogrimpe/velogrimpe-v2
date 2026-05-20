@@ -9,7 +9,7 @@ $gares = $mysqli->query("SELECT
   GROUP_CONCAT(CONCAT(t.ville_id, '|', t.train_depart, '|', t.train_temps, '|', t.train_correspmin, '|', COALESCE(t.train_tgv, 0)) SEPARATOR '=|=') AS villes
   FROM gares g
   LEFT JOIN train t ON t.gare_id = g.gare_id
-  WHERE g.deleted = 0 and t.gare_id IS NOT NULL
+  WHERE g.deleted = 0 and g.gare_id in (SELECT DISTINCT gare_id FROM velo WHERE velo_public >= 1)
   GROUP BY g.gare_id;"
 )->fetch_all(MYSQLI_ASSOC);
 $itineraires = $mysqli->query("SELECT * FROM velo WHERE velo_public >= 1")->fetch_all(MYSQLI_ASSOC);
@@ -377,11 +377,11 @@ $highlight = $_GET['h'] ?? '';
   const falaises = falaisesBase.map(f => {
     const access = itineraires.filter(i => i.falaise_id === f.falaise_id).map(it => {
       const gare = garesBase.find(g => g.gare_id === it.gare_id);
-      const villes = gare.villes.map(v => {
+      const villes = gare?.villes.map(v => {
         const tempsTrainVelo = v.temps + it.tempsVelo;
         const tempsTotal = tempsTrainVelo + (f.maa || 0);
         return { ...v, tempsTrainVelo, tempsTotal };
-      });
+      }) || [];
       return { ...it, gare, villes };
     }).sort((a, b) => a.tempsVelo - b.tempsVelo);
     if (highlightedFalaiseIds.includes(f.falaise_id)) f.highlighted = true;
