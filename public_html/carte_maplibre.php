@@ -866,11 +866,13 @@ $highlight = $_GET['h'] ?? '';
       if (!gare.gare_latlng) return;
       if (gare.access.length === 0) {
         gare.type = "gare_hors_topo";
-        // géré par le layer PMTiles "gares-pm-circle/-label" (zoom 12+)
+        // géré par le layer PMTiles "gares-pm-circle/-label" (zoom 10+/11+)
         return;
       }
       gare.type = "gare";
-      if (zoom < 9) setGareMarker(gare, "hidden");
+      // Carte.php utilise `zoom < 9` mais à visuel équivalent MapLibre est
+      // ~1 niveau en dessous — on aligne en pratique en baissant à 8.
+      if (zoom < 8) setGareMarker(gare, "hidden");
       else {
         if (!gare.marker || gare.displayMode === "hidden") setGareMarker(gare, "normal");
       }
@@ -1061,10 +1063,11 @@ $highlight = $_GET['h'] ?? '';
     const horsTopoFilter = ["!", ["in", ["get", "name"], ["literal", topoGareNames]]];
 
     map.addSource("gares-pm", { type: "vector", url: "pmtiles:///bdd/trains/gares.pmtiles" });
-    // Cercle dès zoom 11 (parité avec carte.php Leaflet : setGareHTMarker
-    // est activé pour zoom >= 11, rayon 4). Label gardé à 12 pour la lisibilité.
+    // Cercle dès zoom 10 (Leaflet montre la même chose à zoom 11, mais à
+    // visuel égal MapLibre est ~1 niveau plus bas — voir comparaison
+    // d'icônes falaises entre les deux captures). Label à zoom 11.
     map.addLayer({
-      id: "gares-pm-circle", type: "circle", source: "gares-pm", "source-layer": "gares", minzoom: 11,
+      id: "gares-pm-circle", type: "circle", source: "gares-pm", "source-layer": "gares", minzoom: 10,
       filter: horsTopoFilter,
       paint: {
         "circle-radius": 4,
@@ -1074,7 +1077,7 @@ $highlight = $_GET['h'] ?? '';
       },
     });
     map.addLayer({
-      id: "gares-pm-label", type: "symbol", source: "gares-pm", "source-layer": "gares", minzoom: 12,
+      id: "gares-pm-label", type: "symbol", source: "gares-pm", "source-layer": "gares", minzoom: 11,
       filter: horsTopoFilter,
       layout: {
         "text-field": ["get", "name"],
