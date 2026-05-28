@@ -20,6 +20,8 @@ const page = ref<CmsPage>({
   slug: '',
   title: '',
   short_title: '',
+  banner_img: '',
+  banner_title: '',
   description: '',
   status: 'draft',
   sections: [],
@@ -52,7 +54,12 @@ onMounted(async () => {
   if (props.pageId) {
     await store.fetchOne(props.pageId)
     if (store.current) {
-      page.value = { ...store.current, short_title: store.current.short_title ?? '' }
+      page.value = {
+        ...store.current,
+        short_title: store.current.short_title ?? '',
+        banner_img: store.current.banner_img ?? '',
+        banner_title: store.current.banner_title ?? '',
+      }
     }
   }
   sectionKeys.value = page.value.sections.map(() => newKey())
@@ -123,6 +130,14 @@ function openPreview() {
   window.open(store.getPreviewUrl(page.value.slug), '_blank')
 }
 
+async function onBannerFile(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  const url = await store.uploadImage(file, page.value.slug)
+  if (url) page.value.banner_img = url
+  ;(e.target as HTMLInputElement).value = ''
+}
+
 function goBack() {
   if (
     hasChanges.value &&
@@ -182,6 +197,39 @@ function goBack() {
           class="input input-bordered w-full"
           placeholder="À propos"
         />
+      </div>
+      <div class="md:col-span-2">
+        <label class="label font-medium">
+          Titre bannière
+          <span class="text-base-content/60 font-normal">(affiche un hero en haut de page)</span>
+        </label>
+        <input
+          v-model="page.banner_title"
+          type="text"
+          class="input input-bordered w-full"
+          placeholder="Conseils pratiques pour le vélo-grimpe"
+        />
+      </div>
+      <div class="md:col-span-2">
+        <label class="label font-medium">
+          Image bannière
+          <span class="text-base-content/60 font-normal">(URL ; sinon image par défaut)</span>
+        </label>
+        <div class="flex gap-2 items-stretch">
+          <input
+            v-model="page.banner_img"
+            type="text"
+            class="input input-bordered grow font-mono text-sm"
+            placeholder="/images/mw/027-velo-aiguille-40.webp"
+          />
+          <label class="btn btn-outline">
+            Uploader
+            <input type="file" accept="image/*" class="hidden" @change="onBannerFile" />
+          </label>
+        </div>
+        <div v-if="page.banner_img" class="mt-2">
+          <img :src="page.banner_img" alt="Aperçu bannière" class="max-h-40 rounded border border-base-300" />
+        </div>
       </div>
       <div class="md:col-span-2">
         <label class="label font-medium">Description (SEO)</label>

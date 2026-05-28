@@ -7,6 +7,8 @@ export interface CmsPage {
   slug: string
   title: string
   short_title: string
+  banner_img: string
+  banner_title: string
   description: string
   status: 'draft' | 'published'
   sections: PageSection[]
