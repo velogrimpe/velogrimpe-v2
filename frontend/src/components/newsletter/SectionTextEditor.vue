@@ -3,6 +3,8 @@ import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
 import Image from '@tiptap/extension-image'
+import { TextStyle, Color } from '@tiptap/extension-text-style'
+import Highlight from '@tiptap/extension-highlight'
 import { watch, onBeforeUnmount } from 'vue'
 import EditorToolbar from './EditorToolbar.vue'
 
@@ -25,6 +27,9 @@ const editor = useEditor({
     }),
     Link.configure({ openOnClick: false, HTMLAttributes: { target: '_blank', rel: 'noopener' } }),
     Image.configure({ inline: false, allowBase64: false }),
+    TextStyle,
+    Color,
+    Highlight.configure({ multicolor: true }),
   ],
   content: props.html,
   onUpdate: ({ editor }) => {

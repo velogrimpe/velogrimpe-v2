@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { Editor } from '@tiptap/vue-3'
 
 const props = defineProps<{
@@ -25,6 +26,27 @@ function addImage() {
   if (url) {
     props.editor.chain().focus().setImage({ src: url }).run()
   }
+}
+
+const currentColor = computed(() => props.editor.getAttributes('textStyle').color || '#000000')
+const currentHighlight = computed(() => props.editor.getAttributes('highlight').color || '#ffff00')
+
+function setColor(event: Event) {
+  const color = (event.target as HTMLInputElement).value
+  props.editor.chain().focus().setColor(color).run()
+}
+
+function unsetColor() {
+  props.editor.chain().focus().unsetColor().run()
+}
+
+function setHighlight(event: Event) {
+  const color = (event.target as HTMLInputElement).value
+  props.editor.chain().focus().setHighlight({ color }).run()
+}
+
+function unsetHighlight() {
+  props.editor.chain().focus().unsetHighlight().run()
 }
 </script>
 
@@ -66,11 +88,64 @@ function addImage() {
       title="Italique (Ctrl+I)"
     >I</button>
     <button
+      class="btn btn-xs btn-ghost underline"
+      :class="{ 'btn-active': editor.isActive('underline') }"
+      @click="editor.chain().focus().toggleUnderline().run()"
+      title="Souligné (Ctrl+U)"
+    >U</button>
+    <button
       class="btn btn-xs btn-ghost line-through"
       :class="{ 'btn-active': editor.isActive('strike') }"
       @click="editor.chain().focus().toggleStrike().run()"
       title="Barré (Ctrl+Shift+S)"
     >S</button>
+
+    <span class="w-px h-5 bg-base-300 mx-1"></span>
+
+    <!-- Text color -->
+    <label
+      class="btn btn-xs btn-ghost px-1 cursor-pointer"
+      :class="{ 'btn-active': editor.isActive('textStyle', { color: /.*/ }) }"
+      title="Couleur du texte"
+    >
+      <span class="font-bold leading-none" :style="{ color: currentColor }">A</span>
+      <span class="block w-3 h-1 mt-0.5" :style="{ backgroundColor: currentColor }"></span>
+      <input
+        type="color"
+        class="sr-only"
+        :value="currentColor"
+        @input="setColor"
+      />
+    </label>
+    <button
+      class="btn btn-xs btn-ghost px-1"
+      @click="unsetColor"
+      title="Retirer la couleur du texte"
+    >
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M6 16 L12 4 L18 16"/><line x1="4" y1="4" x2="20" y2="20" stroke="red"/></svg>
+    </button>
+
+    <!-- Highlight / background -->
+    <label
+      class="btn btn-xs btn-ghost px-1 cursor-pointer"
+      :class="{ 'btn-active': editor.isActive('highlight') }"
+      title="Couleur de fond"
+    >
+      <span class="font-bold leading-none px-0.5 rounded-sm" :style="{ backgroundColor: currentHighlight }">A</span>
+      <input
+        type="color"
+        class="sr-only"
+        :value="currentHighlight"
+        @input="setHighlight"
+      />
+    </label>
+    <button
+      class="btn btn-xs btn-ghost px-1"
+      @click="unsetHighlight"
+      title="Retirer la couleur de fond"
+    >
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l-6 6v3h3l6-6"/><path d="M14 6l4-4 4 4-8 8H10v-4z"/><line x1="4" y1="4" x2="20" y2="20" stroke="red"/></svg>
+    </button>
 
     <span class="w-px h-5 bg-base-300 mx-1"></span>
 

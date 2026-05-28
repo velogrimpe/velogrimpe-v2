@@ -89,6 +89,15 @@
 }
 
 /*
+ * Tailwind Typography forces its own color on <strong>, <em>, <a>, headings…
+ * which overrides Tiptap's inline-style color when the user combines bold +
+ * text color. Let descendant marks inherit so the textStyle <span> wins.
+ */
+.prose :is(strong, em, b, i, u, s, mark) {
+  color: inherit;
+}
+
+/*
  * DaisyUI v5 compatibility - form-control was removed in v5
  * Re-implemented for backward compatibility (outside @layer to override DaisyUI)
  */

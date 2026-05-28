@@ -5,8 +5,10 @@
       "name": "velogrimpe-frontend",
       "dependencies": {
         "@geoman-io/leaflet-geoman-free": "^2.19.0",
+        "@tiptap/extension-highlight": "3.20.6",
         "@tiptap/extension-image": "^3.20.1",
         "@tiptap/extension-link": "^3.20.1",
+        "@tiptap/extension-text-style": "3.20.6",
         "@tiptap/pm": "^3.20.1",
         "@tiptap/starter-kit": "^3.20.1",
         "@tiptap/vue-3": "^3.20.1",
@@ -223,6 +225,8 @@
 
     "@tiptap/extension-heading": ["@tiptap/extension-heading@3.20.1", "", { "peerDependencies": { "@tiptap/core": "^3.20.1" } }, "sha512-unudyfQP6FxnyWinxvPqe/51DG91J6AaJm666RnAubgYMCgym+33kBftx4j4A6qf+ddWYbD00thMNKOnVLjAEQ=="],
 
+    "@tiptap/extension-highlight": ["@tiptap/extension-highlight@3.20.6", "", { "peerDependencies": { "@tiptap/core": "^3.20.6" } }, "sha512-mIzlQoK0vgQTd7Y2DQr79D8On4MCdO6Xz17POPxqKMd/5TeD2B3f19AU23uMV/mv1ZKeMm/VkU1gmbnnJTeQng=="],
+
     "@tiptap/extension-horizontal-rule": ["@tiptap/extension-horizontal-rule@3.20.1", "", { "peerDependencies": { "@tiptap/core": "^3.20.1", "@tiptap/pm": "^3.20.1" } }, "sha512-rjFKFXNntdl0jay8oIGFvvykHlpyQTLmrH3Ag2fj3i8yh6MVvqhtaDomYQbw5sxECd5hBkL+T4n2d2DRuVw/QQ=="],
 
     "@tiptap/extension-image": ["@tiptap/extension-image@3.20.1", "", { "peerDependencies": { "@tiptap/core": "^3.20.1" } }, "sha512-/GPFSLNdYSZQ0E6VBXSAk0UFtDdn98HT1Aa2tO+STELqc5jAdFB42dfFnTC6KQzTvcUOUYkE2S1Q22YC5H2XNQ=="],
@@ -244,6 +248,8 @@
     "@tiptap/extension-strike": ["@tiptap/extension-strike@3.20.1", "", { "peerDependencies": { "@tiptap/core": "^3.20.1" } }, "sha512-EYgyma10lpsY+rwbVQL9u+gA7hBlKLSMFH7Zgd37FSxukOjr+HE8iKPQQ+SwbGejyDsPlLT8Z5Jnuxo5Ng90Pg=="],
 
     "@tiptap/extension-text": ["@tiptap/extension-text@3.20.1", "", { "peerDependencies": { "@tiptap/core": "^3.20.1" } }, "sha512-7PlIbYW8UenV6NPOXHmv8IcmPGlGx6HFq66RmkJAOJRPXPkTLAiX0N8rQtzUJ6jDEHqoJpaHFEHJw0xzW1yF+A=="],
+
+    "@tiptap/extension-text-style": ["@tiptap/extension-text-style@3.20.6", "", { "peerDependencies": { "@tiptap/core": "^3.20.6" } }, "sha512-t1DK52HjnKW70sE09l26PoqIvSVbDJcbzGpUhqORWOYlfNEtaAuRlresMK2Ybv15D8wMpOTrNQXMC5BEg2whiA=="],
 
     "@tiptap/extension-underline": ["@tiptap/extension-underline@3.20.1", "", { "peerDependencies": { "@tiptap/core": "^3.20.1" } }, "sha512-fmHvDKzwCgnZUwRreq8tYkb1YyEwgzZ6QQkAQ0CsCRtvRMqzerr3Duz0Als4i8voZTuGDEL3VR6nAJbLAb/wPg=="],
 
