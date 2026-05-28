@@ -19,6 +19,7 @@ const store = usePagesStore()
 const page = ref<CmsPage>({
   slug: '',
   title: '',
+  short_title: '',
   description: '',
   status: 'draft',
   sections: [],
@@ -51,7 +52,7 @@ onMounted(async () => {
   if (props.pageId) {
     await store.fetchOne(props.pageId)
     if (store.current) {
-      page.value = { ...store.current }
+      page.value = { ...store.current, short_title: store.current.short_title ?? '' }
     }
   }
   sectionKeys.value = page.value.sections.map(() => newKey())
@@ -168,6 +169,18 @@ function goBack() {
           type="text"
           class="input input-bordered w-full"
           placeholder="À propos de Velogrimpe"
+        />
+      </div>
+      <div class="md:col-span-2">
+        <label class="label font-medium">
+          Titre court
+          <span class="text-base-content/60 font-normal">(nav entre pages du même dossier — facultatif)</span>
+        </label>
+        <input
+          v-model="page.short_title"
+          type="text"
+          class="input input-bordered w-full"
+          placeholder="À propos"
         />
       </div>
       <div class="md:col-span-2">

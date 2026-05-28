@@ -6,6 +6,7 @@ export interface CmsPage {
   id?: number
   slug: string
   title: string
+  short_title: string
   description: string
   status: 'draft' | 'published'
   sections: PageSection[]
