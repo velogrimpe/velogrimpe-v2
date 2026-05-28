@@ -671,6 +671,16 @@ async function handleDelete() {
       </div>
 
       <!-- Action buttons -->
+      <p v-if="!editMode" class="text-xs text-slate-500 italic mt-4">
+        En soumettant ce formulaire, vous acceptez que votre contribution soit publiée sous licence libre
+        <a
+          href="https://creativecommons.org/licenses/by-sa/4.0/deed.fr"
+          target="_blank"
+          rel="noopener"
+          class="text-primary"
+          >CC BY-SA</a
+        >.
+      </p>
       <div class="card-actions justify-between mt-4">
         <button
           v-if="editMode"
