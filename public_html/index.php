@@ -1,4 +1,7 @@
-<?php require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/vite.php'; ?>
+<?php
+require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/vite.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/schema.php';
+?>
 <!DOCTYPE html>
 <html lang="fr" data-theme="velogrimpe">
 
@@ -31,6 +34,10 @@
   <link rel="stylesheet" href="/global.css" />
   <link rel="stylesheet" href="./index.css" />
   <link rel="manifest" href="./site.webmanifest" />
+  <?php
+  // --- Données structurées JSON-LD (déclaration canonique de l'entité) ---
+  vg_jsonld(vg_organization(), vg_website());
+  ?>
 </head>
 
 <body>

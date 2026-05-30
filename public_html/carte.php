@@ -2,6 +2,7 @@
 require_once $_SERVER['DOCUMENT_ROOT'] . '/database/velogrimpe.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/vite.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/map-bundle.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/schema.php';
 
 $falaises = $mysqli->query("SELECT falaise_bloc, falaise_cotmax, falaise_cotmin, falaise_exposhort1, falaise_exposhort2, falaise_fermee, falaise_gvnb, falaise_id, falaise_latlng, falaise_maa, falaise_nbvoies, falaise_nom FROM falaises WHERE falaise_public >= 1")->fetch_all(MYSQLI_ASSOC);
 $villes = $mysqli->query("SELECT ville_id, ville_nom FROM villes ORDER BY ville_nom")->fetch_all(MYSQLI_ASSOC);
@@ -71,6 +72,21 @@ $highlight = $_GET['h'] ?? '';
       }
     } */
   </style>
+  <?php
+  vg_jsonld(
+    vg_organization(),
+    [
+      '@type'    => 'WebPage',
+      'name'     => 'Carte des falaises accessibles en vélo et train',
+      'url'      => VG_BASE . '/carte.php',
+      'isPartOf' => ['@id' => VG_BASE . '/#website'],
+    ],
+    vg_breadcrumb([
+      ['name' => 'Accueil', 'url' => '/'],
+      ['name' => 'Carte', 'url' => '/carte.php'],
+    ])
+  );
+  ?>
 </head>
 
 <body>
