@@ -98,6 +98,33 @@
 }
 
 /*
+ * Rendu des champs riches (éditeur TipTap) sur les fiches falaises.
+ * Neutralise les marges par défaut des <p> pour coller au rendu historique
+ * (texte + <br>), et stylise listes à puces et liens.
+ */
+.vg-rt > :first-child {
+  margin-top: 0;
+}
+.vg-rt > :last-child {
+  margin-bottom: 0;
+}
+.vg-rt p {
+  margin: 0 0 0.5rem;
+}
+.vg-rt ul {
+  list-style: disc;
+  margin: 0.25rem 0;
+  padding-left: 1.25rem;
+}
+.vg-rt li {
+  margin: 0.1rem 0;
+}
+.vg-rt a {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+/*
  * DaisyUI v5 compatibility - form-control was removed in v5
  * Re-implemented for backward compatibility (outside @layer to override DaisyUI)
  */

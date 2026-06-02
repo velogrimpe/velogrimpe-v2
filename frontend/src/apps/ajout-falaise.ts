@@ -1,7 +1,8 @@
-import { createApp, h, ref, watch, computed } from 'vue'
+import { createApp, h, ref, watch, computed, type Ref } from 'vue'
 import FormAutocomplete, { type FormAutocompleteItem } from '@/components/shared/FormAutocomplete.vue'
 import MultiSelect, { type MultiSelectOption } from '@/components/shared/MultiSelect.vue'
 import RoseDesVents from '@/components/shared/RoseDesVents.vue'
+import RichTextField from '@/components/shared/RichTextField.vue'
 
 // Helper to create search icon slot
 const searchIconSlot = () => ({
@@ -220,7 +221,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Mount exposition multi-selects
   mountExpositionSelects()
+
+  // Mount rich text editors (TipTap) on the textarea-replacement mount points
+  mountRichTextFields()
 })
+
+// Registry of mounted rich text editors, keyed by field name, for PHP prefill.
+const richTextRefs: Record<string, Ref<{ setContent: (html: string) => void } | null>> = {}
+
+function mountRichTextFields() {
+  document.querySelectorAll<HTMLElement>('.vue-richtext').forEach((el) => {
+    const name = el.dataset.name
+    if (!name) return
+    const initial = el.dataset.value || ''
+    const cmpRef = ref<{ setContent: (html: string) => void } | null>(null)
+
+    const app = createApp({
+      setup() {
+        return () => h(RichTextField, { name, modelValue: initial, ref: cmpRef })
+      },
+    })
+    app.mount(el)
+    richTextRefs[name] = cmpRef
+  })
+
+  // Expose setter so fetchAndPrefillData (PHP) can fill editors in edit mode.
+  ;(window as unknown as Record<string, unknown>).setRichText = (name: string, html: string) => {
+    richTextRefs[name]?.value?.setContent(html || '')
+  }
+}
 
 // Helper to parse comma-separated values with quotes (e.g., "'N','S'" -> ["'N'", "'S'"])
 function parseExpositionValue(value: string): string[] {

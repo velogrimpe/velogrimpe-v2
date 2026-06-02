@@ -1,0 +1,9 @@
+@url=http://localhost:4002
+# @url=https://velogrimpe.fr
+@token=EZkabdP1caAlCbQbdaSE8patAArbbKCakarn5lH4gB2bSublY
+
+### Aperçu (dry-run) : montre les conversions sans rien écrire en base
+GET {{url}}/admin/migrate_richtext.php?admin={{token}}
+
+### Écriture : applique la migration (\n => <br> dans un <p>) — IRRÉVERSIBLE, backup conseillé
+GET {{url}}/admin/migrate_richtext.php?admin={{token}}&apply=1
