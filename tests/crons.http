@@ -10,3 +10,7 @@ Authorization: Bearer FyiloYmSAGkdaleukfEDrivTesxviYyc
 ###
 GET https://velogrimpe.fr/api/private/crons/ingest_cartotrain.php
 Authorization: Bearer FyiloYmSAGkdaleukfEDrivTesxviYyc
+
+###
+GET https://velogrimpe.fr/api/private/crons/export_open_data.php
+Authorization: Bearer FyiloYmSAGkdaleukfEDrivTesxviYyc

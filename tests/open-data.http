@@ -1,0 +1,8 @@
+### Téléchargement tracé de l'export falaises -> 302 vers le .geojson
+GET http://localhost:4002/open-data/download.php?f=falaises
+
+### Téléchargement tracé de l'export détails -> 302
+GET http://localhost:4002/open-data/download.php?f=falaises-details
+
+### Slug inconnu -> 404
+GET http://localhost:4002/open-data/download.php?f=nimportequoi

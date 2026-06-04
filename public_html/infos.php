@@ -34,11 +34,11 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/schema.php';
   vg_jsonld(
     vg_organization(),
     [
-      '@type'       => 'AboutPage',
-      'name'        => 'À propos - Vélogrimpe.fr',
+      '@type' => 'AboutPage',
+      'name' => 'À propos - Vélogrimpe.fr',
       'description' => 'Escalade en mobilité douce à vélo et en train. Histoire du projet, initiatives liées.',
-      'url'         => VG_BASE . '/infos.php',
-      'isPartOf'    => ['@id' => VG_BASE . '/#website'],
+      'url' => VG_BASE . '/infos.php',
+      'isPartOf' => ['@id' => VG_BASE . '/#website'],
     ],
     vg_breadcrumb([
       ['name' => 'Accueil', 'url' => '/'],
@@ -129,6 +129,16 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/schema.php';
 
     <h2>LICENCE</h2>
     <?php include $_SERVER['DOCUMENT_ROOT'] . "/components/licence-notice.php"; ?>
+
+    <h2>DONNÉES</h2>
+
+    Les données des falaises et de leurs intinéraires peuvent être obtenues
+    <a target="_blank" href="/open-data/download.php?f=falaises">ici
+    </a> et les détails toutes falaises aggrégées sont accessibles
+    <a target="_blank" href="/open-data/download.php?f=falaises-details">là</a>. Les exports sont quotidiens et fait au cours
+    de la
+    nuit.
+
   </div>
   <?php include "./components/footer.php"; ?>
 </body>
