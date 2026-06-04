@@ -133,11 +133,41 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/schema.php';
     <h2>DONNÉES</h2>
 
     Les données des falaises et de leurs intinéraires peuvent être obtenues
-    <a target="_blank" href="/open-data/download.php?f=falaises">ici
+    <a target="_blank" href="/open-data/falaises.geojson">ici
     </a> et les détails toutes falaises aggrégées sont accessibles
-    <a target="_blank" href="/open-data/download.php?f=falaises-details">là</a>. Les exports sont quotidiens et fait au cours
+    <a target="_blank" href="/open-data/falaises-details.geojson">là</a>. Les exports sont quotidiens et fait au
+    cours
     de la
     nuit.
+
+    <p>Si vous réutilisez ces données sur une carte, voir ci-dessous.</p>
+
+    <details>
+      <summary>Leaflet</summary>
+      <pre><code>fetch('https://velogrimpe.fr/open-data/falaises.geojson')
+  .then(r =&gt; r.json())
+  .then(data =&gt; L.geoJSON(data, {
+    attribution: '&lt;a href="https://velogrimpe.fr"&gt;© velogrimpe.fr&lt;/a&gt; — CC BY-SA / ODbL'
+  }).addTo(map));</code></pre>
+    </details>
+
+    <details>
+      <summary>MapLibre GL / Mapbox GL</summary>
+      <pre><code>map.addSource('velogrimpe', {
+  type: 'geojson',
+  data: 'https://velogrimpe.fr/open-data/falaises.geojson',
+  attribution: '&lt;a href="https://velogrimpe.fr"&gt;© velogrimpe.fr&lt;/a&gt; — CC BY-SA / ODbL'
+});
+</code></pre>
+    </details>
+
+    <details>
+      <summary>uMap</summary>
+      <p>Lors de l'ajout d'une couche distante pointant vers l'URL ci-dessus,
+        renseignez le champ <em>« Crédits / attribution »</em> de la couche
+        (uMap ne lit pas l'attribution du fichier). Chaque entité porte aussi
+        une propriété <code>attribution</code> affichable dans les popups.</p>
+    </details>
 
   </div>
   <?php include "./components/footer.php"; ?>

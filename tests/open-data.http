@@ -1,8 +1,11 @@
-### Téléchargement tracé de l'export falaises -> 302 vers le .geojson
-GET http://localhost:4002/open-data/download.php?f=falaises
+### URL canonique : réécrite en interne vers download.php (tracée + attachment + CORS)
+GET http://localhost:4002/open-data/falaises.geojson
 
-### Téléchargement tracé de l'export détails -> 302
-GET http://localhost:4002/open-data/download.php?f=falaises-details
+### URL canonique détails
+GET http://localhost:4002/open-data/falaises-details.geojson
+
+### Accès direct au endpoint (équivalent)
+GET http://localhost:4002/open-data/download.php?f=falaises
 
 ### Slug inconnu -> 404
 GET http://localhost:4002/open-data/download.php?f=nimportequoi
