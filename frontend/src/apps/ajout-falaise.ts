@@ -198,6 +198,16 @@ document.addEventListener('DOMContentLoaded', () => {
             onSelect: onFalaiseSelect,
             name: 'falaise_nom',
             required: true,
+            // Empêche les outils de remplissage auto (navigateur + gestionnaires
+            // de mots de passe) d'injecter le nom de l'utilisateur dans le nom
+            // de la falaise, à cause du libellé « Nom de la falaise ».
+            inputAttrs: {
+              id: 'falaise_libelle',
+              'data-1p-ignore': '',
+              'data-lpignore': 'true',
+              'data-bwignore': '',
+              'data-form-type': 'other',
+            },
           },
           searchIconSlot()
         )

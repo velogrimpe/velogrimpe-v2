@@ -11,6 +11,7 @@ const props = withDefaults(
     disabled?: boolean;
     name?: string;
     required?: boolean;
+    inputAttrs?: Record<string, unknown>;
   }>(),
   {
     placeholder: "",
@@ -18,6 +19,7 @@ const props = withDefaults(
     disabled: false,
     name: undefined,
     required: false,
+    inputAttrs: () => ({}),
   },
 );
 
@@ -227,6 +229,7 @@ function getOptionLabel(option: AutocompleteOption): string {
         :disabled="disabled"
         class="grow bg-transparent outline-none"
         autocomplete="off"
+        v-bind="inputAttrs"
         @input="onInput"
         @keydown="onKeydown"
         @focus="isOpen = true"

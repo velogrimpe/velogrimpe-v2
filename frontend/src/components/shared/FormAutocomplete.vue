@@ -18,6 +18,7 @@ const props = withDefaults(
     inputClass?: string
     name?: string
     required?: boolean
+    inputAttrs?: Record<string, unknown>
   }>(),
   {
     placeholder: '',
@@ -26,6 +27,7 @@ const props = withDefaults(
     inputClass: '',
     name: undefined,
     required: false,
+    inputAttrs: () => ({}),
   }
 )
 
@@ -58,6 +60,7 @@ function onSelect(option: AutocompleteOption) {
     :disabled="disabled"
     :name="name"
     :required="required"
+    :input-attrs="inputAttrs"
     @select="onSelect"
   >
     <template #icon>
