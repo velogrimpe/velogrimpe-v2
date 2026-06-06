@@ -13,7 +13,6 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, "src/apps/main.ts"),
         // 'map' is built separately with esbuild for IIFE format (see build-map.ts)
-        "carte-filters": resolve(__dirname, "src/apps/carte-filters.ts"),
         "carte-info": resolve(__dirname, "src/apps/carte-info.ts"),
         "carte-search": resolve(__dirname, "src/apps/carte-search.ts"),
         tableau: resolve(__dirname, "src/apps/tableau.ts"),
@@ -23,11 +22,17 @@ export default defineConfig({
         "ajout-train": resolve(__dirname, "src/apps/ajout-train.ts"),
         "falaise-comment": resolve(__dirname, "src/apps/falaise-comment.ts"),
         "falaise-rose": resolve(__dirname, "src/apps/falaise-rose.ts"),
-        "contrib-details-falaise": resolve(__dirname, "src/apps/contrib-details-falaise.ts"),
+        "contrib-details-falaise": resolve(
+          __dirname,
+          "src/apps/contrib-details-falaise.ts",
+        ),
         sorties: resolve(__dirname, "src/apps/sorties.ts"),
         "ajout-sortie": resolve(__dirname, "src/apps/ajout-sortie.ts"),
         "sortie-details": resolve(__dirname, "src/apps/sortie-details.ts"),
-        "carte-map-filters": resolve(__dirname, "src/apps/carte-map-filters.ts"),
+        "carte-map-filters": resolve(
+          __dirname,
+          "src/apps/carte-map-filters.ts",
+        ),
         emport: resolve(__dirname, "src/apps/emport.ts"),
         "newsletter-admin": resolve(__dirname, "src/apps/newsletter-admin.ts"),
         "pages-admin": resolve(__dirname, "src/apps/pages-admin.ts"),

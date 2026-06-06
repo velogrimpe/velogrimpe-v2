@@ -81,16 +81,16 @@ const expositions: { id: Exposition; label: string; hint: string }[] = [
 const cotationGroups: { id: Cotation; label: string }[][] = [
   [{ id: "40", label: "4 et -" }],
   [
-    { id: "50", label: "5-" },
-    { id: "59", label: "5+" },
+    { id: "50", label: "de 5a à 5b" },
+    { id: "59", label: "5b+ à 5c+" },
   ],
   [
-    { id: "60", label: "6-" },
-    { id: "69", label: "6+" },
+    { id: "60", label: "6a à 6b" },
+    { id: "69", label: "6b+ à 6c+" },
   ],
   [
-    { id: "70", label: "7-" },
-    { id: "79", label: "7+" },
+    { id: "70", label: "7a à 7b" },
+    { id: "79", label: "7b+ à 7c+" },
   ],
   [{ id: "80", label: "8 et +" }],
 ];
@@ -189,7 +189,7 @@ function parseNumberInput(value: string): number | null {
                       v-for="cot in group"
                       :key="cot.id"
                       class="label hover:bg-base-300 rounded-lg cursor-pointer gap-2 p-0 pr-1"
-                      :class="{ 'w-16 justify-start': group.length > 1 }"
+                      :class="{ 'w-24 justify-start': group.length > 1 }"
                     >
                       <input
                         type="checkbox"
@@ -201,9 +201,6 @@ function parseNumberInput(value: string): number | null {
                     </label>
                   </div>
                 </template>
-                <span class="italic text-base-300 text-sm"
-                  >(5- = de 5a à 5b, 5+ = de 5b+ à 5c+)</span
-                >
               </div>
             </div>
           </div>

@@ -1,6 +1,6 @@
 import { createApp } from "vue";
 import { createPinia } from "pinia";
-import { TableauFilterPanel } from "@/components/filters";
+import { TableauFilterPanel } from "@/components/tableau";
 import { TableauList } from "@/components/tableau";
 import { useTableauStore } from "@/stores";
 import type { TableauFalaise } from "@/types/tableau";
