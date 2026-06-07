@@ -1,0 +1,62 @@
+@host = http://localhost:4002
+
+### Récupérer un arrêt existant (prefill édition)
+GET {{host}}/api/fetch_bus.php?arret_id=1
+
+### Créer un arrêt de bus (avec une liaison vers l'arrêt 2 via une nouvelle ligne + falaise 39)
+POST {{host}}/api/add_bus.php
+Content-Type: application/json
+
+{
+  "admin": "0",
+  "arret_id": null,
+  "nom": "Test - Arrêt HTTP",
+  "loc": "43.8270,5.3830",
+  "description": "<p>Arrêt de test créé via .http</p>",
+  "osm_id": null,
+  "osm_data": null,
+  "falaise_ids": [39],
+  "lignes": [
+    { "id": null, "key": "new:zou! l12", "nom": "Zou! L12", "description": "<p>Apt - Buoux</p>", "lien": "https://zou.maregionsud.fr" }
+  ],
+  "liaisons": [
+    { "id": null, "arret_2_id": 2, "ligne_key": "new:zou! l12", "description": "<p>Tronçon de test</p>" }
+  ],
+  "nom_prenom": "Testeur",
+  "email": "test@example.org",
+  "message": "Création via test .http"
+}
+
+### Modifier un arrêt existant (remplace nom + falaises, conserve la liaison id 1)
+POST {{host}}/api/add_bus.php
+Content-Type: application/json
+
+{
+  "admin": "0",
+  "arret_id": 1,
+  "nom": "Test - Arrêt modifié",
+  "loc": "43.8275,5.3835",
+  "description": "<p>Commentaire mis à jour</p>",
+  "osm_id": "node/1234567890",
+  "osm_data": { "highway": "bus_stop", "name": "Test" },
+  "falaise_ids": [39],
+  "lignes": [
+    { "id": 1, "key": "id:1", "nom": "Zou! L12", "description": "<p>desc</p>", "lien": "https://zou.maregionsud.fr" }
+  ],
+  "liaisons": [
+    { "id": 1, "arret_2_id": 2, "ligne_key": "id:1", "description": "<p>liaison existante modifiée</p>" }
+  ],
+  "nom_prenom": "Testeur",
+  "email": "test@example.org",
+  "message": ""
+}
+
+### Supprimer une liaison
+POST {{host}}/api/delete_bus_liaison.php
+Content-Type: application/json
+
+{
+  "liaison_id": 1,
+  "nom_prenom": "Testeur",
+  "email": "test@example.org"
+}

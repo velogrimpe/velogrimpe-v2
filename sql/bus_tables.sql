@@ -31,13 +31,12 @@ CREATE TABLE
     `nom` text NOT NULL COMMENT 'Nom de la ligne avec transporteur (ex: Zou! L12)',
     `description` text DEFAULT NULL COMMENT 'Description de la ligne',
     `lien` text DEFAULT NULL COMMENT 'Lien vers les horaires',
-    `shape` multilinestring NOT NULL COMMENT 'Tracé de la ligne',
+    `shape` multilinestring DEFAULT NULL COMMENT 'Tracé de la ligne (optionnel)',
     `date_creation` timestamp NOT NULL DEFAULT current_timestamp(),
     `date_modification` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
     `contrib` text NOT NULL COMMENT 'Contributeur',
     `contrib_mail` text NOT NULL COMMENT 'Mail du contributeur',
-    PRIMARY KEY (`id`),
-    SPATIAL KEY `shape` (`shape`)
+    PRIMARY KEY (`id`)
   ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------------
@@ -67,7 +66,7 @@ CREATE TABLE
     `ligne_id` int (11) NOT NULL,
     `arret_min` int (11) GENERATED ALWAYS AS (LEAST(`arret_1_id`, `arret_2_id`)) STORED COMMENT 'Normalisation pour unicité non-orientée',
     `arret_max` int (11) GENERATED ALWAYS AS (GREATEST(`arret_1_id`, `arret_2_id`)) STORED COMMENT 'Normalisation pour unicité non-orientée',
-    `shape` linestring NOT NULL COMMENT 'Tracé de la liaison',
+    `shape` linestring DEFAULT NULL COMMENT 'Tracé de la liaison (optionnel)',
     `description` text DEFAULT NULL COMMENT 'Description de la liaison',
     `date_creation` timestamp NOT NULL DEFAULT current_timestamp(),
     `date_modification` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
@@ -78,7 +77,6 @@ CREATE TABLE
     KEY `arret_1_id` (`arret_1_id`),
     KEY `arret_2_id` (`arret_2_id`),
     KEY `ligne_id` (`ligne_id`),
-    SPATIAL KEY `shape` (`shape`),
     CONSTRAINT `bus_liaisons_ibfk_1` FOREIGN KEY (`arret_1_id`) REFERENCES `bus_arrets` (`id`),
     CONSTRAINT `bus_liaisons_ibfk_2` FOREIGN KEY (`arret_2_id`) REFERENCES `bus_arrets` (`id`),
     CONSTRAINT `bus_liaisons_ibfk_3` FOREIGN KEY (`ligne_id`) REFERENCES `bus_lignes` (`id`) ON DELETE CASCADE
