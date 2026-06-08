@@ -12,6 +12,7 @@ const props = withDefaults(
     name?: string;
     required?: boolean;
     inputAttrs?: Record<string, unknown>;
+    preventAutofill?: boolean;
   }>(),
   {
     placeholder: "",
@@ -20,6 +21,7 @@ const props = withDefaults(
     name: undefined,
     required: false,
     inputAttrs: () => ({}),
+    preventAutofill: false,
   },
 );
 
@@ -33,6 +35,17 @@ const listRef = ref<HTMLUListElement | null>(null);
 const isOpen = ref(false);
 const currentFocus = ref(-1);
 const inputValue = ref(props.modelValue);
+
+// Tant que le champ n'a pas le focus, il reste readonly : les outils de
+// remplissage automatique (autofill navigateur + gestionnaires de mots de
+// passe) ignorent les champs readonly et ne peuvent donc plus injecter de
+// valeur, notamment au moment du submit.
+const isReadonly = ref(props.preventAutofill);
+
+function onFocus() {
+  if (props.preventAutofill) isReadonly.value = false;
+  isOpen.value = true;
+}
 
 watch(
   () => props.modelValue,
@@ -85,6 +98,11 @@ function matchOption(optionValue: string, searchValue: string): boolean {
 }
 
 function onInput(event: Event) {
+  // En mode preventAutofill, le champ n'est éditable que lorsqu'il a le focus
+  // (isReadonly === false). Un event `input` reçu alors qu'il est encore
+  // readonly ne peut venir que d'un script externe (form-filler qui pose
+  // `.value` + dispatch). On l'ignore pour ne pas polluer le modèle.
+  if (props.preventAutofill && isReadonly.value) return;
   const target = event.target as HTMLInputElement;
   inputValue.value = target.value;
   emit("update:modelValue", target.value);
@@ -166,6 +184,8 @@ function ensureVisible() {
 }
 
 function onBlur() {
+  // Re-verrouille le champ pour empêcher tout remplissage auto au submit.
+  if (props.preventAutofill) isReadonly.value = true;
   // Delay to allow click events to fire
   setTimeout(() => {
     if (!props.acceptNewValue && inputValue.value) {
@@ -229,10 +249,11 @@ function getOptionLabel(option: AutocompleteOption): string {
         :disabled="disabled"
         class="grow bg-transparent outline-none"
         autocomplete="off"
+        :readonly="isReadonly || undefined"
         v-bind="inputAttrs"
         @input="onInput"
         @keydown="onKeydown"
-        @focus="isOpen = true"
+        @focus="onFocus"
         @blur="onBlur"
       />
       <slot name="icon" />

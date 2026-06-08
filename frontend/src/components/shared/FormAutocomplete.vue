@@ -19,6 +19,7 @@ const props = withDefaults(
     name?: string
     required?: boolean
     inputAttrs?: Record<string, unknown>
+    preventAutofill?: boolean
   }>(),
   {
     placeholder: '',
@@ -28,6 +29,7 @@ const props = withDefaults(
     name: undefined,
     required: false,
     inputAttrs: () => ({}),
+    preventAutofill: false,
   }
 )
 
@@ -61,6 +63,7 @@ function onSelect(option: AutocompleteOption) {
     :name="name"
     :required="required"
     :input-attrs="inputAttrs"
+    :prevent-autofill="preventAutofill"
     @select="onSelect"
   >
     <template #icon>

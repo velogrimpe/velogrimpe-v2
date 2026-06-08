@@ -198,6 +198,11 @@ document.addEventListener('DOMContentLoaded', () => {
             onSelect: onFalaiseSelect,
             name: 'falaise_nom',
             required: true,
+            // Le champ reste readonly tant qu'il n'a pas le focus : l'autofill
+            // navigateur (qui ignore autocomplete="off") et les gestionnaires
+            // de mots de passe sautent les champs readonly et ne peuvent plus
+            // injecter le nom de l'utilisateur au moment du submit.
+            preventAutofill: true,
             // Empêche les outils de remplissage auto (navigateur + gestionnaires
             // de mots de passe) d'injecter le nom de l'utilisateur dans le nom
             // de la falaise, à cause du libellé « Nom de la falaise ».
