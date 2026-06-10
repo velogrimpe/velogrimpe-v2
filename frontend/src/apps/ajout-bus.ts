@@ -1,6 +1,7 @@
 import { createApp, h, ref, type Ref } from 'vue'
 import AjoutBus from '@/components/ajout/AjoutBus.vue'
 import RichTextField from '@/components/shared/RichTextField.vue'
+import { postBusStop } from '@/utils/bus-api'
 
 interface ArretItem {
   id: number
@@ -150,34 +151,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement | null
     if (submitBtn) submitBtn.disabled = true
 
-    try {
-      const res = await fetch('/api/add_bus.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-      const result = await res.json().catch(() => ({}))
-      if (!res.ok || !result.success) {
-        alert('Erreur : ' + (result.error || res.status))
-        if (submitBtn) submitBtn.disabled = false
-        return
-      }
-      // Sauvegarde des infos contributeur
-      const contribStorage = (window as unknown as Record<string, { saveContribInfo?: (n: string, e: string) => void }>).contribStorage
-      contribStorage?.saveContribInfo?.(val('nom_prenom'), val('email'))
-
-      const params = new URLSearchParams({
-        arret_id: String(result.arret_id),
-        type: isEdition ? 'update' : 'insert',
-        admin: payload.admin && payload.admin !== '0' ? '1' : '0',
-        nom_prenom: payload.nom_prenom,
-        email: payload.email,
-      })
-      window.location.href = '/ajout/confirmation_bus.php?' + params.toString()
-    } catch (err) {
-      alert('Erreur réseau lors de l\'enregistrement.')
+    const result = await postBusStop(payload)
+    if (!result.success) {
+      alert('Erreur : ' + (result.error || result.status))
       if (submitBtn) submitBtn.disabled = false
+      return
     }
+
+    // Sauvegarde des infos contributeur
+    const contribStorage = (window as unknown as Record<string, { saveContribInfo?: (n: string, e: string) => void }>).contribStorage
+    contribStorage?.saveContribInfo?.(val('nom_prenom'), val('email'))
+
+    const params = new URLSearchParams({
+      arret_id: String(result.arret_id),
+      type: isEdition ? 'update' : 'insert',
+      admin: payload.admin && payload.admin !== '0' ? '1' : '0',
+      nom_prenom: payload.nom_prenom,
+      email: payload.email,
+    })
+    window.location.href = '/ajout/confirmation_bus.php?' + params.toString()
   })
 
   console.log('[velogrimpe] Vue ajout-bus mounted')

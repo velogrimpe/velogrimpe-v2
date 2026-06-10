@@ -21,6 +21,7 @@ export default defineConfig({
         "ajout-falaise": resolve(__dirname, "src/apps/ajout-falaise.ts"),
         "ajout-train": resolve(__dirname, "src/apps/ajout-train.ts"),
         "ajout-bus": resolve(__dirname, "src/apps/ajout-bus.ts"),
+        "bus-stop-dialog": resolve(__dirname, "src/apps/bus-stop-dialog.ts"),
         "falaise-comment": resolve(__dirname, "src/apps/falaise-comment.ts"),
         "falaise-rose": resolve(__dirname, "src/apps/falaise-rose.ts"),
         "contrib-details-falaise": resolve(

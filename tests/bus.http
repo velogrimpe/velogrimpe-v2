@@ -60,3 +60,36 @@ Content-Type: application/json
   "nom_prenom": "Testeur",
   "email": "test@example.org"
 }
+
+### Lister les arrêts pour l'éditeur (bbox autour de Buoux/Apt + arrêts liés à la falaise 39)
+GET {{host}}/api/fetch_bus_arrets.php?falaise_id=39&bbox=43.78,5.30,43.92,5.45
+
+### Lister uniquement les arrêts liés à la falaise 39 (sans bbox)
+GET {{host}}/api/fetch_bus_arrets.php?falaise_id=39
+
+### Lier l'arrêt 1 à la falaise 39 (« cet arrêt est pertinent »)
+POST {{host}}/api/link_bus_falaise.php
+Content-Type: application/json
+
+{
+  "arret_id": 1,
+  "falaise_id": 39,
+  "action": "link",
+  "nom_prenom": "Testeur",
+  "email": "test@example.org"
+}
+
+### Délier l'arrêt 1 de la falaise 39
+POST {{host}}/api/link_bus_falaise.php
+Content-Type: application/json
+
+{
+  "arret_id": 1,
+  "falaise_id": 39,
+  "action": "unlink",
+  "nom_prenom": "Testeur",
+  "email": "test@example.org"
+}
+
+### Page ajout_bus pré-liée à la falaise 39 (depuis confirmation_falaise) — vérifier presetFalaiseIds
+GET {{host}}/ajout/ajout_bus.php?falaise_ids=39
