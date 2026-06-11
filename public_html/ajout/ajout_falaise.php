@@ -184,6 +184,21 @@ if ($falaise_id) {
             </div>
           </div>
         </div>
+        <div id="falaiseDuplicateAlert" class="hidden bg-warning/20 border border-red-900 text-red-900 p-2 rounded-lg">
+          <svg class="w-4 h-4 mb-1 fill-none stroke-current inline-block">
+            <use href="#error-warning-fill"></use>
+          </svg> Une falaise avec ce nom existe déjà (<a id="linkDuplicatedFalaise"
+            class="inline-flex items-center gap-1" target="_blank">
+            <span> consulter la page de cette falaise </span>
+            <svg class="w-4 h-4 fill-none stroke-current">
+              <use href="#external-link"></use>
+            </svg></a>) dans la base de données. Assurez vous de ne pas créer un doublon en vérifiant sa localisation
+          sur la carte. Vous pouvez aussi <a id="linkEditFalaise" target="_blank"
+            class="inline-flex items-center gap-1">la modifier en cliquant ici <svg
+              class="w-4 h-4 fill-none stroke-current">
+              <use href="#external-link"></use>
+            </svg></a>.
+        </div>
         <div id="falaiseExistsAlert" class="hidden bg-red-200 border border-red-900 text-red-900 p-2 rounded-lg">
           <svg class="w-4 h-4 mb-1 fill-none stroke-current inline-block">
             <use href="#error-warning-fill"></use>
@@ -1005,7 +1020,8 @@ champ rqvillefalaise_txt de la table rqvillefalaise).</pre>
           <textarea class="textarea textarea-sm leading-6" id="message" name="message" rows="4"></textarea>
         </label>
         <?php include $_SERVER['DOCUMENT_ROOT'] . "/components/contrib-licence-notice.php"; ?>
-        <div id="submitError" class="hidden items-start gap-2 bg-red-200 border border-red-900 text-red-900 p-3 rounded-lg">
+        <div id="submitError"
+          class="hidden items-start gap-2 bg-red-200 border border-red-900 text-red-900 p-3 rounded-lg">
           <svg class="w-5 h-5 mt-0.5 shrink-0 fill-none stroke-current">
             <use href="#error-warning-fill"></use>
           </svg>
@@ -1127,79 +1143,80 @@ champ rqvillefalaise_txt de la table rqvillefalaise).</pre>
 
 </script>
 <script>
-  // Soumission AJAX : en cas d'échec, le formulaire reste en place avec toutes
-  // les données saisies (texte, rich-text, images, position). Pas de perte de données.
-  (function () {
-    const form = document.getElementById('form');
-    const btn = document.getElementById('confirmButton');
-    const errorBox = document.getElementById('submitError');
-    const errorMsg = document.getElementById('submitErrorMessage');
-    let submitting = false;
+    // Soumission AJAX : en cas d'échec, le formulaire reste en place avec toutes
+    // les données saisies (texte, rich-text, images, position). Pas de perte de données.
+    (function () {
+      const form = document.getElementById('form');
+      const errorBox = document.getElementById('submitError');
+      const errorMsg = document.getElementById('submitErrorMessage');
+      let submitting = false;
 
-    function clearError() {
-      errorBox.classList.add('hidden');
-      errorBox.classList.remove('flex');
-      errorMsg.textContent = '';
-    }
-
-    function showError(message) {
-      errorMsg.textContent = message;
-      errorBox.classList.remove('hidden');
-      errorBox.classList.add('flex');
-      errorBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-
-    // Validation des champs rich-text obligatoires : chaque champ porte son
-    // propre attribut `required` (data-required) et s'auto-valide.
-    function validateRequiredRichText() {
-      const validator = window.validateRichTextFields;
-      if (typeof validator !== 'function') return true;
-      if (validator()) return true;
-      showError('Merci de remplir les champs obligatoires signalés en rouge ci-dessus.');
-      return false;
-    }
-
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      // queueMicrotask : laisse les autres listeners "submit" synchrones (sauvegarde
-      // contrib, reset GV...) mettre à jour les champs avant de construire le FormData.
-      queueMicrotask(submitFalaise);
-    });
-
-    async function submitFalaise() {
-      if (submitting) return;
-      if (!validateRequiredRichText()) return;
-      submitting = true;
-      const originalLabel = btn.textContent;
-      btn.disabled = true;
-      btn.textContent = 'Envoi en cours…';
-      clearError();
-      try {
-        const resp = await fetch(form.action, {
-          method: 'POST',
-          body: new FormData(form),
-          headers: { 'X-Requested-With': 'XMLHttpRequest' },
-        });
-        let data = null;
-        try { data = await resp.json(); } catch (_) { /* réponse non-JSON */ }
-        // Toute réponse 2xx est un succès : on ne doit jamais afficher d'erreur.
-        if (resp.ok) {
-          // succès : redirection vers la confirmation (ou rechargement en dernier recours)
-          window.location.href = (data && data.redirect) ? data.redirect : window.location.href;
-          return; // on quitte sans réactiver le bouton
-        }
-        const msg = (data && data.error)
-          || `Une erreur est survenue (code ${resp.status}). Vos données sont conservées, vous pouvez réessayer.`;
-        showError(msg);
-      } catch (err) {
-        showError("Erreur réseau : impossible d'envoyer le formulaire. Vos données sont conservées, vérifiez votre connexion et réessayez.");
-      } finally {
-        submitting = false;
-        btn.disabled = false;
-        btn.textContent = originalLabel;
+      function clearError() {
+        errorBox.classList.add('hidden');
+        errorBox.classList.remove('flex');
+        errorMsg.textContent = '';
       }
-    }
-  })();
+
+      function showError(message) {
+        errorMsg.textContent = message;
+        errorBox.classList.remove('hidden');
+        errorBox.classList.add('flex');
+        errorBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+
+      // Validation des champs custom obligatoires (rich-text + autocomplete + expo) :
+      // chaque champ porte son propre `required` et affiche son erreur (cf. Vue).
+      function validateRequiredFields() {
+        const validator = window.validateFalaiseForm;
+        if (typeof validator !== 'function') return true;
+        if (validator()) return true;
+        showError('Merci de remplir les champs obligatoires signalés en rouge ci-dessus.');
+        return false;
+      }
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        // queueMicrotask : laisse les autres listeners "submit" synchrones (sauvegarde
+        // contrib, reset GV...) mettre à jour les champs avant de construire le FormData.
+        queueMicrotask(submitFalaise);
+      });
+
+      async function submitFalaise() {
+        if (submitting) return;
+        if (!validateRequiredFields()) return;
+        submitting = true;
+        clearError();
+        // Bouton désactivé + spinner « Envoi en cours… » via l'utilitaire global.
+        window.formSubmitUI?.setSubmitting(form);
+        let succeeded = false;
+        try {
+          const resp = await fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form),
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          });
+          let data = null;
+          try { data = await resp.json(); } catch (_) { /* réponse non-JSON */ }
+          // Toute réponse 2xx est un succès : on ne doit jamais afficher d'erreur.
+          if (resp.ok) {
+            succeeded = true;
+            // succès : redirection vers la confirmation (ou rechargement en dernier recours)
+            window.location.href = (data && data.redirect) ? data.redirect : window.location.href;
+            return; // on quitte en gardant le spinner pendant la navigation
+          }
+          const msg = (data && data.error)
+            || `Une erreur est survenue (code ${resp.status}). Vos données sont conservées, vous pouvez réessayer.`;
+          showError(msg);
+        } catch (err) {
+          showError("Erreur réseau : impossible d'envoyer le formulaire. Vos données sont conservées, vérifiez votre connexion et réessayez.");
+        } finally {
+          if (!succeeded) {
+            submitting = false;
+            window.formSubmitUI?.resetSubmitting(form);
+          }
+        }
+      }
+    })();
 </script>
 <script type="module" src="/dist/ajout-falaise.js"></script>
 

@@ -28,6 +28,7 @@ const props = withDefaults(
 const emit = defineEmits<{
   "update:modelValue": [value: string];
   select: [option: AutocompleteOption];
+  blur: [value: string];
 }>();
 
 const inputRef = ref<HTMLInputElement | null>(null);
@@ -35,6 +36,8 @@ const listRef = ref<HTMLUListElement | null>(null);
 const isOpen = ref(false);
 const currentFocus = ref(-1);
 const inputValue = ref(props.modelValue);
+// Passe à true quand validate() échoue ; cf. validation type "input required".
+const invalid = ref(false);
 
 // Tant que le champ n'a pas le focus, il reste readonly : les outils de
 // remplissage automatique (autofill navigateur + gestionnaires de mots de
@@ -108,6 +111,14 @@ function onInput(event: Event) {
   emit("update:modelValue", target.value);
   isOpen.value = true;
   currentFocus.value = -1;
+  if (invalid.value && target.value.trim()) invalid.value = false;
+}
+
+/** Validation type "input required" : renvoie true si valide, sinon affiche l'erreur. */
+function validate(): boolean {
+  const ok = !props.required || inputValue.value.trim() !== "";
+  invalid.value = !ok;
+  return ok;
 }
 
 function selectOption(option: AutocompleteOption) {
@@ -116,6 +127,7 @@ function selectOption(option: AutocompleteOption) {
   emit("select", option);
   isOpen.value = false;
   currentFocus.value = -1;
+  if (invalid.value && option.value.trim()) invalid.value = false;
 }
 
 function selectNewValue() {
@@ -196,6 +208,10 @@ function onBlur() {
       }
     }
     isOpen.value = false;
+    // Émis après le délai : un éventuel clic sur une option a déjà déclenché
+    // `select` (et la valeur finale est stabilisée), donc le consommateur peut
+    // se fier à l'état courant sans faux positif.
+    emit("blur", inputValue.value);
   }, 200);
 }
 
@@ -215,7 +231,7 @@ function focus() {
   inputRef.value?.focus();
 }
 
-defineExpose({ focus });
+defineExpose({ focus, validate });
 
 onMounted(() => {
   document.addEventListener("click", onClickOutside);
@@ -240,7 +256,10 @@ function getOptionLabel(option: AutocompleteOption): string {
       :value="inputValue"
       :required="required"
     />
-    <label class="input input-primary w-full flex items-center gap-2">
+    <label
+      class="input input-primary w-full flex items-center gap-2"
+      :class="{ 'input-error': invalid }"
+    >
       <input
         ref="inputRef"
         type="text"
@@ -289,5 +308,6 @@ function getOptionLabel(option: AutocompleteOption): string {
         "{{ inputValue }}"
       </li>
     </ul>
+    <p v-if="invalid" class="text-error text-sm mt-1">Ce champ est obligatoire.</p>
   </div>
 </template>

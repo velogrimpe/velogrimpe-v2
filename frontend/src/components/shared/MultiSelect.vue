@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 
 export interface MultiSelectOption {
   value: string;
@@ -31,6 +31,25 @@ const searchQuery = ref("");
 const isOpen = ref(false);
 const containerRef = ref<HTMLElement | null>(null);
 const searchInputRef = ref<HTMLInputElement | null>(null);
+// Passe à true quand validate() échoue ; cf. validation type "input required".
+const invalid = ref(false);
+
+// L'erreur disparaît dès qu'une option est sélectionnée.
+watch(
+  () => props.modelValue,
+  (value) => {
+    if (invalid.value && value.length > 0) invalid.value = false;
+  },
+);
+
+/** Validation type "input required" : renvoie true si valide, sinon affiche l'erreur. */
+function validate(): boolean {
+  const ok = !props.required || props.modelValue.length > 0;
+  invalid.value = !ok;
+  return ok;
+}
+
+defineExpose({ validate });
 
 const selectedValues = computed(() => new Set(props.modelValue));
 
@@ -120,7 +139,7 @@ onUnmounted(() => {
     <!-- Main input area -->
     <div
       class="input input-primary input-sm flex items-center h-auto min-h-8 cursor-text py-1 pr-1"
-      :class="{ 'input-disabled': disabled }"
+      :class="{ 'input-disabled': disabled, 'input-error': invalid }"
       @click="handleContainerClick"
     >
       <!-- Selected items wrapper - no wrap, single line -->
@@ -175,6 +194,8 @@ onUnmounted(() => {
         {{ option.label }}
       </div>
     </div>
+
+    <p v-if="invalid" class="text-error text-sm mt-1">Ce champ est obligatoire.</p>
   </div>
 </template>
 
