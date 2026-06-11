@@ -242,18 +242,22 @@ document.addEventListener('DOMContentLoaded', () => {
 })
 
 // Registry of mounted rich text editors, keyed by field name, for PHP prefill.
-const richTextRefs: Record<string, Ref<{ setContent: (html: string) => void } | null>> = {}
+type RichTextApi = { setContent: (html: string) => void; validate: () => boolean }
+const richTextRefs: Record<string, Ref<RichTextApi | null>> = {}
 
 function mountRichTextFields() {
   document.querySelectorAll<HTMLElement>('.vue-richtext').forEach((el) => {
     const name = el.dataset.name
     if (!name) return
     const initial = el.dataset.value || ''
-    const cmpRef = ref<{ setContent: (html: string) => void } | null>(null)
+    // Le caractère obligatoire est porté par le champ lui-même (data-required),
+    // comme un input classique.
+    const required = el.dataset.required === 'true'
+    const cmpRef = ref<RichTextApi | null>(null)
 
     const app = createApp({
       setup() {
-        return () => h(RichTextField, { name, modelValue: initial, ref: cmpRef })
+        return () => h(RichTextField, { name, modelValue: initial, required, ref: cmpRef })
       },
     })
     app.mount(el)
@@ -263,6 +267,20 @@ function mountRichTextFields() {
   // Expose setter so fetchAndPrefillData (PHP) can fill editors in edit mode.
   ;(window as unknown as Record<string, unknown>).setRichText = (name: string, html: string) => {
     richTextRefs[name]?.value?.setContent(html || '')
+  }
+
+  // Valide tous les champs rich-text (chacun applique son propre `required`).
+  // Renvoie true si tous valides, sinon défile vers le premier invalide.
+  ;(window as unknown as Record<string, unknown>).validateRichTextFields = (): boolean => {
+    let firstInvalid: HTMLElement | null = null
+    document.querySelectorAll<HTMLElement>('.vue-richtext').forEach((el) => {
+      const name = el.dataset.name
+      if (!name) return
+      const ok = richTextRefs[name]?.value?.validate() ?? true
+      if (!ok && !firstInvalid) firstInvalid = el
+    })
+    if (firstInvalid) (firstInvalid as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' })
+    return !firstInvalid
   }
 }
 

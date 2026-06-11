@@ -9,9 +9,12 @@ const props = withDefaults(
     name: string;
     /** HTML initial (mode édition). */
     modelValue?: string;
+    /** Champ obligatoire : valide comme un input classique (cf. validate()). */
+    required?: boolean;
   }>(),
   {
     modelValue: "",
+    required: false,
   },
 );
 
@@ -22,6 +25,8 @@ const emit = defineEmits<{
 // Valeur réellement soumise via l'input caché (vide si éditeur vide, pour ne
 // pas envoyer un "<p></p>" parasite). Pilotée par onUpdate (réactivité fiable).
 const html = ref(props.modelValue);
+// Passe à true quand validate() échoue ; affiche le message d'erreur sous le champ.
+const invalid = ref(false);
 
 const editor = useEditor({
   extensions: [
@@ -45,8 +50,25 @@ const editor = useEditor({
   onUpdate: ({ editor }) => {
     html.value = editor.isEmpty ? "" : editor.getHTML();
     emit("update:modelValue", html.value);
+    // L'erreur disparaît dès que l'utilisateur saisit du contenu valide.
+    if (invalid.value && !isEmpty()) invalid.value = false;
   },
 });
+
+/** Vrai si le champ ne contient aucun texte réel (gère "<p></p>", &nbsp;, etc.). */
+function isEmpty(): boolean {
+  if (!html.value) return true;
+  const tmp = document.createElement("div");
+  tmp.innerHTML = html.value;
+  return (tmp.textContent || "").replace(/\u00a0/g, "").trim() === "";
+}
+
+/** Validation type "input required" : renvoie true si valide, sinon affiche l'erreur. */
+function validate(): boolean {
+  const ok = !props.required || !isEmpty();
+  invalid.value = !ok;
+  return ok;
+}
 
 function setLink() {
   const ed = editor.value;
@@ -73,7 +95,7 @@ function setLink() {
 function setContent(html: string) {
   editor.value?.commands.setContent(html || "", { emitUpdate: true });
 }
-defineExpose({ setContent });
+defineExpose({ setContent, validate });
 
 onBeforeUnmount(() => {
   editor.value?.destroy();
@@ -81,9 +103,10 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+  <div v-if="editor">
   <div
-    v-if="editor"
-    class="border border-base-300 rounded-lg bg-base-100 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary"
+    class="border rounded-lg bg-base-100 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary"
+    :class="invalid ? 'border-error' : 'border-base-300'"
   >
     <div
       class="flex flex-wrap items-center gap-0.5 p-1 border-b border-base-300 bg-base-200 rounded-t-lg"
@@ -181,5 +204,7 @@ onBeforeUnmount(() => {
       class="prose prose-p:my-1 prose-p:first:mt-0 prose-p:last:mb-0 max-w-none [&_.ProseMirror]:min-h-[3.5rem] [&_.ProseMirror]:p-1 [&_.ProseMirror]:cursor-text [&_.ProseMirror]:outline-none"
     />
     <input type="hidden" :name="name" :value="html" />
+  </div>
+    <p v-if="invalid" class="text-error text-sm mt-1">Ce champ est obligatoire.</p>
   </div>
 </template>

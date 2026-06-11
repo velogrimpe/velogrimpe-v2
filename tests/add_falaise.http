@@ -1,0 +1,26 @@
+### add_falaise.php — soumission AJAX (X-Requested-With) => réponses JSON
+### En cas d'échec, le front conserve les données ; ces tests vérifient le contrat JSON.
+
+### Méthode non autorisée => 405 JSON {"error": "Method not allowed"}
+GET http://localhost:4002/api/add_falaise.php
+X-Requested-With: XMLHttpRequest
+
+### Champ obligatoire manquant => 400 JSON {"error": "Il manque une info obligatoire : ..."}
+POST http://localhost:4002/api/add_falaise.php
+X-Requested-With: XMLHttpRequest
+Content-Type: application/x-www-form-urlencoded
+
+admin=0&falaise_public=2
+
+### Ajout minimal valide (non-admin) => 200 JSON {"redirect": "/ajout/confirmation_falaise.php?..."}
+POST http://localhost:4002/api/add_falaise.php
+X-Requested-With: XMLHttpRequest
+Content-Type: application/x-www-form-urlencoded
+
+admin=0&falaise_public=2&falaise_nom=Test+AJAX&falaise_nomformate=test-ajax&falaise_latlng=45.1234,6.2355&falaise_exposhort1=S&falaise_cotmin=5-&falaise_cotmax=6-&falaise_maa=10&falaise_mar=5&falaise_topo=Topo+test&falaise_expotxt=Sud&falaise_matxt=10min&falaise_voletcarto=Resume+test&falaise_voies=Quelques+voies&falaise_nbvoies=20&falaise_bloc=0&nom_prenom=Testeur&email=test@example.com
+
+### Même erreur sans en-tête AJAX => HTML (rétro-compatibilité plein-écran)
+POST http://localhost:4002/api/add_falaise.php
+Content-Type: application/x-www-form-urlencoded
+
+admin=0&falaise_public=2
