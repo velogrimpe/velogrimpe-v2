@@ -265,7 +265,7 @@ function getOptionLabel(option: AutocompleteOption): string {
     >
       <li
         v-for="(option, index) in filteredOptions"
-        :key="option.value"
+        :key="`${option.value}__${index}`"
         class="p-2 cursor-pointer hover:bg-primary hover:text-white"
         :class="{ 'bg-primary text-white': index === currentFocus }"
         @mousedown.prevent
