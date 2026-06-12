@@ -1,0 +1,22 @@
+### Test d'invalidation du cache LiteSpeed Hostinger (approche B)
+# Objectif : vérifier si Hostinger honore l'en-tête `X-LiteSpeed-Purge` émis depuis PHP.
+# Prérequis : cache_test.php et cache_purge.php déployés sur la prod.
+#
+# Procédure :
+#  1. Lancer la requête #1 deux fois de suite -> `rendered_at` doit être IDENTIQUE
+#     (preuve que la page est servie depuis le cache).
+#  2. Lancer la requête #2 (purge).
+#  3. Relancer la requête #1 -> `rendered_at` doit avoir CHANGÉ
+#     => la purge fonctionne, l'approche B est viable.
+#     Sinon (heure inchangée) => Hostinger ignore la purge applicative, bascule sur l'approche A.
+
+@base = https://velogrimpe.fr
+
+### 1. Sonde (à appeler plusieurs fois : l'heure doit rester figée tant que c'est caché)
+GET {{base}}/cache_test.php
+
+### 2. Purge
+GET {{base}}/cache_purge.php
+
+### 3. Re-sonde (l'heure doit avoir changé juste après la purge)
+GET {{base}}/cache_test.php
