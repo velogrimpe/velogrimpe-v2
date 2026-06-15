@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useEditor, EditorContent } from "@tiptap/vue-3";
 import StarterKit from "@tiptap/starter-kit";
-import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
 import { TextStyle, Color } from "@tiptap/extension-text-style";
 import Highlight from "@tiptap/extension-highlight";
@@ -24,10 +23,10 @@ const editor = useEditor({
       codeBlock: false,
       code: false,
       blockquote: false,
-    }),
-    Link.configure({
-      openOnClick: false,
-      HTMLAttributes: { target: "_blank", rel: "noopener" },
+      link: {
+        openOnClick: false,
+        HTMLAttributes: { target: "_blank", rel: "noopener" },
+      },
     }),
     Image.configure({ inline: false, allowBase64: false }),
     TextStyle,
