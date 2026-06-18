@@ -1,11 +1,39 @@
+
+### Export Open Data
+GET http://localhost:4002/api/private/crons/export_open_data.php
+Authorization: Bearer FyiloYmSAGkdaleukfEDrivTesxviYyc
+
+###
+GET https://velogrimpe.fr/api/private/crons/export_open_data.php
+Authorization: Bearer FyiloYmSAGkdaleukfEDrivTesxviYyc
+
+
 ### URL canonique : réécrite en interne vers download.php (tracée + attachment + CORS)
 GET http://localhost:4002/open-data/falaises.geojson
 
 ### URL canonique détails
 GET http://localhost:4002/open-data/falaises-details.geojson
 
+### URL canonique itinéraires vélo (tracés GPX agrégés en LineString)
+GET http://localhost:4002/open-data/itineraires-velo.geojson
+
+### URL canonique gares (points, référentiel hors gares supprimées)
+GET http://localhost:4002/open-data/gares.geojson
+
+### URL canonique export complet (toutes les collections fusionnées, tag vg_type)
+GET http://localhost:4002/open-data/complet.geojson
+
 ### Accès direct au endpoint (équivalent)
 GET http://localhost:4002/open-data/download.php?f=falaises
+
+### Accès direct itinéraires vélo
+GET http://localhost:4002/open-data/download.php?f=itineraires-velo
+
+### Accès direct gares
+GET http://localhost:4002/open-data/download.php?f=gares
+
+### Accès direct export complet
+GET http://localhost:4002/open-data/download.php?f=complet
 
 ### Slug inconnu -> 404
 GET http://localhost:4002/open-data/download.php?f=nimportequoi
