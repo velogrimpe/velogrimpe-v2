@@ -24,6 +24,7 @@ export default defineConfig({
         "bus-stop-dialog": resolve(__dirname, "src/apps/bus-stop-dialog.ts"),
         "falaise-comment": resolve(__dirname, "src/apps/falaise-comment.ts"),
         "falaise-rose": resolve(__dirname, "src/apps/falaise-rose.ts"),
+        "falaise-sun": resolve(__dirname, "src/apps/falaise-sun.ts"),
         "contrib-details-falaise": resolve(
           __dirname,
           "src/apps/contrib-details-falaise.ts",

@@ -55,26 +55,78 @@ async function readMultilineSVG(): Promise<string> {
   })
 }
 
+// Read a numeric attribute (e.g. cx, r) from an element's opening tag.
+function num(tag: string, name: string): number {
+  const m = tag.match(new RegExp(`\\b${name}=["']([^"']+)["']`))
+  return m ? parseFloat(m[1]) : 0
+}
+
+// Read a string attribute (e.g. points, d) from an element's opening tag.
+function str(tag: string, name: string): string {
+  const m = tag.match(new RegExp(`\\b${name}=["']([^"']*)["']`))
+  return m?.[1] ?? ''
+}
+
+// Convert SVG primitives (circle, line, rect, ellipse, poly*) to a path `d`.
+// Stroke-based icon sets (Lucide, Heroicons...) mix <path> with these, and
+// they must be preserved or the icon is incomplete (e.g. the sun's disc).
+function primitiveToPath(tag: string): string | null {
+  const type = tag.match(/^<\s*([a-zA-Z]+)/)?.[1]?.toLowerCase()
+  switch (type) {
+    case 'circle': {
+      const cx = num(tag, 'cx'), cy = num(tag, 'cy'), r = num(tag, 'r')
+      if (!r) return null
+      return `M${cx - r} ${cy}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0`
+    }
+    case 'ellipse': {
+      const cx = num(tag, 'cx'), cy = num(tag, 'cy')
+      const rx = num(tag, 'rx'), ry = num(tag, 'ry')
+      if (!rx || !ry) return null
+      return `M${cx - rx} ${cy}a${rx} ${ry} 0 1 0 ${2 * rx} 0a${rx} ${ry} 0 1 0 ${-2 * rx} 0`
+    }
+    case 'line': {
+      const x1 = num(tag, 'x1'), y1 = num(tag, 'y1')
+      const x2 = num(tag, 'x2'), y2 = num(tag, 'y2')
+      return `M${x1} ${y1}L${x2} ${y2}`
+    }
+    case 'rect': {
+      const x = num(tag, 'x'), y = num(tag, 'y')
+      const w = num(tag, 'width'), h = num(tag, 'height')
+      if (!w || !h) return null
+      return `M${x} ${y}h${w}v${h}h${-w}Z`
+    }
+    case 'polyline':
+    case 'polygon': {
+      const pts = str(tag, 'points').trim().split(/[\s,]+/).map(parseFloat)
+      if (pts.length < 4) return null
+      let d = `M${pts[0]} ${pts[1]}`
+      for (let i = 2; i < pts.length - 1; i += 2) d += `L${pts[i]} ${pts[i + 1]}`
+      return type === 'polygon' ? d + 'Z' : d
+    }
+    default:
+      return null
+  }
+}
+
 function parseSVG(svg: string): { viewBox: string; paths: string[] } | null {
   // Extract viewBox
   const viewBoxMatch = svg.match(/viewBox=["']([^"']+)["']/)
   const viewBox = viewBoxMatch?.[1] || '0 0 24 24'
 
-  // Extract all path d attributes
   const paths: string[] = []
 
-  // Match path elements with d attribute
-  const pathRegex = /<path[^>]*\bd=["']([^"']+)["'][^>]*\/?>/gi
+  // Walk every drawable element in document order so the icon is preserved
+  // exactly (shape order can matter for fills/overlaps).
+  const elementRegex = /<\s*(path|circle|ellipse|line|rect|polyline|polygon)\b[^>]*?\/?>/gi
   let match
-  while ((match = pathRegex.exec(svg)) !== null) {
-    paths.push(match[1])
-  }
-
-  // Also check for paths with d after other attributes
-  const pathRegex2 = /<path[^>]*\bd=["']([^"']+)["'][^>]*>/gi
-  while ((match = pathRegex2.exec(svg)) !== null) {
-    if (!paths.includes(match[1])) {
-      paths.push(match[1])
+  while ((match = elementRegex.exec(svg)) !== null) {
+    const tag = match[0]
+    if (match[1].toLowerCase() === 'path') {
+      const d = str(tag, 'd')
+      if (d) paths.push(d)
+    } else {
+      const d = primitiveToPath(tag)
+      if (d) paths.push(d)
     }
   }
 
