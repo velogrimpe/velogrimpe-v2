@@ -1,0 +1,113 @@
+### add_velo.php — soumission du formulaire d'ajout d'itinéraire vélo (multipart/form-data)
+### ATTENTION : un envoi valide insère réellement une ligne `velo` et écrit un fichier GPX
+### dans /bdd/gpx/. À n'exécuter que sur un environnement de test.
+###
+### Comportement vérifié ici :
+### - validation des champs obligatoires et du fichier GPX
+### - nettoyage du GPX : les <wpt> sont retirés, la trace <trk>/<trkpt> est conservée
+###   (cf. fixtures/velo-with-wpt.gpx)
+
+### Champ obligatoire manquant => "Il manque une info obligatoire : ..."
+POST http://localhost:4002/api/add_velo.php
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="admin"
+
+0
+------vg--
+
+### Fichier GPX manquant (champs présents) => "Il manque le fichier GPX."
+POST http://localhost:4002/api/add_velo.php
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="admin"
+
+0
+------vg
+Content-Disposition: form-data; name="gare_id"
+
+1
+------vg
+Content-Disposition: form-data; name="falaise_id"
+
+1
+------vg
+Content-Disposition: form-data; name="velo_depart"
+
+gare-test
+------vg
+Content-Disposition: form-data; name="velo_arrivee"
+
+falaise-test
+------vg
+Content-Disposition: form-data; name="velo_km"
+
+12.5
+------vg
+Content-Disposition: form-data; name="velo_dplus"
+
+650
+------vg
+Content-Disposition: form-data; name="velo_dmoins"
+
+650
+------vg--
+
+### Ajout valide avec GPX contenant des waypoints => redirection vers confirmation_velo.php
+### Après exécution : vérifier que le fichier écrit dans /bdd/gpx/ ne contient plus de <wpt>
+### mais conserve les <trkpt>.
+POST http://localhost:4002/api/add_velo.php
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="admin"
+
+0
+------vg
+Content-Disposition: form-data; name="velo_public"
+
+2
+------vg
+Content-Disposition: form-data; name="gare_id"
+
+1
+------vg
+Content-Disposition: form-data; name="falaise_id"
+
+1
+------vg
+Content-Disposition: form-data; name="velo_depart"
+
+gare-test
+------vg
+Content-Disposition: form-data; name="velo_arrivee"
+
+falaise-test
+------vg
+Content-Disposition: form-data; name="velo_km"
+
+12.5
+------vg
+Content-Disposition: form-data; name="velo_dplus"
+
+650
+------vg
+Content-Disposition: form-data; name="velo_dmoins"
+
+650
+------vg
+Content-Disposition: form-data; name="nom_prenom"
+
+Testeur
+------vg
+Content-Disposition: form-data; name="email"
+
+test@example.com
+------vg
+Content-Disposition: form-data; name="gpx_file"; filename="velo-with-wpt.gpx"
+Content-Type: application/gpx+xml
+
+< ./fixtures/velo-with-wpt.gpx
+------vg--
