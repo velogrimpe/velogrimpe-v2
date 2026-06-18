@@ -1,0 +1,14 @@
+### backfill_altitudes.php — renseigne falaise_altitude (IGN) pour les falaises sans altitude
+### Réservé admin (token). Renvoie {success, traites, renseignes, echecs}.
+
+### Sans token => 403 Forbidden
+GET http://localhost:4002/api/private/backfill_altitudes.php
+
+### Dry-run limité (2 falaises) — local
+GET http://localhost:4002/api/private/backfill_altitudes.php?admin=EZkabdP1caAlCbQbdaSE8patAArbbKCakarn5lH4gB2bSublY&limit=2
+
+### Backfill complet — local
+GET http://localhost:4002/api/private/backfill_altitudes.php?admin=EZkabdP1caAlCbQbdaSE8patAArbbKCakarn5lH4gB2bSublY
+
+### Backfill complet — prod
+GET https://velogrimpe.fr/api/private/backfill_altitudes.php?admin=EZkabdP1caAlCbQbdaSE8patAArbbKCakarn5lH4gB2bSublY
