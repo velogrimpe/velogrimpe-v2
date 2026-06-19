@@ -448,7 +448,7 @@ function parseNumberInput(value: string): number | null {
                       type="number"
                       step="50"
                       min="0"
-                      class="input input-sm w-12"
+                      class="input input-sm w-12 px-1"
                       :value="store.filters.altitude.min ?? ''"
                       @input="
                         store.setAltitudeMin(
@@ -466,7 +466,7 @@ function parseNumberInput(value: string): number | null {
                       type="number"
                       step="50"
                       min="0"
-                      class="input input-sm w-12"
+                      class="input input-sm w-12 px-1"
                       :value="store.filters.altitude.max ?? ''"
                       @input="
                         store.setAltitudeMax(
