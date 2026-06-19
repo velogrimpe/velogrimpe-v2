@@ -74,6 +74,18 @@ function getVeloReturnTime(it: TableauItinerary): string {
         >
           {{ common.falaise_deptname }} ({{ common.falaise_deptcode }})
         </div>
+        <div
+          v-if="common.falaise_altitude !== null"
+          class="font-normal text-xs flex items-center justify-center gap-1"
+        >
+          <svg
+            class="h-3! w-3! stroke-2 inline stroke-current fill-none"
+            aria-hidden="true"
+          >
+            <use href="#altitude"></use>
+          </svg>
+          {{ common.falaise_altitude }} m
+        </div>
       </div>
     </div>
 

@@ -1,4 +1,4 @@
-export type SortKey = "total" | "train" | "velo" | "voies" | "approche";
+export type SortKey = "total" | "train" | "velo" | "voies" | "approche" | "altitude";
 export type SortDir = "asc" | "desc";
 
 export interface SortState {
@@ -15,6 +15,7 @@ export interface TableauItinerary {
   falaise_maa: number;
   falaise_exposhort1: string;
   falaise_exposhort2: string;
+  falaise_altitude: number | null;
   falaise_bloc: number;
   falaise_gvnb: string | null;
   falaise_fermee: string;

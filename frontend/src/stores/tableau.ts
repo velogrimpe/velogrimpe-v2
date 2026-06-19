@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useFiltersStore } from './filters'
 import { calculateVeloTime } from '@/utils'
+import { matchesAltitude } from '@/types'
 import type { SortState, SortKey, SortDir, TableauFalaise } from '@/types/tableau'
 
 export const useTableauStore = defineStore('tableau', () => {
@@ -40,7 +41,8 @@ export const useTableauStore = defineStore('tableau', () => {
     const minVelo = Math.min(...f.map(it => calculateVeloTime(it)))
     const nbVoies = f[0].falaise_nbvoies || 0
     const approche = f[0].falaise_maa || 0
-    return { minTotal, minTrain, minVelo, nbVoies, approche }
+    const altitude = Number(f[0].falaise_altitude) || 0
+    return { minTotal, minTrain, minVelo, nbVoies, approche, altitude }
   }
 
   // Check if a falaise passes the current filters
@@ -74,9 +76,12 @@ export const useTableauStore = defineStore('tableau', () => {
     const { tempsMax: tempsMaxMA } = f.approche
     const { tempsTV: tempsMaxTV, tempsTVA: tempsMaxTVA } = f.total
     const nbVoies = f.nbVoiesMin
+    const { min: altMin, max: altMax } = f.altitude
 
     // Cotation compatibility check
+    // Exclure les falaises sans cotation min/max renseignée quand on filtre par cotation
     const estCotationsCompatible = (
+      !!falaise.falaise_cotmin && !!falaise.falaise_cotmax &&
       (!cot40 || ('4+'.localeCompare(falaise.falaise_cotmin) >= 0)) &&
       (!cot50 || ('5-'.localeCompare(falaise.falaise_cotmin) >= 0 && falaise.falaise_cotmax.localeCompare('5-') >= 0)) &&
       (!cot59 || ('5+'.localeCompare(falaise.falaise_cotmin) >= 0 && falaise.falaise_cotmax.localeCompare('5+') >= 0)) &&
@@ -129,6 +134,7 @@ export const useTableauStore = defineStore('tableau', () => {
 
     return (
       expoMatch &&
+      matchesAltitude(falaise.falaise_altitude, altMin, altMax) &&
       (!cotFiltered || estCotationsCompatible) &&
       estNbVoiesCompatible &&
       (tempsMaxMA === null || (falaise.falaise_maa || 0) <= tempsMaxMA) &&
@@ -158,6 +164,7 @@ export const useTableauStore = defineStore('tableau', () => {
         case 'velo': va = ma.minVelo; vb = mb.minVelo; break
         case 'voies': va = ma.nbVoies; vb = mb.nbVoies; break
         case 'approche': va = ma.approche; vb = mb.approche; break
+        case 'altitude': va = ma.altitude; vb = mb.altitude; break
       }
 
       const cmp = va === vb ? 0 : (va < vb ? -1 : 1)

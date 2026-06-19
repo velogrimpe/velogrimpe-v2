@@ -5,6 +5,7 @@ import { ref, computed, watch } from 'vue'
 export interface CarteFalaise {
   falaise_id: string
   falaise_nom: string
+  falaise_altitude: string | null
   falaise_latlng: string
   falaise_fermee: string
   falaise_voletcarto: string

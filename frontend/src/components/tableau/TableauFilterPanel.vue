@@ -114,6 +114,10 @@ const nbVoiesOptions = [
 
 // Active filter indicators
 const hasExpoFilter = computed(() => store.filters.exposition.length > 0);
+const hasAltitudeFilter = computed(
+  () =>
+    store.filters.altitude.min !== null || store.filters.altitude.max !== null,
+);
 const hasVoiesFilter = computed(
   () =>
     store.filters.cotations.length > 0 ||
@@ -256,22 +260,23 @@ function parseNumberInput(value: string): number | null {
         </div>
       </div>
 
-      <!-- Exposition Dropdown -->
+      <!-- Exposition + Altitude Dropdown -->
       <div class="dropdown w-fit">
         <div
           tabindex="0"
           role="button"
           class="btn btn-sm text-nowrap focus:pointer-events-none"
-          :class="{ 'btn-primary': hasExpoFilter }"
+          :class="{ 'btn-primary': hasExpoFilter || hasAltitudeFilter }"
         >
-          Exposition 🔅
+          Expo 🔅 / Alti 🏔️
         </div>
         <div
-          class="dropdown-content menu bg-base-200 rounded-box z-1 m-1 w-40 p-2 shadow-lg"
+          class="dropdown-content menu bg-base-200 rounded-box z-1 m-1 w-56 p-2 shadow-lg"
           tabindex="1"
         >
-          <div class="flex flex-row gap-1 items-center">
-            <div class="max-w-96 flex flex-col gap-1 w-full">
+          <div class="flex flex-col gap-2">
+            <div class="font-bold">Exposition</div>
+            <div class="flex flex-col gap-1 w-full">
               <label
                 v-for="expo in expositions"
                 :key="expo.id"
@@ -289,6 +294,42 @@ function parseNumberInput(value: string): number | null {
                 </span>
               </label>
             </div>
+
+            <div class="divider my-1"></div>
+
+            <div class="font-bold">Altitude 🏔️ (m)</div>
+            <label class="flex flex-row gap-2 items-center">
+              <div class="text-normal font-bold w-8">min</div>
+              <input
+                type="number"
+                step="50"
+                min="0"
+                class="input input-sm w-20"
+                :value="store.filters.altitude.min ?? ''"
+                @input="
+                  store.setAltitudeMin(
+                    parseNumberInput(($event.target as HTMLInputElement).value),
+                  )
+                "
+              />
+              <div>m</div>
+            </label>
+            <label class="flex flex-row gap-2 items-center">
+              <div class="text-normal font-bold w-8">max</div>
+              <input
+                type="number"
+                step="50"
+                min="0"
+                class="input input-sm w-20"
+                :value="store.filters.altitude.max ?? ''"
+                @input="
+                  store.setAltitudeMax(
+                    parseNumberInput(($event.target as HTMLInputElement).value),
+                  )
+                "
+              />
+              <div>m</div>
+            </label>
           </div>
         </div>
       </div>

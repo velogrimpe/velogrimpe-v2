@@ -44,6 +44,7 @@ export interface Falaise {
   falaise_nom: string
   falaise_nomformate: string
   falaise_latlng: string
+  falaise_altitude: number | null
   falaise_fermee: string | null
   falaise_bloc: string
   falaise_cotmin: string

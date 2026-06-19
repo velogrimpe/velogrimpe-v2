@@ -49,6 +49,18 @@ function formatCorrespondances(it: TableauItinerary): string {
           <div v-if="!common.falaise_zonename && common.falaise_deptcode">
             {{ common.falaise_deptname }} ({{ common.falaise_deptcode }})
           </div>
+          <div
+            v-if="common.falaise_altitude !== null"
+            class="flex items-center gap-1"
+          >
+            <svg
+              class="h-3! w-3! stroke-2 inline stroke-current fill-none"
+              aria-hidden="true"
+            >
+              <use href="#altitude"></use>
+            </svg>
+            {{ common.falaise_altitude }} m
+          </div>
           <div>
             <b title="Cotations (6-: 6a à 6b, 6+: 6b+ à 6c+ etc.)">Cotations</b>
             :

@@ -12,6 +12,9 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 - Altitude des falaises : à l'ajout/édition d'une falaise (`api/add_falaise.php`), l'altitude du point `lat,lng` est récupérée automatiquement via l'API altimétrie de la Géoplateforme IGN (`data.geopf.fr`, sans clé) et stockée en mètres dans la nouvelle colonne `falaises.falaise_altitude`. L'appel est robuste : tout échec (réseau, timeout, point hors couverture) laisse l'altitude vide sans bloquer l'enregistrement. En édition, l'altitude n'est recalculée que si les coordonnées changent ou si elle est absente. Helper : `lib/altitude_lib.php`.
 - Affichage de l'altitude et des coordonnées dans un item « localisation » du bandeau de stats de la page falaise (`falaise.php`).
 - Endpoint admin `api/private/backfill_altitudes.php` (token requis) : renseigne `falaise_altitude` pour les falaises qui n'en ont pas encore (paramètre optionnel `limit`), avec un journal (`edit_logs`) par falaise modifiée. Test : `tests/backfill_altitudes.http`.
+- Filtre par altitude (intervalle libre min/max en mètres) sur la page carte (`carte.php`) et la page tableau (`tableau.php`). Le filtre Exposition et le filtre Altitude sont regroupés dans un même menu « Expo 🔅 / Alti 🏔️ » à deux sous-rubriques. Les falaises sans altitude connue sont exclues dès qu'une borne est définie. État synchronisé dans l'URL (`altmin`, `altmax`). Store partagé `stores/filters.ts` (helper `matchesAltitude`).
+- Page tableau : affichage de l'altitude (icône + valeur en m) sous la zone/département de chaque falaise, et tri par altitude dans le menu « Tri ».
+- Page carte : l'altitude (icône + valeur en m) s'affiche entre parenthèses à côté du nom de la falaise dans le volet d'information.
 
 ## 2026-06-17
 

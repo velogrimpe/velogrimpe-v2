@@ -1,9 +1,32 @@
 export type Exposition = 'N' | 'E' | 'S' | 'O'
 export type Cotation = '40' | '50' | '59' | '60' | '69' | '70' | '79' | '80'
 
+/**
+ * Vrai si l'altitude (en mètres) est dans l'intervalle [min, max] (bornes
+ * incluses, chacune optionnelle). Aucune borne => pas de filtre (toujours vrai).
+ * Une altitude inconnue (null) est exclue dès qu'une borne est définie.
+ */
+export function matchesAltitude(
+  altitude: number | null | undefined,
+  min: number | null,
+  max: number | null,
+): boolean {
+  if (min === null && max === null) return true
+  if (altitude === null || altitude === undefined) return false
+  const a = Number(altitude)
+  if (!Number.isFinite(a)) return false
+  return (min === null || a >= min) && (max === null || a <= max)
+}
+
 export interface FilterState {
   // Exposition (OR logic between selected)
   exposition: Exposition[]
+
+  // Altitude (en mètres) : intervalle libre, bornes optionnelles
+  altitude: {
+    min: number | null
+    max: number | null
+  }
 
   // Cotations (AND logic - falaise must have routes in ALL selected ranges)
   cotations: Cotation[]
@@ -51,6 +74,10 @@ export interface FilterState {
 
 export const defaultFilters: FilterState = {
   exposition: [],
+  altitude: {
+    min: null,
+    max: null,
+  },
   cotations: [],
   typeVoies: {
     couenne: false,

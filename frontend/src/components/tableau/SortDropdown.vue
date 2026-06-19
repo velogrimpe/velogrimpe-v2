@@ -22,6 +22,8 @@ const sortOptions: SortOption[] = [
   { key: 'voies', dir: 'desc', label: 'Nb voies' },
   { key: 'approche', dir: 'asc', label: 'Approche' },
   { key: 'approche', dir: 'desc', label: 'Approche' },
+  { key: 'altitude', dir: 'asc', label: 'Altitude' },
+  { key: 'altitude', dir: 'desc', label: 'Altitude' },
 ]
 
 function isActive(opt: SortOption): boolean {

@@ -12,6 +12,8 @@ export const useFiltersStore = defineStore("filters", () => {
     const f = filters.value;
     return (
       f.exposition.length > 0 ||
+      f.altitude.min !== null ||
+      f.altitude.max !== null ||
       f.cotations.length > 0 ||
       f.typeVoies.couenne ||
       f.typeVoies.grandeVoie ||
@@ -46,6 +48,14 @@ export const useFiltersStore = defineStore("filters", () => {
     } else {
       filters.value.exposition.splice(idx, 1);
     }
+  }
+
+  function setAltitudeMin(value: number | null) {
+    filters.value.altitude.min = value;
+  }
+
+  function setAltitudeMax(value: number | null) {
+    filters.value.altitude.max = value;
   }
 
   function setCotations(cotations: Cotation[]) {
@@ -126,6 +136,7 @@ export const useFiltersStore = defineStore("filters", () => {
   function hydrate(partial: Partial<FilterState>) {
     const f = filters.value;
     if (partial.exposition) f.exposition = partial.exposition;
+    if (partial.altitude) f.altitude = { ...f.altitude, ...partial.altitude };
     if (partial.cotations) f.cotations = partial.cotations;
     if (partial.typeVoies) f.typeVoies = { ...f.typeVoies, ...partial.typeVoies };
     if (partial.nbVoiesMin !== undefined) f.nbVoiesMin = partial.nbVoiesMin;
@@ -158,6 +169,8 @@ export const useFiltersStore = defineStore("filters", () => {
     // Actions
     setExposition,
     toggleExposition,
+    setAltitudeMin,
+    setAltitudeMax,
     setCotations,
     toggleCotation,
     setTypeVoie,

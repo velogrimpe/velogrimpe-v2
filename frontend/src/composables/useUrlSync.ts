@@ -15,7 +15,7 @@ const VALID_COTATIONS: Cotation[] = [
   "80",
 ];
 
-const VALID_SORT_KEYS: SortKey[] = ["total", "train", "velo", "voies", "approche"];
+const VALID_SORT_KEYS: SortKey[] = ["total", "train", "velo", "voies", "approche", "altitude"];
 const VALID_SORT_DIRS: SortDir[] = ["asc", "desc"];
 const DEFAULT_SORT_KEY: SortKey = "total";
 const DEFAULT_SORT_DIR: SortDir = "asc";
@@ -42,6 +42,13 @@ function paramsToFilters(params: URLSearchParams): Partial<FilterState> {
         VALID_EXPOSITIONS.includes(v as Exposition),
       );
     if (values.length) partial.exposition = values;
+  }
+
+  // Altitude (intervalle libre, en mètres)
+  const altmin = parseNumber(params.get("altmin"));
+  const altmax = parseNumber(params.get("altmax"));
+  if (altmin !== null || altmax !== null) {
+    partial.altitude = { min: altmin, max: altmax };
   }
 
   // Cotations
@@ -123,6 +130,11 @@ function filtersToParams(state: FilterState): URLSearchParams {
 
   if (state.exposition.length > 0)
     params.set("expo", state.exposition.join(","));
+
+  if (state.altitude.min !== null)
+    params.set("altmin", String(state.altitude.min));
+  if (state.altitude.max !== null)
+    params.set("altmax", String(state.altitude.max));
 
   if (state.cotations.length > 0)
     params.set("cot", state.cotations.join(","));
