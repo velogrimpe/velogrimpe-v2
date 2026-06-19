@@ -14,7 +14,6 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 - Endpoint admin `api/private/backfill_altitudes.php` (token requis) : renseigne `falaise_altitude` pour les falaises qui n'en ont pas encore (paramètre optionnel `limit`), avec un journal (`edit_logs`) par falaise modifiée. Test : `tests/backfill_altitudes.http`.
 - Filtre par altitude (intervalle libre min/max en mètres) sur la page carte (`carte.php`) et la page tableau (`tableau.php`). Le filtre Exposition et le filtre Altitude sont regroupés dans un même menu « Expo 🔅 / Alti 🏔️ » à deux sous-rubriques. Les falaises sans altitude connue sont exclues dès qu'une borne est définie. État synchronisé dans l'URL (`altmin`, `altmax`). Store partagé `stores/filters.ts` (helper `matchesAltitude`).
 - Page tableau : affichage de l'altitude (icône + valeur en m) sous la zone/département de chaque falaise, et tri par altitude dans le menu « Tri ».
-- Page carte : l'altitude (icône + valeur en m) s'affiche entre parenthèses à côté du nom de la falaise dans le volet d'information.
 
 ## 2026-06-17
 
