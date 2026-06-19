@@ -71,6 +71,14 @@ function unsetHighlight() {
       @click="editor.chain().focus().toggleHeading({ level: 3 }).run()"
       title="Titre H3"
     >H3</button>
+    <button
+      class="btn btn-xs btn-ghost"
+      :class="{ 'btn-active': editor.isActive('caption') }"
+      @click="editor.chain().focus().toggleCaption().run()"
+      title="Légende d'image (centré, italique, gris)"
+    >
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="12" rx="2" ry="2"/><line x1="7" y1="19" x2="17" y2="19"/></svg>
+    </button>
 
     <span class="w-px h-5 bg-base-300 mx-1"></span>
 

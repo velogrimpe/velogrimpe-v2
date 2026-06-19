@@ -98,6 +98,21 @@
 }
 
 /*
+ * Légende d'image (bouton « Légende » de l'éditeur) : texte centré, italique,
+ * légèrement grisé et collé à l'élément précédent (image), sans marge ni
+ * padding en haut. Voir caption-extension.ts et la conversion email dans
+ * newsletter_renderer.php.
+ */
+.prose .vg-caption {
+  margin-top: 0;
+  padding-top: 0;
+  text-align: center;
+  font-style: italic;
+  color: #6b7280;
+  font-size: 0.875em;
+}
+
+/*
  * Rendu des champs riches (éditeur TipTap) sur les fiches falaises.
  * Neutralise les marges par défaut des <p> pour coller au rendu historique
  * (texte + <br>), et stylise listes à puces et liens.

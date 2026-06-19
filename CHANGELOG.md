@@ -4,6 +4,12 @@ Tous les changements notables de ce projet sont documentés dans ce fichier.
 
 Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 2026-06-19
+
+### Added
+
+- Éditeur de texte riche des newsletters et des pages (`SectionTextEditor`) : nouveau format de bloc « Légende d'image » (bouton dédié dans la barre d'outils, à côté de P/H2/H3). Le texte est centré, en italique, légèrement grisé et collé sans marge ni padding en haut à l'élément précédent (typiquement une image). Rendu cohérent en preview, sur les pages publiques (`.prose .vg-caption`) et dans les emails (conversion en styles inline via `newsletter_renderer.php`). Extension TipTap `caption` produisant `<p class="vg-caption">`.
+
 ## 2026-06-18
 
 ### Added

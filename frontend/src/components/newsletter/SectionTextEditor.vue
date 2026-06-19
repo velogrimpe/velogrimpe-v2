@@ -6,6 +6,7 @@ import { TextStyle, Color } from "@tiptap/extension-text-style";
 import Highlight from "@tiptap/extension-highlight";
 import { watch, onBeforeUnmount } from "vue";
 import EditorToolbar from "./EditorToolbar.vue";
+import { Caption } from "./caption-extension";
 
 const props = defineProps<{
   html: string;
@@ -32,6 +33,7 @@ const editor = useEditor({
     TextStyle,
     Color,
     Highlight.configure({ multicolor: true }),
+    Caption,
   ],
   content: props.html,
   onUpdate: ({ editor }) => {
