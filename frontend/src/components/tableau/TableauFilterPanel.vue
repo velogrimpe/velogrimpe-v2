@@ -271,7 +271,7 @@ function parseNumberInput(value: string): number | null {
           Expo 🔅 / Alti 🏔️
         </div>
         <div
-          class="dropdown-content menu bg-base-200 rounded-box z-1 m-1 w-56 p-2 shadow-lg"
+          class="dropdown-content menu bg-base-200 rounded-box z-[1001] m-1 w-60 p-2 shadow-lg"
           tabindex="1"
         >
           <div class="flex flex-col gap-2">
@@ -297,39 +297,45 @@ function parseNumberInput(value: string): number | null {
 
             <div class="divider my-1"></div>
 
-            <div class="font-bold">Altitude 🏔️ (m)</div>
-            <label class="flex flex-row gap-2 items-center">
-              <div class="text-normal font-bold w-8">min</div>
-              <input
-                type="number"
-                step="50"
-                min="0"
-                class="input input-sm w-20"
-                :value="store.filters.altitude.min ?? ''"
-                @input="
-                  store.setAltitudeMin(
-                    parseNumberInput(($event.target as HTMLInputElement).value),
-                  )
-                "
-              />
-              <div>m</div>
-            </label>
-            <label class="flex flex-row gap-2 items-center">
-              <div class="text-normal font-bold w-8">max</div>
-              <input
-                type="number"
-                step="50"
-                min="0"
-                class="input input-sm w-20"
-                :value="store.filters.altitude.max ?? ''"
-                @input="
-                  store.setAltitudeMax(
-                    parseNumberInput(($event.target as HTMLInputElement).value),
-                  )
-                "
-              />
-              <div>m</div>
-            </label>
+            <div class="font-bold">Altitude 🏔️</div>
+            <div class="flex flex-row gap-2 items-center">
+              <label class="flex flex-row gap-2 items-center">
+                <div class="text-normal font-bold">Entre</div>
+                <input
+                  type="number"
+                  step="50"
+                  min="0"
+                  class="input input-sm w-12"
+                  :value="store.filters.altitude.min ?? ''"
+                  @input="
+                    store.setAltitudeMin(
+                      parseNumberInput(
+                        ($event.target as HTMLInputElement).value,
+                      ),
+                    )
+                  "
+                />
+                <div>m</div>
+              </label>
+              <label class="flex flex-row gap-2 items-center">
+                <div class="text-normal font-bold">et</div>
+                <input
+                  type="number"
+                  step="50"
+                  min="0"
+                  class="input input-sm w-12"
+                  :value="store.filters.altitude.max ?? ''"
+                  @input="
+                    store.setAltitudeMax(
+                      parseNumberInput(
+                        ($event.target as HTMLInputElement).value,
+                      ),
+                    )
+                  "
+                />
+                <div>m</div>
+              </label>
+            </div>
           </div>
         </div>
       </div>
