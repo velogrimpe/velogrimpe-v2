@@ -13,7 +13,10 @@ function buildSprite(): string {
   const symbols = icons.map(icon => {
     const viewBox = icon.viewBox || '0 0 24 24'
     const paths = icon.paths.map(d => `<path d="${d}"/>`).join('')
-    return `<symbol id="${icon.name}" viewBox="${viewBox}">${paths}</symbol>`
+    // stroke-linecap/linejoin doivent vivre sur la géométrie du sprite : posés
+    // sur le wrapper <svg> côté <use>, ils ne franchissent pas la frontière de
+    // référence externe. Sur le <symbol> ils sont hérités par les <path>.
+    return `<symbol id="${icon.name}" viewBox="${viewBox}" stroke-linecap="round" stroke-linejoin="round">${paths}</symbol>`
   }).join('\n  ')
 
   return `<svg xmlns="http://www.w3.org/2000/svg" style="display:none;">

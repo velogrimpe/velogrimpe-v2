@@ -2,6 +2,9 @@ import { createApp, h } from 'vue'
 import SunIndicator from '@/components/shared/SunIndicator.vue'
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Fonctionnalité en preview : activée uniquement avec ?preview=true dans l'URL.
+  if (new URLSearchParams(window.location.search).get('preview') !== 'true') return
+
   const mountEl = document.getElementById('vue-sun-simulator')
   if (!mountEl) return
 

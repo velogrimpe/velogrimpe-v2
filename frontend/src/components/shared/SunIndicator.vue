@@ -239,8 +239,9 @@ const arrowStyle = computed(() => ({
           :style="{ color: markerIconColor }"
         />
         <span
-          class="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded bg-base-100/95 px-1 text-[10px] font-semibold leading-tight tabular-nums shadow ring-1 ring-base-300"
+          class="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded bg-base-100/95 pr-1 text-[10px] font-semibold leading-tight tabular-nums shadow ring-1 ring-base-300 flex items-center"
         >
+          <Icon name="elevation-angle" class="inline h-3! w-3! stroke-2" />
           {{ altitudeLabel }}
         </span>
       </div>
@@ -261,15 +262,13 @@ const arrowStyle = computed(() => ({
       <button
         v-if="collapsed"
         type="button"
-        class="btn btn-circle btn-sm bg-base-100/95 shadow-lg ring-1 ring-base-300"
+        class="btn rounded-full btn-sm bg-base-100/95 shadow-lg ring-1 ring-base-300"
         :title="`Simulateur d'ensoleillement — ${currentTimeLabel}`"
         @click="collapsed = false"
+        :style="{ color: panelIconColor }"
       >
-        <Icon
-          :name="astreIconName"
-          class="h-5 w-5 stroke-2"
-          :style="{ color: panelIconColor }"
-        />
+        <Icon :name="astreIconName" class="h-5 w-5 stroke-2" />
+        Ensoleillement
       </button>
 
       <!-- Déployé : panneau complet -->
@@ -287,7 +286,7 @@ const arrowStyle = computed(() => ({
               class="h-4 w-4 stroke-2"
               :style="{ color: panelIconColor }"
             />
-            Position du soleil
+            Ensoleillement
           </span>
           <button
             type="button"
