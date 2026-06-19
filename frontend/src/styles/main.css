@@ -111,6 +111,11 @@
   color: #6b7280;
   font-size: 0.875em;
 }
+/* Colle la légende à l'image qui la précède en annulant la marge basse de
+ * l'image (les marges par défaut de prose créeraient sinon un écart). */
+.prose img:has(+ .vg-caption) {
+  margin-bottom: 0;
+}
 
 /*
  * Rendu des champs riches (éditeur TipTap) sur les fiches falaises.
