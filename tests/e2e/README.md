@@ -4,7 +4,7 @@ Tests end-to-end avec Playwright.
 
 ## Prérequis
 
-- Le serveur PHP doit tourner sur `http://localhost:4002`
+- Le serveur PHP doit tourner sur `http://localhost:4000`
 - Docker container `velogrimpe-2` démarré
 
 ## Commandes
@@ -39,14 +39,14 @@ tests/e2e/
 ## Écrire un nouveau test
 
 ```typescript
-import { test, expect } from '@playwright/test'
+import { test, expect } from "@playwright/test";
 
-test.describe('Ma fonctionnalité', () => {
-  test('fait quelque chose', async ({ page }) => {
-    await page.goto('/ma-page.php')
-    await expect(page.locator('#element')).toBeVisible()
-  })
-})
+test.describe("Ma fonctionnalité", () => {
+  test("fait quelque chose", async ({ page }) => {
+    await page.goto("/ma-page.php");
+    await expect(page.locator("#element")).toBeVisible();
+  });
+});
 ```
 
 ## Patterns utiles
@@ -54,43 +54,44 @@ test.describe('Ma fonctionnalité', () => {
 ### Attendre qu'un composant Vue soit monté
 
 ```typescript
-await page.waitForSelector('#vue-mount-point')
+await page.waitForSelector("#vue-mount-point");
 ```
 
 ### Tester une carte Leaflet
 
 ```typescript
 // Attendre que Leaflet soit chargé
-await page.waitForSelector('.leaflet-container')
+await page.waitForSelector(".leaflet-container");
 
 // Cliquer sur un marker
-await page.locator('.leaflet-marker-icon').first().click()
+await page.locator(".leaflet-marker-icon").first().click();
 
 // Vérifier un popup
-await expect(page.locator('.leaflet-popup')).toBeVisible()
+await expect(page.locator(".leaflet-popup")).toBeVisible();
 ```
 
 ### Mocker la géolocalisation
 
 ```typescript
-test('avec position mockée', async ({ context, page }) => {
-  await context.grantPermissions(['geolocation'])
-  await context.setGeolocation({ latitude: 45.76, longitude: 4.83 })
-  await page.goto('/carte.php')
-})
+test("avec position mockée", async ({ context, page }) => {
+  await context.grantPermissions(["geolocation"]);
+  await context.setGeolocation({ latitude: 45.76, longitude: 4.83 });
+  await page.goto("/carte.php");
+});
 ```
 
 ### Tester un formulaire
 
 ```typescript
-await page.fill('#input-name', 'valeur')
-await page.selectOption('#select-id', 'option-value')
-await page.click('button[type="submit"]')
+await page.fill("#input-name", "valeur");
+await page.selectOption("#select-id", "option-value");
+await page.click('button[type="submit"]');
 ```
 
 ## Configuration
 
 Voir `playwright.config.ts` à la racine du projet pour :
+
 - Changer le baseURL
 - Ajouter d'autres navigateurs (Firefox, Safari)
 - Configurer les retries et le parallélisme

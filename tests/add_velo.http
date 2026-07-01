@@ -8,7 +8,7 @@
 ###   (cf. fixtures/velo-with-wpt.gpx)
 
 ### Champ obligatoire manquant => "Il manque une info obligatoire : ..."
-POST http://localhost:4002/api/add_velo.php
+POST http://localhost:4000/api/add_velo.php
 Content-Type: multipart/form-data; boundary=----vg
 
 ------vg
@@ -18,7 +18,7 @@ Content-Disposition: form-data; name="admin"
 ------vg--
 
 ### Fichier GPX manquant (champs présents) => "Il manque le fichier GPX."
-POST http://localhost:4002/api/add_velo.php
+POST http://localhost:4000/api/add_velo.php
 Content-Type: multipart/form-data; boundary=----vg
 
 ------vg
@@ -58,7 +58,7 @@ Content-Disposition: form-data; name="velo_dmoins"
 ### Ajout valide avec GPX contenant des waypoints => redirection vers confirmation_velo.php
 ### Après exécution : vérifier que le fichier écrit dans /bdd/gpx/ ne contient plus de <wpt>
 ### mais conserve les <trkpt>.
-POST http://localhost:4002/api/add_velo.php
+POST http://localhost:4000/api/add_velo.php
 Content-Type: multipart/form-data; boundary=----vg
 
 ------vg

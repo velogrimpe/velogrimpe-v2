@@ -54,8 +54,8 @@ test("peut créer une falaise", async ({ page }) => {
 export default defineConfig({
   use: {
     baseURL: process.env.CI
-      ? "http://localhost:4002" // BDD de test
-      : "http://localhost:4002", // ou BDD locale de dev
+      ? "http://localhost:4000" // BDD de test
+      : "http://localhost:4000", // ou BDD locale de dev
   },
 });
 ```
