@@ -25,8 +25,8 @@ velo-grimpe/
 ## Development
 
 ```bash
-# Docker container: velogrimpe, port 4002
-docker run --platform linux/x86_64 --name velogrimpe -p 4003:22 -p 4002:80 -d \
+# Docker container: velogrimpe, port 4000
+docker run --platform linux/x86_64 --name velogrimpe -p 4003:22 -p 4000:80 -d \
   -v $PWD/velo-grimpe/public_html:/opt/lampp/htdocs \
   --mount type=bind,source=$PWD/velo-grimpe/config.php,target=/opt/lampp/config.php,readonly \
   tomsik68/xampp:8

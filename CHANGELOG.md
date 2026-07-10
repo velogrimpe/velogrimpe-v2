@@ -4,6 +4,16 @@ Tous les changements notables de ce projet sont documentés dans ce fichier.
 
 Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 2026-07-10
+
+### Added
+
+- Redimensionnement des images dans l'éditeur de texte riche des newsletters et des pages (`SectionTextEditor`) : poignées de glissement aux quatre coins de l'image sélectionnée (ou au survol) pour ajuster sa taille, avec ratio verrouillé. Seule la largeur est persistée, en attribut HTML `width` (pixels) ; la hauteur reste automatique, garantissant un affichage responsive. La largeur choisie est respectée sur les pages publiques et dans les emails (`newsletter_renderer.php` conserve l'attribut `width` et force `height="auto"`). S'appuie sur le node view de resize intégré à TipTap v3 (extension `ResizableImage`, `frontend/src/components/newsletter/resizable-image.ts`).
+
+### Fixed
+
+- `vite_css()` (`lib/vite.php`) : le CSS des composants importés statiquement par une entrée (ex. les styles de `SectionTextEditor`, éclatés dans un chunk séparé par Vite) n'était jamais chargé en production, faute de remonter la chaîne d'imports du manifest. La résolution récurse désormais dans les `imports` (hors `dynamicImports`, injectés au runtime par Vite), avec dédoublonnage. Corrige au passage l'absence des styles de l'éditeur sur les pages admin (couleurs des titres, arrondi et contour des images, poignées de redimensionnement).
+
 ## 2026-06-19
 
 ### Added
