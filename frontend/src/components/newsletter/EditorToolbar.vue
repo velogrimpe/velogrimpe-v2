@@ -28,6 +28,31 @@ function addImage() {
   }
 }
 
+type Align = 'left' | 'center' | 'right' | 'justify'
+
+// L'alignement s'applique à l'image si elle est sélectionnée, sinon au texte.
+// « justifié » n'a pas de sens pour une image.
+function isImageSelected() {
+  return props.editor.isActive('image')
+}
+
+function setAlign(align: Align) {
+  if (isImageSelected()) {
+    if (align === 'justify') return
+    props.editor.chain().focus().setImageAlign(align).run()
+  } else {
+    props.editor.chain().focus().setTextAlign(align).run()
+  }
+}
+
+function alignActive(align: Align) {
+  if (isImageSelected()) {
+    const current = props.editor.getAttributes('image').align ?? 'left'
+    return current === align
+  }
+  return props.editor.isActive({ textAlign: align })
+}
+
 const currentColor = computed(() => props.editor.getAttributes('textStyle').color || '#000000')
 const currentHighlight = computed(() => props.editor.getAttributes('highlight').color || '#ffff00')
 
@@ -185,6 +210,43 @@ function unsetHighlight() {
       title="Liste numérotée"
     >
       <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><text x="2" y="8" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">1</text><text x="2" y="14" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">2</text><text x="2" y="20" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">3</text></svg>
+    </button>
+
+    <span class="w-px h-5 bg-base-300 mx-1"></span>
+
+    <!-- Alignment (texte, ou image si sélectionnée) -->
+    <button
+      class="btn btn-xs btn-ghost"
+      :class="{ 'btn-active': alignActive('left') }"
+      @click="setAlign('left')"
+      title="Aligner à gauche"
+    >
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg>
+    </button>
+    <button
+      class="btn btn-xs btn-ghost"
+      :class="{ 'btn-active': alignActive('center') }"
+      @click="setAlign('center')"
+      title="Centrer"
+    >
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+    </button>
+    <button
+      class="btn btn-xs btn-ghost"
+      :class="{ 'btn-active': alignActive('right') }"
+      @click="setAlign('right')"
+      title="Aligner à droite"
+    >
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="6" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <button
+      class="btn btn-xs btn-ghost"
+      :class="{ 'btn-active': alignActive('justify') }"
+      :disabled="isImageSelected()"
+      @click="setAlign('justify')"
+      title="Justifier"
+    >
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     </button>
 
     <span class="w-px h-5 bg-base-300 mx-1"></span>

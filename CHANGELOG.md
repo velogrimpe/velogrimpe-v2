@@ -9,6 +9,9 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 ### Added
 
 - Redimensionnement des images dans l'éditeur de texte riche des newsletters et des pages (`SectionTextEditor`) : poignées de glissement aux quatre coins de l'image sélectionnée (ou au survol) pour ajuster sa taille, avec ratio verrouillé. Seule la largeur est persistée, en attribut HTML `width` (pixels) ; la hauteur reste automatique, garantissant un affichage responsive. La largeur choisie est respectée sur les pages publiques et dans les emails (`newsletter_renderer.php` conserve l'attribut `width` et force `height="auto"`). S'appuie sur le node view de resize intégré à TipTap v3 (extension `ResizableImage`, `frontend/src/components/newsletter/resizable-image.ts`).
+- Alignement dans l'éditeur de texte riche (`SectionTextEditor`), via un nouveau groupe de boutons dans la barre d'outils :
+  - **Texte** (paragraphes et titres) : gauche, centré, droite, justifié — sérialisé en `style="text-align: …"` (respecté par le CSS `prose` des pages publiques et par les clients mail ; les titres conservent leur couleur dans l'email). Extension `TextAlign` maison (`frontend/src/components/newsletter/text-align.ts`).
+  - **Images** : gauche, centré, droite (le bouton « justifié » est désactivé quand une image est sélectionnée). L'alignement est stocké en attribut `data-align` (robuste au nettoyage des styles côté email) + `style` margin pour les pages publiques ; dans l'éditeur il pilote le `justify-content` du node view de resize. Le renderer email centre/aligne à droite via une table, aligne à gauche en image inline (défaut historique : centré).
 
 ### Fixed
 

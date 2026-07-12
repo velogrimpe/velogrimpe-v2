@@ -7,6 +7,7 @@ import { watch, onBeforeUnmount } from "vue";
 import EditorToolbar from "./EditorToolbar.vue";
 import { Caption } from "./caption-extension";
 import { ResizableImage } from "./resizable-image";
+import { TextAlign } from "./text-align";
 
 const props = defineProps<{
   html: string;
@@ -46,6 +47,7 @@ const editor = useEditor({
     Color,
     Highlight.configure({ multicolor: true }),
     Caption,
+    TextAlign.configure({ types: ["paragraph", "heading"] }),
   ],
   content: props.html,
   onUpdate: ({ editor }) => {
