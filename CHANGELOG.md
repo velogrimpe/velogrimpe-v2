@@ -4,6 +4,19 @@ Tous les changements notables de ce projet sont documentés dans ce fichier.
 
 Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 2026-07-13
+
+### Added
+
+- Mise à niveau de la carte MapLibre (`carte_maplibre.php`) sur les évolutions déjà en place sur la carte Leaflet (`carte.php`), en vue de son passage en production :
+  - **Filtre par altitude** (#114) : lecture des bornes `filters.altitude.min/max` émises par le composant Vue partagé, helper `altitudeMatches()` (altitude inconnue exclue dès qu'une borne est définie) et prise en compte dans `applyVueFilters`. Le champ `falaise_altitude` est désormais sélectionné en base et sérialisé vers le JS ; le tri et l'affichage de l'altitude (bundles Vue partagés) fonctionnent donc à l'identique.
+  - **Données structurées JSON-LD** (`vg_jsonld` via `lib/schema.php`) et **lien RSS** vers `/feed/nouveautes.xml`, alignés sur `carte.php`. Les URL du JSON-LD (WebPage + fil d'Ariane) pointent vers `/carte_maplibre.php` (URL actuelle de la page).
+
+### Fixed
+
+- Carte MapLibre : gares manquantes — la requête ne restreignait plus l'affichage aux gares reliées à un itinéraire vélo public (`WHERE g.deleted = 0` seul), comme sur la carte Leaflet. Les deux cartes affichent désormais le même jeu de gares.
+- Carte MapLibre : le filtre par cotation exclut désormais les falaises sans cotation min/max renseignée (garde `!!falaise_cotmin && !!falaise_cotmax`), évitant de les inclure à tort quand un filtre de cotation est actif.
+
 ## 2026-07-10
 
 ### Added
