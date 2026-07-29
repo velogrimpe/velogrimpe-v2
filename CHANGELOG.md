@@ -4,6 +4,22 @@ Tous les changements notables de ce projet sont documentés dans ce fichier.
 
 Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 2026-07-29
+
+### Security
+
+- **Correction de la faille ayant permis la compromission du serveur** (webshell déposé dans `bdd/images_falaises/` puis remplacement de trois pages par du spam SEO — rapport complet : `docs/incident-2026-07-29-compromission.md`). `uploadImage()` dans `api/add_falaise.php` construisait le nom du fichier de destination avec l'extension lue dans le nom envoyé par le client, sur un endpoint POST non authentifié écrivant dans un dossier servi par le serveur web : un fichier nommé `shell.php` était déposé tel quel, puis exécuté par simple appel HTTP.
+  - L'extension est désormais **déduite du type réel de l'image** via `getimagesize()` (JPEG, PNG ou WebP uniquement) ; le nom envoyé par le client n'intervient plus. Ajout d'un contrôle `is_uploaded_file()` et d'un plafond de 10 Mo.
+  - `falaise_nomformate`, qui compose l'autre moitié du nom de fichier, est validé contre `^[a-z0-9-]{1,255}$` — la forme produite par `formatNomFalaise()` côté formulaire. C'est une validation et non un reformatage, car `falaise.php` reconstruit le chemin des images depuis la valeur stockée en base : les deux doivent rester identiques. Sans effet sur les données existantes (les 278 valeurs en base respectent déjà ce motif).
+- Nouveau `public_html/bdd/.htaccess` : refus de servir toute extension exécutable dans les dossiers de données (`images_falaises/`, `gpx/`, `barres/`…), `php_flag engine off` en renfort (encadré par `<IfModule>` pour ne pas provoquer d'erreur 500 en PHP-FPM), et `Options -Indexes`. Seconde barrière indépendante de la validation d'upload.
+- **Durcissement du formulaire d'ajout d'itinéraire vélo** (`api/add_velo.php`), qui présentait le même défaut de conception : le nom du fichier GPX écrit sur disque était composé de `velo_depart`, `velo_arrivee` et `velo_varianteformate`, des `$_POST` bruts sans même un `trim()`, permettant une traversée de répertoire. L'extension `.gpx` étant codée en dur, il n'y avait pas d'exécution de code possible, mais l'écrasement de traces existantes l'était.
+  - Les trois champs sont validés contre `^[a-z0-9-]{0,255}$`. Sans effet sur les données existantes (les 337 itinéraires en base et les 464 fichiers GPX respectent déjà ce motif). L'authentification n'a **pas** été ajoutée : c'est un formulaire de contribution public.
+  - Plafond de 10 Mo sur le fichier téléversé (plus grosse trace actuelle : 553 Ko), `loadXML()` avec `LIBXML_NONET` et contrôle de sa valeur de retour — un XML malformé produisait un warning PHP au lieu d'un message clair. Garde sur `insert_id` avant écriture du fichier.
+- `api/private/falaises.php` exige désormais `Authorization: Bearer <admin_token>` : **401** sans en-tête (avec `WWW-Authenticate`), **403** sur token invalide, comparaison par `hash_equals()`. L'endpoint répondait jusqu'ici 200 à toute requête anonyme, alors que son commentaire d'en-tête annonçait un contrôle du token. Le préflight `OPTIONS` reste ouvert pour ne pas casser le CORS.
+- Cas de régression ajoutés dans `tests/add_falaise.http` et `tests/add_velo.http` : dépôt d'un `.php` déguisé en image, slugs avec traversée de répertoire ou accents, XML malformé, et vérifications d'après-déploiement (shell non exécutable, images et GPX toujours servis). L'ensemble a été vérifié de bout en bout dans le conteneur de développement, contribution légitime incluse.
+
+- Les fichiers de test `.http` ne contiennent plus de valeurs de tokens : elles sont référencées via un fichier d'environnement non versionné.
+
 ## 2026-07-13
 
 ### Added

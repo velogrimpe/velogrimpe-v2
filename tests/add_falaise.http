@@ -24,3 +24,116 @@ POST http://localhost:4000/api/add_falaise.php
 Content-Type: application/x-www-form-urlencoded
 
 admin=0&falaise_public=2
+
+### ---------------------------------------------------------------------------
+### Validation des téléversements (régression : webshell déposé en juillet 2026
+### via un fichier .php envoyé dans falaise_img1). Voir docs/incident-2026-07-29.
+### ---------------------------------------------------------------------------
+
+### Slug de nom invalide (traversée de répertoire) => 400 "falaise_nomformate invalide"
+POST http://localhost:4000/api/add_falaise.php
+X-Requested-With: XMLHttpRequest
+Content-Type: application/x-www-form-urlencoded
+
+admin=0&falaise_public=2&falaise_nom=Test&falaise_nomformate=../../../shell&falaise_latlng=45.1234,6.2355&falaise_exposhort1=S&falaise_cotmin=5-&falaise_cotmax=6-&falaise_maa=10&falaise_mar=5&falaise_topo=Topo+test&falaise_expotxt=Sud&falaise_matxt=10min&falaise_voletcarto=Resume+test&falaise_voies=Quelques+voies&nom_prenom=Testeur&email=test@example.com
+
+### Slug avec majuscules/accents (non conforme à formatNomFalaise) => 400
+POST http://localhost:4000/api/add_falaise.php
+X-Requested-With: XMLHttpRequest
+Content-Type: application/x-www-form-urlencoded
+
+admin=0&falaise_public=2&falaise_nom=Test&falaise_nomformate=Saint-L%C3%A9ger&falaise_latlng=45.1234,6.2355&falaise_exposhort1=S&falaise_cotmin=5-&falaise_cotmax=6-&falaise_maa=10&falaise_mar=5&falaise_topo=Topo+test&falaise_expotxt=Sud&falaise_matxt=10min&falaise_voletcarto=Resume+test&falaise_voies=Quelques+voies&nom_prenom=Testeur&email=test@example.com
+
+### Téléversement d'un .php déguisé en image => 500 JSON, message
+### "falaise_img1 n'est pas une image JPEG, PNG ou WebP." et AUCUN fichier écrit.
+### La falaise est bien créée (l'INSERT précède l'upload) : penser à la supprimer.
+POST http://localhost:4000/api/add_falaise.php
+X-Requested-With: XMLHttpRequest
+Content-Type: multipart/form-data; boundary=----VelogrimpeBoundary
+
+------VelogrimpeBoundary
+Content-Disposition: form-data; name="admin"
+
+0
+------VelogrimpeBoundary
+Content-Disposition: form-data; name="falaise_public"
+
+2
+------VelogrimpeBoundary
+Content-Disposition: form-data; name="falaise_nom"
+
+Test Upload
+------VelogrimpeBoundary
+Content-Disposition: form-data; name="falaise_nomformate"
+
+test-upload
+------VelogrimpeBoundary
+Content-Disposition: form-data; name="falaise_latlng"
+
+45.1234,6.2355
+------VelogrimpeBoundary
+Content-Disposition: form-data; name="falaise_exposhort1"
+
+S
+------VelogrimpeBoundary
+Content-Disposition: form-data; name="falaise_cotmin"
+
+5-
+------VelogrimpeBoundary
+Content-Disposition: form-data; name="falaise_cotmax"
+
+6-
+------VelogrimpeBoundary
+Content-Disposition: form-data; name="falaise_maa"
+
+10
+------VelogrimpeBoundary
+Content-Disposition: form-data; name="falaise_mar"
+
+5
+------VelogrimpeBoundary
+Content-Disposition: form-data; name="falaise_topo"
+
+Topo test
+------VelogrimpeBoundary
+Content-Disposition: form-data; name="falaise_expotxt"
+
+Sud
+------VelogrimpeBoundary
+Content-Disposition: form-data; name="falaise_matxt"
+
+10min
+------VelogrimpeBoundary
+Content-Disposition: form-data; name="falaise_voletcarto"
+
+Resume test
+------VelogrimpeBoundary
+Content-Disposition: form-data; name="falaise_voies"
+
+Quelques voies
+------VelogrimpeBoundary
+Content-Disposition: form-data; name="nom_prenom"
+
+Testeur
+------VelogrimpeBoundary
+Content-Disposition: form-data; name="email"
+
+test@example.com
+------VelogrimpeBoundary
+Content-Disposition: form-data; name="falaise_img1"; filename="shell.php"
+Content-Type: image/webp
+
+<?php echo "pwned"; ?>
+------VelogrimpeBoundary--
+
+### Vérification : le shell de l'incident n'est plus exécutable (404/403, jamais "pwned")
+GET http://localhost:4000/bdd/images_falaises/446_test-falaise_img1.php
+
+### Vérification : les images légitimes restent servies malgré bdd/.htaccess => 200 image/webp
+GET http://localhost:4000/bdd/images_falaises/140_saint-leger-du-ventoux_img1.webp
+
+### Vérification : les traces GPX restent servies => 200 application/gpx+xml
+GET http://localhost:4000/bdd/gpx/101_aix-les-bains_la-balme-de-yenne_.gpx
+
+### Vérification : plus de listing des dossiers de données => 403
+GET http://localhost:4000/bdd/images_falaises/

@@ -111,3 +111,156 @@ Content-Type: application/gpx+xml
 
 < ./fixtures/velo-with-wpt.gpx
 ------vg--
+
+### ---------------------------------------------------------------------------
+### Durcissement (voir docs/incident-2026-07-29-compromission.md §7.3).
+### Les trois champs velo_depart / velo_arrivee / velo_varianteformate composent
+### le nom du fichier GPX écrit sur disque : ils doivent rester des slugs.
+### ---------------------------------------------------------------------------
+
+### Traversée de répertoire via velo_varianteformate
+### => "Champ velo_varianteformate invalide", et AUCUN fichier écrit hors de /bdd/gpx/
+POST http://localhost:4000/api/add_velo.php
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="admin"
+
+0
+------vg
+Content-Disposition: form-data; name="velo_public"
+
+2
+------vg
+Content-Disposition: form-data; name="gare_id"
+
+1
+------vg
+Content-Disposition: form-data; name="falaise_id"
+
+1
+------vg
+Content-Disposition: form-data; name="velo_depart"
+
+gare-test
+------vg
+Content-Disposition: form-data; name="velo_arrivee"
+
+falaise-test
+------vg
+Content-Disposition: form-data; name="velo_varianteformate"
+
+../../../public_html/contribuer
+------vg
+Content-Disposition: form-data; name="velo_km"
+
+12.5
+------vg
+Content-Disposition: form-data; name="velo_dplus"
+
+650
+------vg
+Content-Disposition: form-data; name="velo_dmoins"
+
+650
+------vg
+Content-Disposition: form-data; name="gpx_file"; filename="velo-with-wpt.gpx"
+Content-Type: application/gpx+xml
+
+< ./fixtures/velo-with-wpt.gpx
+------vg--
+
+### Slug invalide sur velo_depart (majuscules/accents) => "Champ velo_depart invalide"
+POST http://localhost:4000/api/add_velo.php
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="admin"
+
+0
+------vg
+Content-Disposition: form-data; name="velo_public"
+
+2
+------vg
+Content-Disposition: form-data; name="gare_id"
+
+1
+------vg
+Content-Disposition: form-data; name="falaise_id"
+
+1
+------vg
+Content-Disposition: form-data; name="velo_depart"
+
+Saint-Léger
+------vg
+Content-Disposition: form-data; name="velo_arrivee"
+
+falaise-test
+------vg
+Content-Disposition: form-data; name="velo_km"
+
+12.5
+------vg
+Content-Disposition: form-data; name="velo_dplus"
+
+650
+------vg
+Content-Disposition: form-data; name="velo_dmoins"
+
+650
+------vg
+Content-Disposition: form-data; name="gpx_file"; filename="velo-with-wpt.gpx"
+Content-Type: application/gpx+xml
+
+< ./fixtures/velo-with-wpt.gpx
+------vg--
+
+### XML malformé (racine <gpx> absente après échec de parsing)
+### => "Le fichier GPX n'est pas un XML valide." (et non un warning PHP)
+POST http://localhost:4000/api/add_velo.php
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="admin"
+
+0
+------vg
+Content-Disposition: form-data; name="velo_public"
+
+2
+------vg
+Content-Disposition: form-data; name="gare_id"
+
+1
+------vg
+Content-Disposition: form-data; name="falaise_id"
+
+1
+------vg
+Content-Disposition: form-data; name="velo_depart"
+
+gare-test
+------vg
+Content-Disposition: form-data; name="velo_arrivee"
+
+falaise-test
+------vg
+Content-Disposition: form-data; name="velo_km"
+
+12.5
+------vg
+Content-Disposition: form-data; name="velo_dplus"
+
+650
+------vg
+Content-Disposition: form-data; name="velo_dmoins"
+
+650
+------vg
+Content-Disposition: form-data; name="gpx_file"; filename="casse.gpx"
+Content-Type: application/gpx+xml
+
+<gpx><trk><trkseg></gpx>
+------vg--
