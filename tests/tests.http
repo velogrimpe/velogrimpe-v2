@@ -12,7 +12,7 @@ GET http://localhost:4000/api/private/falaise_details.php?falaise_id=30
 
 ###
 POST http://localhost:4000/api/private/exclude_train.php
-Authorization: Bearer EZkabdP1caAlCbQbdaSE8patAArbbKCakarn5lH4gB2bSublY
+Authorization: Bearer ADMIN_TOKEN
 Content-Type: application/json
 
 {
@@ -24,7 +24,7 @@ Content-Type: application/json
 
 ###
 POST http://localhost:4000/api/private/exclude_falaise.php
-Authorization: Bearer EZkabdP1caAlCbQbdaSE8patAArbbKCakarn5lH4gB2bSublY
+Authorization: Bearer ADMIN_TOKEN
 Content-Type: application/json
 
 {

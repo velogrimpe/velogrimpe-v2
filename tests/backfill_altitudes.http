@@ -5,10 +5,10 @@
 GET http://localhost:4000/api/private/backfill_altitudes.php
 
 ### Dry-run limité (2 falaises) — local
-GET http://localhost:4000/api/private/backfill_altitudes.php?admin=EZkabdP1caAlCbQbdaSE8patAArbbKCakarn5lH4gB2bSublY&limit=2
+GET http://localhost:4000/api/private/backfill_altitudes.php?admin=ADMIN_TOKEN&limit=2
 
 ### Backfill complet — local
-GET http://localhost:4000/api/private/backfill_altitudes.php?admin=EZkabdP1caAlCbQbdaSE8patAArbbKCakarn5lH4gB2bSublY
+GET http://localhost:4000/api/private/backfill_altitudes.php?admin=ADMIN_TOKEN
 
 ### Backfill complet — prod
-GET https://velogrimpe.fr/api/private/backfill_altitudes.php?admin=EZkabdP1caAlCbQbdaSE8patAArbbKCakarn5lH4gB2bSublY
+GET https://velogrimpe.fr/api/private/backfill_altitudes.php?admin=ADMIN_TOKEN

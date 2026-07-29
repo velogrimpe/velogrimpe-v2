@@ -1,11 +1,11 @@
 
 ### Export Open Data
 GET http://localhost:4000/api/private/crons/export_open_data.php
-Authorization: Bearer FyiloYmSAGkdaleukfEDrivTesxviYyc
+Authorization: Bearer VG_TOKEN
 
 ###
 GET https://velogrimpe.fr/api/private/crons/export_open_data.php
-Authorization: Bearer FyiloYmSAGkdaleukfEDrivTesxviYyc
+Authorization: Bearer VG_TOKEN
 
 
 ### URL canonique : réécrite en interne vers download.php (tracée + attachment + CORS)
