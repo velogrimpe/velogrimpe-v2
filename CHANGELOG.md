@@ -4,6 +4,13 @@ Tous les changements notables de ce projet sont documentés dans ce fichier.
 
 Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 2026-08-25
+
+### Fixed
+
+- **Carte MapLibre** (`carte_maplibre.php`) : les popups des falaises hors topo ne se fermaient pas automatiquement. MapLibre n'a pas d'équivalent à l'`autoClose` de Leaflet, et le `closeOnClick` interne (branché sur l'event `click` de la carte) était court-circuité par le `stopPropagation()` des handlers de clic sur les markers — les popups s'empilaient donc à chaque clic. Ajout d'un `openPopup()`/`closePopup()` centralisé qui ne garde qu'un popup ouvert à la fois (falaises hors topo, gares hors topo PMTiles, résultats de recherche), avec toggle sur re-clic du même marker comme `bindPopup`, et fermeture depuis `teardown()`.
+- **Carte MapLibre** : style des popups aligné sur celui de Leaflet (`carte.php`) — coins arrondis à 12px sur les quatre angles, padding `13px 24px 13px 20px`, ombre portée, bouton de fermeture en 24×24, `maxWidth` à 300px. `focusAfterOpen` désactivé sur les popups hors topo : MapLibre focusait le bouton « Renseigner la falaise » et faisait apparaître un focus ring daisyUI absent de la version Leaflet.
+
 ## 2026-07-29
 
 ### Security
