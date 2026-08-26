@@ -1,0 +1,18 @@
+### fetch_velos.php — itinéraires vélo d'une falaise avec leur gare (cascade de la page d'édition)
+### Réponse : { falaise_id, velos: [{ velo_id, gare_id, velo_variante, velo_km, velo_dplus, velo_dmoins,
+###             gare: { id, nom, nomformate, latlng }, gpx_url|null, ... }] }
+
+### Falaise avec plusieurs variantes pour la même gare (Ambérieu → Ambérieu-Salèze : Option Nord / Sud)
+GET http://localhost:4000/api/fetch_velos.php?falaise_id=7
+
+### Falaise sans itinéraire => velos: []
+GET http://localhost:4000/api/fetch_velos.php?falaise_id=999999
+
+### Paramètre manquant => 400
+GET http://localhost:4000/api/fetch_velos.php
+
+### Paramètre invalide => 400
+GET http://localhost:4000/api/fetch_velos.php?falaise_id=abc
+
+### Mauvaise méthode => 405
+POST http://localhost:4000/api/fetch_velos.php?falaise_id=7

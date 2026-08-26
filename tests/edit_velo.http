@@ -1,0 +1,378 @@
+### edit_velo.php — soumission du formulaire d'édition d'itinéraire vélo (multipart/form-data)
+### ATTENTION : un envoi valide modifie réellement la ligne `velo` et, si un GPX est fourni,
+### REMPLACE le fichier dans /bdd/gpx/ (l'ancien est archivé dans /bdd/gpx-historique/).
+### À n'exécuter que sur un environnement de test.
+###
+### Trois modes (D010), déterminés par le token admin et velo_public de l'itinéraire :
+### - admin ({{admin_token}}) : km / D+ / D- / description / Openrunner / GPX appliqués, velo_public => 1, pas de mail
+### - contributeur + itinéraire NON validé (velo_public ≠ 1) : km / D+ / D- / description / GPX appliqués,
+###   Openrunner ignoré, mail aux admins avec lien de validation (accept_velo.php)
+### - contributeur + itinéraire VALIDÉ (velo_public = 1) : RIEN n'est écrit ; description + GPX (assaini,
+###   en PJ) envoyés aux admins en suggestion ; km / D+ / D- ignorés ; ligne edit_logs type `suggestion` ;
+###   redirection vers confirmation_velo.php?type=suggestion
+###
+### Contrôles communs : champs obligatoires, 404, 405, email, GPX (lib/velo_lib.php : XML valide, racine
+### <gpx>, <wpt> retirés) validé AVANT toute écriture ou envoi.
+###
+### Après un test valide, restaurer les valeurs (ex. velo_id=8 : 3.8 / 150 / 10, velo_public=1) et le GPX d'origine.
+
+### Mauvaise méthode => 405
+GET http://localhost:4000/api/edit_velo.php
+
+### Champ obligatoire manquant => "Il manque une info obligatoire : velo_id"
+POST http://localhost:4000/api/edit_velo.php
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="admin"
+
+0
+------vg--
+
+### Itinéraire inexistant => 404 "Itinéraire introuvable."
+POST http://localhost:4000/api/edit_velo.php
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="admin"
+
+{{admin_token}}
+------vg
+Content-Disposition: form-data; name="velo_id"
+
+999999
+------vg
+Content-Disposition: form-data; name="velo_km"
+
+1
+------vg
+Content-Disposition: form-data; name="velo_dplus"
+
+1
+------vg
+Content-Disposition: form-data; name="velo_dmoins"
+
+1
+------vg
+Content-Disposition: form-data; name="nom_prenom"
+
+Testeur
+------vg
+Content-Disposition: form-data; name="email"
+
+test@example.com
+------vg--
+
+### Email invalide => "Adresse mail invalide."
+POST http://localhost:4000/api/edit_velo.php
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="admin"
+
+{{admin_token}}
+------vg
+Content-Disposition: form-data; name="velo_id"
+
+8
+------vg
+Content-Disposition: form-data; name="velo_km"
+
+1
+------vg
+Content-Disposition: form-data; name="velo_dplus"
+
+1
+------vg
+Content-Disposition: form-data; name="velo_dmoins"
+
+1
+------vg
+Content-Disposition: form-data; name="nom_prenom"
+
+Testeur
+------vg
+Content-Disposition: form-data; name="email"
+
+pas-un-mail
+------vg--
+
+### Modification des indicateurs seuls (sans GPX, admin => pas de mail)
+### => 302 vers /ajout/confirmation_velo.php?...&type=update ; le fichier GPX n'est pas touché
+POST http://localhost:4000/api/edit_velo.php
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="admin"
+
+{{admin_token}}
+------vg
+Content-Disposition: form-data; name="velo_id"
+
+8
+------vg
+Content-Disposition: form-data; name="velo_km"
+
+3.9
+------vg
+Content-Disposition: form-data; name="velo_dplus"
+
+155
+------vg
+Content-Disposition: form-data; name="velo_dmoins"
+
+12
+------vg
+Content-Disposition: form-data; name="nom_prenom"
+
+Testeur
+------vg
+Content-Disposition: form-data; name="email"
+
+test@example.com
+------vg--
+
+### Remplacement du GPX (fixture avec waypoints)
+### Après exécution : le fichier /bdd/gpx/8_amberieu-en-bugey_amberieu-saleze_option-nord.gpx
+### ne contient plus de <wpt> mais conserve les <trkpt>. PENSER À RESTAURER L'ORIGINAL.
+POST http://localhost:4000/api/edit_velo.php
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="admin"
+
+{{admin_token}}
+------vg
+Content-Disposition: form-data; name="velo_id"
+
+8
+------vg
+Content-Disposition: form-data; name="velo_km"
+
+3.8
+------vg
+Content-Disposition: form-data; name="velo_dplus"
+
+150
+------vg
+Content-Disposition: form-data; name="velo_dmoins"
+
+10
+------vg
+Content-Disposition: form-data; name="nom_prenom"
+
+Testeur
+------vg
+Content-Disposition: form-data; name="email"
+
+test@example.com
+------vg
+Content-Disposition: form-data; name="gpx_file"; filename="velo-with-wpt.gpx"
+Content-Type: application/gpx+xml
+
+< ./fixtures/velo-with-wpt.gpx
+------vg--
+
+### XML malformé => "Le fichier GPX n'est pas un XML valide." et AUCUNE modification en base
+### (le GPX est validé avant l'UPDATE)
+POST http://localhost:4000/api/edit_velo.php
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="admin"
+
+{{admin_token}}
+------vg
+Content-Disposition: form-data; name="velo_id"
+
+8
+------vg
+Content-Disposition: form-data; name="velo_km"
+
+99
+------vg
+Content-Disposition: form-data; name="velo_dplus"
+
+99
+------vg
+Content-Disposition: form-data; name="velo_dmoins"
+
+99
+------vg
+Content-Disposition: form-data; name="nom_prenom"
+
+Testeur
+------vg
+Content-Disposition: form-data; name="email"
+
+test@example.com
+------vg
+Content-Disposition: form-data; name="gpx_file"; filename="casse.gpx"
+Content-Type: application/gpx+xml
+
+<gpx><trk><trkseg></gpx>
+------vg--
+
+### [suggestion] Itinéraire validé (velo 8), contributeur, rien de changé
+### => "Aucune modification à transmettre : ..." (la description envoyée doit être identique à celle en base)
+POST http://localhost:4000/api/edit_velo.php
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="admin"
+
+0
+------vg
+Content-Disposition: form-data; name="velo_id"
+
+8
+------vg
+Content-Disposition: form-data; name="velo_descr"
+
+<coller ici la description actuelle de l'itinéraire 8>
+------vg
+Content-Disposition: form-data; name="nom_prenom"
+
+Testeur
+------vg
+Content-Disposition: form-data; name="email"
+
+test@example.com
+------vg--
+
+### [suggestion] Itinéraire validé (velo 8), contributeur, nouvelle description + GPX
+### => 302 vers confirmation_velo.php?...&type=suggestion ; AUCUNE modification en base ni sur le disque
+### (km/D+/D- envoyés ici sont ignorés) ; mail admin avec le GPX nettoyé en PJ ; edit_logs type `suggestion`
+POST http://localhost:4000/api/edit_velo.php
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="admin"
+
+0
+------vg
+Content-Disposition: form-data; name="velo_id"
+
+8
+------vg
+Content-Disposition: form-data; name="velo_km"
+
+99
+------vg
+Content-Disposition: form-data; name="velo_dplus"
+
+99
+------vg
+Content-Disposition: form-data; name="velo_dmoins"
+
+99
+------vg
+Content-Disposition: form-data; name="velo_descr"
+
+Proposition de description
+------vg
+Content-Disposition: form-data; name="nom_prenom"
+
+Testeur
+------vg
+Content-Disposition: form-data; name="email"
+
+test@example.com
+------vg
+Content-Disposition: form-data; name="gpx_file"; filename="velo-with-wpt.gpx"
+Content-Type: application/gpx+xml
+
+< ./fixtures/velo-with-wpt.gpx
+------vg--
+
+### [admin] Tout appliqué, Openrunner compris, velo_public => 1, GPX remplacé et ancien archivé
+### => 302 vers confirmation_velo.php?...&type=update&admin=...
+POST http://localhost:4000/api/edit_velo.php
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="admin"
+
+{{admin_token}}
+------vg
+Content-Disposition: form-data; name="velo_id"
+
+8
+------vg
+Content-Disposition: form-data; name="velo_km"
+
+3.8
+------vg
+Content-Disposition: form-data; name="velo_dplus"
+
+150
+------vg
+Content-Disposition: form-data; name="velo_dmoins"
+
+10
+------vg
+Content-Disposition: form-data; name="velo_descr"
+
+Description corrigée par un admin
+------vg
+Content-Disposition: form-data; name="velo_openrunner"
+
+https://www.openrunner.com/embed/xxx?unit=metric
+------vg
+Content-Disposition: form-data; name="nom_prenom"
+
+Florent
+------vg
+Content-Disposition: form-data; name="email"
+
+contact@velogrimpe.fr
+------vg
+Content-Disposition: form-data; name="gpx_file"; filename="velo-with-wpt.gpx"
+Content-Type: application/gpx+xml
+
+< ./fixtures/velo-with-wpt.gpx
+------vg--
+
+### [contrib] Itinéraire NON validé (mettre velo 9 en velo_public=2 au préalable), contributeur
+### => indicateurs + description appliqués, velo_openrunner IGNORÉ (reste tel qu'en base),
+###    velo_public reste 2, mail admin avec lien accept_velo.php
+POST http://localhost:4000/api/edit_velo.php
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="admin"
+
+0
+------vg
+Content-Disposition: form-data; name="velo_id"
+
+9
+------vg
+Content-Disposition: form-data; name="velo_km"
+
+4.2
+------vg
+Content-Disposition: form-data; name="velo_dplus"
+
+185
+------vg
+Content-Disposition: form-data; name="velo_dmoins"
+
+12
+------vg
+Content-Disposition: form-data; name="velo_descr"
+
+Description proposée par un contributeur
+------vg
+Content-Disposition: form-data; name="velo_openrunner"
+
+IGNORE-MOI
+------vg
+Content-Disposition: form-data; name="nom_prenom"
+
+Testeur
+------vg
+Content-Disposition: form-data; name="email"
+
+test@example.com
+------vg--

@@ -93,3 +93,45 @@ clair.
 
 Corollaire opérationnel : un secret committé dans un dépôt public est **définitivement brûlé**. Réécrire
 l'historique est une mesure d'hygiène, pas une remédiation — seule la rotation ferme la porte.
+
+## D008 — Un itinéraire vélo s'édite par `velo_id`, et ses champs qui composent le nom du fichier GPX ne sont pas éditables
+
+La page `ajout/edit_velo.php` identifie la variante par `velo_id` (et non par le triplet gare / falaise /
+slug de variante), et `api/edit_velo.php` ne modifie que `velo_km`, `velo_dplus`, `velo_dmoins` et,
+optionnellement, le contenu du fichier GPX. `velo_depart`, `velo_arrivee` et `velo_varianteformate`
+restent tels qu'en base.
+
+**Pourquoi :** le nom du fichier GPX est reconstruit depuis ces trois champs et `velo_id`
+(`falaise.php`, `gpx_path()` côté JS, cf. D002). Ne pas les toucher garantit que le fichier remplacé est
+exactement celui que le site sert déjà, sans renommage ni orphelin sur le disque. `velo_id` est de plus
+le seul identifiant stable : plusieurs variantes d'un même couple gare / falaise peuvent avoir un slug
+vide. Le jour où le renommage de variante devient nécessaire, il devra déplacer le fichier dans la même
+transaction logique que la mise à jour SQL.
+
+## D009 — Le code de validation / nettoyage d'un GPX est partagé entre ajout et édition
+
+`lib/velo_lib.php` porte la lecture des indicateurs, la validation des slugs et le chargement /
+nettoyage du GPX téléversé ; `api/add_velo.php` et `api/edit_velo.php` l'utilisent tous deux.
+
+**Pourquoi :** les contrôles de sécurité ajoutés en juillet 2026 (plafond de taille, `LIBXML_NONET`,
+racine `<gpx>`, slugs) ne doivent exister qu'à un seul endroit, sinon le second point d'écriture finira
+par diverger du premier — c'est exactement le scénario qui a conduit à l'incident.
+
+## D010 — Un itinéraire vélo validé ne se modifie pas directement : les contributeurs suggèrent, les admins appliquent
+
+`api/edit_velo.php` distingue trois cas. Admin (token) : tout est appliqué et l'itinéraire passe
+`velo_public = 1`. Contributeur sur un itinéraire non validé (`velo_public ≠ 1`) : les modifications sont
+appliquées, un mail aux admins porte un lien de validation (`api/private/accept_velo.php`, même principe
+que `accept_falaise.php`). Contributeur sur un itinéraire validé : rien n'est écrit ; la description
+proposée et le GPX sont envoyés aux admins en suggestion, et le formulaire désactive les indicateurs.
+
+**Pourquoi :** les itinéraires validés sont ceux du topo, déjà vérifiés sur le terrain ; une écriture
+directe et anonyme y ferait régresser une donnée relue. La contribution reste ouverte (D005) mais passe
+par une relecture. Le lien Openrunner est réservé aux admins dans tous les cas : c'est une URL rendue
+dans une `<iframe>`, on ne laisse pas un formulaire public en choisir la source.
+
+Deux règles associées. Le GPX joint au mail de suggestion est **ré-sérialisé depuis le DOM nettoyé**
+(`velo_charger_gpx_upload()`), jamais le fichier reçu : seul un XML GPX validé, sans `<wpt>`, part en
+pièce jointe. Et avant tout remplacement de trace, l'ancienne est copiée dans `bdd/gpx-historique/`
+(comme `bdd/barres-historique/` pour les GeoJSON), pour pouvoir revenir en arrière après une mauvaise
+contribution.

@@ -4,6 +4,35 @@ Tous les changements notables de ce projet sont documentés dans ce fichier.
 
 Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 2026-08-26
+
+### Added
+
+- Dev local : procédure d'accès à `/admin/` sans toucher au `.htaccess` (fichier `.htpasswd.dev` versionné, monté ou copié au chemin absolu attendu dans le conteneur), documentée dans `public_html/README.md`.
+- **Page d'édition d'un itinéraire vélo** (`ajout/edit_velo.php`) : sélection en cascade Falaise (autocomplete) → Gare de départ (select) → Variante (select), chaque sélecteur ne se dégrisant qu'une fois le précédent renseigné, avec options déduites des itinéraires réellement en base (gares desservant la falaise, variantes du couple gare + falaise) et sélection automatique quand une seule option existe. Presets par l'URL (`?falaise_id=&gare_id=&velo_id=`) vérifiés contre la base — un preset incohérent est ignoré au niveau où il devient faux — et URL synchronisée avec la sélection courante. Une fois la variante choisie : champs longueur / D+ / D- pré-remplis, bouton de téléchargement du GPX existant, upload optionnel d'une nouvelle trace, et carte de vérification (gare, falaise, trace existante en bleu pointillé, nouvelle trace en vert).
+- `api/edit_velo.php` (POST multipart) : met à jour `velo_km`, `velo_dplus`, `velo_dmoins` et `date_modification`, remplace le fichier GPX si fourni (mêmes contrôles qu'à l'ajout : plafond 10 Mo, `LIBXML_NONET`, racine `<gpx>`, retrait des `<wpt>`, validation des slugs du nom de fichier — validé **avant** l'UPDATE, un GPX invalide ne modifie rien), journalise en `edit_logs` (type `update`, anciennes/nouvelles valeurs), notifie par mail hors admin et redirige vers `confirmation_velo.php?type=update`. Formulaire de contribution public, comme l'ajout (D005). Les champs qui composent le nom du fichier GPX ne sont pas éditables (D008).
+- `api/fetch_velos.php?falaise_id=` (GET, JSON) : itinéraires d'une falaise avec leur gare et l'URL du GPX s'il existe sur le disque.
+- **Workflow de validation des itinéraires vélo** (D010) : `api/edit_velo.php` distingue trois cas. Admin (token dans l'URL depuis le panneau d'admin) : tout est appliqué (km, D+, D-, description, lien Openrunner, GPX) et l'itinéraire passe en `velo_public = 1` ; le mail de notification part vers `admin_mail` (vers `contact_mail` hors admin, comme pour les falaises et les bus — `add_velo.php` aligné sur ce schéma, il n'envoyait rien en mode admin). Contributeur sur un itinéraire non validé : modifications appliquées, mail aux admins avec **lien de validation** et lien d'édition admin. Contributeur sur un itinéraire **validé** : rien n'est écrit — la description proposée et le GPX (ré-sérialisé depuis le DOM nettoyé, jamais le fichier reçu) sont envoyés aux admins en pièce jointe, une ligne `edit_logs` de type `suggestion` est tracée, les champs km / D+ / D- sont désactivés côté formulaire et ignorés côté API, et la page de confirmation (`type=suggestion`) explique que la modification n'est pas immédiate.
+- `api/private/accept_velo.php?admin=&velo_id=` : validation d'un itinéraire (`velo_public = 1`), même principe qu'`accept_falaise.php`, 401 / 403 / 404 (D006). Le mail d'ajout (`add_velo.php`) porte désormais aussi ce lien.
+- Page d'édition : champ **description** (tout le monde), champ **Openrunner** (admin uniquement, ignoré côté API sinon), section admin « ⚠️ Itinéraires à valider » en haut de page (select des `velo_public = 2`, ouvre l'itinéraire pré-sélectionné), mention « — à valider » dans la liste des variantes.
+- Archivage de l'ancienne trace dans `bdd/gpx-historique/` (`velo_archiver_gpx()`) avant tout remplacement de GPX, comme `bdd/barres-historique/` pour les GeoJSON.
+- Panneau d'admin : bouton « 🚲 Itinéraire vélo à vérifier / modifier » (avec le nombre en attente) vers `edit_velo.php?admin=`.
+- `confirmation_velo.php` : messages pour `type=update` et `type=suggestion`, bouton « Modifier à nouveau cet itinéraire ».
+- Tests : `tests/edit_velo.http` (trois modes), `tests/accept_velo.http`, `tests/fetch_velos.http`. Icône `download` ajoutée au sprite.
+- Mails en dev : `sendMail()` préfixe le sujet par `[DEV]` quand `base_url` pointe sur `localhost` (même convention de détection que `newsletter_renderer.php` et `fetch_mail_template.php`), pour distinguer les envois de test en boîte de réception.
+
+### Fixed
+
+- Page d'édition : la carte était créée dans une section masquée, d'où des tuiles partiellement chargées et une trace GPX mal cadrée à l'affichage (Leaflet mesurait un conteneur de taille nulle). `velo-form-map.js` observe désormais la taille du conteneur (`ResizeObserver`) et appelle `invalidateSize()` + recadrage dès qu'il devient visible.
+
+### Security
+
+- `.htaccess` : `X-Content-Type-Options: nosniff` ajouté sur les `.gpx` (en plus du `Content-Disposition: attachment` déjà en place). Les GPX étant des XML fournis par les contributeurs et servis sur l'origine du site, cela empêche un navigateur de les rendre comme document (XSS stocké via `xml-stylesheet` / XHTML embarqué). Sans effet sur les `fetch()` de la carte.
+
+### Changed
+
+- **Factorisation ajout / édition** (D009) : `lib/velo_lib.php` porte la lecture des indicateurs, la vérification des champs obligatoires, la validation des slugs, le chargement / nettoyage du GPX téléversé et la construction du chemin GPX ; `api/add_velo.php` l'utilise (comportement inchangé). La carte de vérification inline de `ajout_velo.php` devient le module partagé `js/components/map/velo-form-map.js` (événements `velogrimpe:velo-form:gare|falaise|gpx-url`, anciennement `velogrimpe:ajout-velo:*`), et les types/helpers des deux apps Vue sont regroupés dans `frontend/src/utils/velo-form.ts`.
+
 ## 2026-08-25
 
 ### Fixed

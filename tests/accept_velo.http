@@ -1,0 +1,18 @@
+### accept_velo.php — validation d'un itinéraire vélo (velo_public = 1) depuis le lien des mails admin
+### Même principe que accept_falaise.php. Token via {{admin_token}} (fichier d'environnement, D007).
+
+### Sans token => 401 + WWW-Authenticate
+GET http://localhost:4000/api/private/accept_velo.php?velo_id=9
+
+### Token invalide => 403
+GET http://localhost:4000/api/private/accept_velo.php?admin=mauvais&velo_id=9
+
+### velo_id manquant => 400
+GET http://localhost:4000/api/private/accept_velo.php?admin={{admin_token}}
+
+### Itinéraire inexistant => 404
+GET http://localhost:4000/api/private/accept_velo.php?admin={{admin_token}}&velo_id=999999
+
+### Validation => { success: true, velo_id, previous_velo_public } + ligne edit_logs type update
+### ATTENTION : modifie réellement velo_public. Restaurer ensuite si besoin.
+GET http://localhost:4000/api/private/accept_velo.php?admin={{admin_token}}&velo_id=9

@@ -18,6 +18,7 @@ export default defineConfig({
         tableau: resolve(__dirname, "src/apps/tableau.ts"),
         utils: resolve(__dirname, "src/apps/utils.ts"),
         "ajout-velo": resolve(__dirname, "src/apps/ajout-velo.ts"),
+        "edit-velo": resolve(__dirname, "src/apps/edit-velo.ts"),
         "ajout-falaise": resolve(__dirname, "src/apps/ajout-falaise.ts"),
         "ajout-train": resolve(__dirname, "src/apps/ajout-train.ts"),
         "ajout-bus": resolve(__dirname, "src/apps/ajout-bus.ts"),

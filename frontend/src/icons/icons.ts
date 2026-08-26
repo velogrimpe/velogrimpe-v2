@@ -12,6 +12,7 @@ export interface IconDefinition {
 
 export const icons: IconDefinition[] = [
   { name: 'arrow-down', paths: ['M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3'] },
+  { name: 'download', paths: ['M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3'] },
   { name: 'arrow-left', paths: ['M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18'] },
   { name: 'arrow-right', paths: ['M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3'] },
   { name: 'arrow-up', paths: ['M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18'] },

@@ -1,27 +1,13 @@
 import { createApp, h, ref } from 'vue'
 import FormAutocomplete, { type FormAutocompleteItem } from '@/components/shared/FormAutocomplete.vue'
-
-// Helper to create search icon slot
-const searchIconSlot = () => ({
-  icon: () => h('svg', { class: 'w-4 h-4 fill-none stroke-current shrink-0' }, [h('use', { href: '#search' })]),
-})
-
-interface GareItem extends FormAutocompleteItem {
-  nomformate: string
-  latlng: string | null
-}
-
-interface FalaiseItem extends FormAutocompleteItem {
-  nomformate: string
-  latlng: string | null
-  fermee: string | null
-  bloc: number | null
-}
-
-// Notifie la carte (script module legacy) de la sélection courante.
-const emitMapEvent = (name: string, detail: unknown) => {
-  document.dispatchEvent(new CustomEvent(name, { detail }))
-}
+import {
+  type GareItem,
+  type FalaiseItem,
+  searchIconSlot,
+  emitMapEvent,
+  gareMapDetail,
+  falaiseMapDetail,
+} from '@/utils/velo-form'
 
 // Wait for DOM to be ready
 document.addEventListener('DOMContentLoaded', () => {
@@ -91,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const veloDepartEl = document.getElementById('velo_depart') as HTMLInputElement
             if (gareIdEl) gareIdEl.value = String(preset.id)
             if (veloDepartEl) veloDepartEl.value = preset.nomformate
-            emitMapEvent('velogrimpe:ajout-velo:gare', { latlng: preset.latlng, nom: preset.nom })
+            emitMapEvent('gare', gareMapDetail(preset))
           }, 0)
         }
       }
@@ -108,12 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const veloArriveeEl = document.getElementById('velo_arrivee') as HTMLInputElement
             if (falaiseIdEl) falaiseIdEl.value = String(preset.id)
             if (veloArriveeEl) veloArriveeEl.value = preset.nomformate
-            emitMapEvent('velogrimpe:ajout-velo:falaise', {
-              latlng: preset.latlng,
-              nom: preset.nom,
-              fermee: preset.fermee,
-              bloc: preset.bloc,
-            })
+            emitMapEvent('falaise', falaiseMapDetail(preset))
           }, 0)
         }
       }
@@ -128,11 +109,11 @@ document.addEventListener('DOMContentLoaded', () => {
           if (gareIdEl) gareIdEl.value = String(gareItem.id)
           if (veloDepartEl) veloDepartEl.value = gareItem.nomformate || ''
           verifierExistenceItineraire(gareItem.id, falaiseIdEl?.value || '')
-          emitMapEvent('velogrimpe:ajout-velo:gare', { latlng: gareItem.latlng, nom: gareItem.nom })
+          emitMapEvent('gare', gareMapDetail(gareItem))
         } else {
           if (gareIdEl) gareIdEl.value = ''
           if (veloDepartEl) veloDepartEl.value = ''
-          emitMapEvent('velogrimpe:ajout-velo:gare', null)
+          emitMapEvent('gare', null)
         }
       }
 
@@ -146,16 +127,11 @@ document.addEventListener('DOMContentLoaded', () => {
           if (falaiseIdEl) falaiseIdEl.value = String(falaiseItem.id)
           if (veloArriveeEl) veloArriveeEl.value = falaiseItem.nomformate || ''
           verifierExistenceItineraire(gareIdEl?.value || '', falaiseItem.id)
-          emitMapEvent('velogrimpe:ajout-velo:falaise', {
-            latlng: falaiseItem.latlng,
-            nom: falaiseItem.nom,
-            fermee: falaiseItem.fermee,
-            bloc: falaiseItem.bloc,
-          })
+          emitMapEvent('falaise', falaiseMapDetail(falaiseItem))
         } else {
           if (falaiseIdEl) falaiseIdEl.value = ''
           if (veloArriveeEl) veloArriveeEl.value = ''
-          emitMapEvent('velogrimpe:ajout-velo:falaise', null)
+          emitMapEvent('falaise', null)
         }
       }
 
