@@ -4,6 +4,17 @@ Tous les changements notables de ce projet sont documentés dans ce fichier.
 
 Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 2026-08-28
+
+### Added
+
+- Utilitaire toast vanilla `public_html/js/components/utils/toast.js` (`showToast(message, type, duration)`, classes Daisy UI identiques au `ToastContainer.vue`) pour les pages non montées en Vue.
+
+### Changed
+
+- Import Overpass des arrêts de bus (éditeur de falaise et `ajout/ajout_bus.php`) : en cas d'échec, une notification toast d'erreur remplace l'`alert()`. `overpassFetch()` lève désormais une `OverpassError` portant le statut HTTP ; `overpassErrorMessage()` donne un message dédié pour le 429 (« Service Overpass surchargé, ré-essayez dans 1 minute. ») et le 504 (timeout).
+- Éditeur de falaise et `ajout/ajout_bus.php` : le bouton d'import Overpass est désactivé et affiche un spinner pendant l'appel Overpass (évite les doubles requêtes).
+
 ## 2026-08-26
 
 ### Added
