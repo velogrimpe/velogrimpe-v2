@@ -4,6 +4,12 @@ Tous les changements notables de ce projet sont documentés dans ce fichier.
 
 Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 2026-08-30
+
+### Fixed
+
+- Erreur en production à la lecture des fichiers PMTiles (`bdd/trains/*.pmtiles`) : « Server returned no content-length header… Check that your storage backend supports HTTP Byte Serving ». Sans MIME connu, Apache servait les `.pmtiles` en `text/plain`, la compression gzip (règle DEFLATE + CDN Hostinger) s'appliquait et supprimait le `Content-Length` tout en ignorant les requêtes `Range`. Le `.htaccess` force désormais `application/octet-stream` et désactive la compression (`no-gzip`) pour `*.pmtiles`, avec un cache d'un jour.
+
 ## 2026-08-28
 
 ### Added
