@@ -43,3 +43,5 @@ db_init.sql
 playwright-report/
 test-results/
 playwright/.cache/
+
+public/
