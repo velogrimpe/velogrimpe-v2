@@ -37,7 +37,6 @@ npm-debug.log*
 *.temp
 
 db_backup.sql
-db_init.sql
 
 # Playwright
 playwright-report/

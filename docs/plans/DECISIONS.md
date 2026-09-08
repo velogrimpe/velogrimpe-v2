@@ -20,7 +20,7 @@ d'autorisation : aucune entrée cliente n'atteint plus le nom du fichier écrit.
 `falaise_nomformate` est rejeté s'il ne correspond pas à `^[a-z0-9-]{1,255}$`, au lieu d'être assaini
 silencieusement côté serveur.
 
-**Pourquoi :** ce champ est stocké en base *et* utilisé comme nom de fichier, et `falaise.php`
+**Pourquoi :** ce champ est stocké en base _et_ utilisé comme nom de fichier, et `falaise.php`
 reconstruit le chemin des images depuis la valeur en base. Un assainissement côté serveur produirait un
 nom de fichier différent de celui que la base laisse attendre : les images disparaîtraient sans erreur
 visible. Rejeter est le seul comportement qui garde la base et le disque cohérents. Le formulaire
@@ -57,7 +57,7 @@ hériter d'un blocage équivalent, ou être placé hors du webroot et servi par 
 
 **Pourquoi :** ce sont les formulaires de contribution décrits sur `contribuer.php` (« ajouter une
 falaise », « ajouter un itinéraire »). Exiger un token supprimerait la contribution ouverte, qui est la
-raison d'être du site. La sécurité doit donc porter sur ce que ces endpoints *écrivent* — type réel des
+raison d'être du site. La sécurité doit donc porter sur ce que ces endpoints _écrivent_ — type réel des
 fichiers, forme des noms, plafonds de taille — et non sur qui les appelle.
 
 Corollaire : un endpoint public d'écriture doit être conçu en supposant l'appelant hostile. Toute

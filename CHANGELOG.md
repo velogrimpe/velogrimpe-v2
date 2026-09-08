@@ -6,8 +6,19 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ## 2026-09-08
 
+### Added
+
+- Commandes de mise en place de la base de dev, documentées dans `CLAUDE.md` et le `README.md` : création de la base et de son utilisateur (`db_init.sql`), puis re-seed depuis un export de la prod (`db_backup.sql`) et vérification. La base du conteneur étant éphémère, ces deux commandes la remontent de zéro.
+
+### Changed
+
+- `db_init.sql` ne crée plus que la base principale et son utilisateur. La base `sncf` et l'utilisateur `u829510062_sncf` en ont été retirés : aucun code PHP ne les référence plus (cf. D011).
+- Commande `docker run` documentée (`CLAUDE.md`, `README.md`) mise à jour pour la v2 : sources des binds relatives à la racine du repo (le préfixe `velo-grimpe/` n'existe plus), ajout du montage du dossier de données `public/` — **en lecture/écriture**, puisqu'il reçoit les images de falaises et GPX téléversés — et du montage du `.htpasswd.dev`, qui remplace le `docker cp` manuel.
+- `README.md` : `config.php` d'exemple aligné sur `config.sample.php` (clés `sncf_db_*` retirées, `base_url` ajoutée), et création du dossier `public/` ajoutée aux pré-requis.
+
 ### Fixed
 
+- Commande `docker run` du `README.md` : le nom de l'image (`tomsik68/xampp:8`) manquait en fin de commande, qui était donc incopiable telle quelle.
 - Sélecteur admin d'arrêt existant sur `/ajout/ajout_bus.php` : le lien de navigation utilisait une variable `$token` inexistante, donc le rechargement perdait le mode admin. Il pointe désormais vers `$config['admin_token']`, reflète l'arrêt courant (`selected`) et affiche le nombre d'arrêts en base.
 
 ## 2026-08-30

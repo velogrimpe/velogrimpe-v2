@@ -157,6 +157,11 @@ git -C ~/public_html log --oneline -3          # confirme la mécanique (checkou
 mkdir -p ~/public && chmod 755 ~/public
 echo ok > ~/public/ping.txt
 printf '<?php echo "EXEC";' > ~/public/probe.php
+cp ~/public/probe.php ~/public/probe.php.jpg      # contournement AddHandler
+# Installer le .htaccess de la cible dès maintenant (cf. phase 1.3) : s'il
+# provoque une 500 parce qu'AllowOverride n'accorde pas `Options` hors du
+# DocumentRoot, autant le savoir avant d'avoir déplacé 470 Mo.
+cp <dépôt>/deploy/public-htaccess ~/public/.htaccess
 ```
 
 Puis, dans un commit dédié :
@@ -177,8 +182,15 @@ Après déploiement, les cinq contrôles :
 4. `ls -la ~/public_html/public` → toujours un lien symbolique après déploiement
    (le rsync du workflow utilise `-a`, donc `-l` : il ne doit **jamais** passer à
    `-aL` / `--copy-links`).
-5. Un `.pmtiles` de test servi depuis `~/public` répond bien à
+5. `curl -I https://velogrimpe.fr/public/` → **403** (pas de listing), et de même
+   sur un sous-dossier.
+6. `curl https://velogrimpe.fr/public/probe.php.jpg` → **403** : valide le motif
+   « extension n'importe où dans le nom ».
+7. Un `.pmtiles` de test servi depuis `~/public` répond bien à
    `curl -H 'Range: bytes=0-99' -I` → **206**.
+8. Aucune 500 sur `/public/ping.txt` après installation du `.htaccess` de la cible.
+   Si 500 : retirer la ligne `Options` du fichier (les garanties restent portées
+   par le `.htaccess` racine).
 
 **Repli si le lien symbolique n'est pas suivi** : un vrai dossier
 `public_html/public/`, créé une fois à la main sur le serveur et **ignoré
@@ -224,10 +236,21 @@ que si le lien échoue, et à documenter comme dette.
    # reflète l'espace d'URL (public/bdd/…, public/images/…). La cible est hors du
    # dossier déployé : aucun déploiement ne peut l'effacer.
 
-   # Aucun exécutable servi sous /public. Règle placée ici et pas seulement dans
-   # ~/public/.htaccess : derrière un lien symbolique hors DocumentRoot, un
-   # .htaccess peut être ignoré selon la configuration d'AllowOverride.
-   RewriteRule ^public/.*\.(php|phar|phtml|php[0-9]|phps|pht|inc|shtml|cgi|pl|py|rb|sh|lua)$ - [F,L,NC]
+   # Les deux garanties — aucun exécutable, aucun listing — sont posées ICI et
+   # pas seulement dans ~/public/.htaccess : derrière un lien symbolique dont la
+   # cible est hors DocumentRoot, un .htaccess peut être ignoré selon la portée
+   # d'AllowOverride. Ce fichier-ci est toujours lu.
+   #
+   # Le motif matche l'extension n'importe où dans le nom, pas seulement en fin :
+   # avec une config à base d'`AddHandler`, Apache exécute `shell.php.jpg`, que le
+   # motif ancré `\.php$` de bdd/.htaccess laisse passer.
+   RewriteRule ^public/.*\.(php|phar|phtml|php[0-9]|phps|pht|inc|shtml|cgi|pl|py|rb|sh|lua)(\.|$) - [F,L,NC]
+
+   # Pas de listing du point de montage. Couvre aussi les URLs historiques : un
+   # GET sur /bdd/images_falaises/ est réécrit en /public/bdd/images_falaises/
+   # puis refusé ici — comportement identique à aujourd'hui (assertion 403 dans
+   # tests/add_falaise.http).
+   RewriteRule ^public/(.*/)?$ - [F,L]
 
    # Repli sur le point de montage : un fichier absent du dossier déployé est
    # cherché dans les données. Conserve l'espace d'URL historique (/bdd/…,
@@ -253,10 +276,98 @@ que si le lien échoue, et à documenter comme dette.
    `RewriteRule ^public/ - [E=NOINDEX:1]` + `Header set X-Robots-Tag "noindex" env=NOINDEX`.
    Sans enjeu réel pour des images et des traces GPX.
 
-3. **`deploy/public-htaccess`** (versionné, installé une fois à la main dans
-   `~/public/.htaccess`) : reprise du durcissement de `bdd/.htaccess` — `FilesMatch`
-   + `Require all denied`, `php_flag engine off` sous `<IfModule>`, `Options -Indexes`.
-   Défense en profondeur ; la barrière garantie reste la règle `[F]` ci-dessus.
+3. **`deploy/public-htaccess`** — versionné dans le dépôt, installé à la main dans
+   `~/public/.htaccess` (dès la phase 0, pour qu'un éventuel 500 soit détecté avant
+   tout déplacement de données). C'est de la **défense en profondeur** : les deux
+   garanties qui comptent sont déjà dans le `.htaccess` racine ci-dessus, parce que
+   celui-ci peut être ignoré. Ne jamais compter sur lui seul.
+
+   ```apache
+   # ~/public/.htaccess — contenus téléversés et générés, servis via le lien
+   # symbolique public_html/public (cf. DECISIONS.md D008).
+   #
+   # Défense en profondeur uniquement : derrière un lien symbolique dont la cible
+   # est hors DocumentRoot, Apache peut ignorer ce fichier selon la portée
+   # d'AllowOverride. Les garanties « pas d'exécutable » et « pas de listing » sont
+   # aussi posées dans public_html/.htaccess, qui est systématiquement lu.
+   #
+   # Contexte : en juillet 2026 un webshell a été déposé dans bdd/images_falaises/
+   # via le formulaire d'ajout de falaise, puis exécuté par simple appel HTTP
+   # (docs/incident-2026-07-29-compromission.md).
+
+   # --- 1. Aucun exécutable servi ---------------------------------------------
+   # Motif volontairement plus large que celui de bdd/.htaccess : l'extension est
+   # cherchée n'importe où dans le nom. Avec une config à base d'`AddHandler`,
+   # Apache exécute `shell.php.jpg`, qu'un motif ancré `\.php$` laisse passer.
+   <FilesMatch "(?i)\.(php|phar|phtml|php[0-9]|phps|pht|inc|shtml|cgi|pl|py|rb|sh|lua)(\.|$)">
+     <IfModule mod_authz_core.c>
+       Require all denied
+     </IfModule>
+     <IfModule mod_access_compat.c>
+       Order allow,deny
+       Deny from all
+     </IfModule>
+   </FilesMatch>
+
+   # Renfort : retirer le mapping de handler, pour qu'un fichier qui échapperait au
+   # refus ci-dessus ne soit pas interprété. mod_mime est toujours chargé, donc
+   # aucun risque de 500.
+   RemoveHandler .php .phar .phtml .php3 .php4 .php5 .php6 .php7 .php8 .phps .pht .cgi .pl .py .rb .sh .lua
+
+   # Renfort : couper l'interpréteur pour tout le dossier. Encadré par IfModule car
+   # `php_flag` déclenche une 500 quand PHP n'est pas chargé en module (PHP-FPM,
+   # LSAPI) — ce qui rendrait toutes les données inaccessibles.
+   <IfModule mod_php.c>
+     php_flag engine off
+   </IfModule>
+   <IfModule mod_php8.c>
+     php_flag engine off
+   </IfModule>
+   <IfModule mod_php7.c>
+     php_flag engine off
+   </IfModule>
+
+   # --- 2. Pas d'exploration ---------------------------------------------------
+   Options -Indexes -ExecCGI -Includes
+
+   # Fichiers cachés : rien d'utile ici, et ça couvre .git, .env ou une clé qui
+   # atterrirait dans le dossier par accident.
+   <FilesMatch "^\.">
+     <IfModule mod_authz_core.c>
+       Require all denied
+     </IfModule>
+     <IfModule mod_access_compat.c>
+       Order allow,deny
+       Deny from all
+     </IfModule>
+   </FilesMatch>
+
+   # --- 3. En-têtes de sûreté --------------------------------------------------
+   <IfModule mod_headers.c>
+     # Contenus fournis par des tiers : interdire au navigateur de deviner un type
+     # plus dangereux que celui annoncé.
+     Header always set X-Content-Type-Options "nosniff"
+
+     # Neutralise ce qui pourrait être interprété comme un document (pas de script,
+     # pas de formulaire, origine opaque). Volontairement PAS appliqué aux images :
+     # `sandbox` est ignoré sur une sous-ressource, mais autant ne pas exposer
+     # l'affichage des photos à une subtilité de navigateur.
+     <FilesMatch "(?i)\.(gpx|geojson|json|xml|svg|html?|txt|csv)$">
+       Header always set Content-Security-Policy "sandbox"
+     </FilesMatch>
+   </IfModule>
+   ```
+
+   Ce qui n'y figure **pas**, volontairement : les en-têtes de cache, le
+   `Content-Disposition` des `.gpx` et le `ForceType` des `.geojson`. Ils sont
+   déclarés dans `public_html/.htaccess`, qui s'applique au point de montage comme
+   à n'importe quel sous-dossier — les dupliquer créerait deux sources de vérité.
+
+   **Amélioration à répercuter** : le motif « extension n'importe où dans le nom »
+   corrige un contournement (`shell.php.jpg`) qui existe aujourd'hui dans
+   `public_html/bdd/.htaccess` et `public_html/images/.htaccess`. Ces deux fichiers
+   restent en place pour les contenus versionnés : appliquer le même motif, avec un
+   cas de régression dans `tests/add_falaise.http`.
 
 4. **`deploy/bootstrap-public.sh`** : script idempotent de création de `~/public`,
    de son arborescence (`bdd/*`, `images/`, `open-data/`) et de son `.htaccess`.
@@ -391,7 +502,9 @@ Ne pas oublier ce qui reste dans `public_html/bdd/` : `styles/`, `trains/gares.j
 | --- | --- | --- |
 | Lien symbolique non suivi par LiteSpeed | faible | Détecté en phase 0. `Options +FollowSymLinks`, sinon repli sur dossier ignoré |
 | `Options` interdit en `.htaccess` → 500 | faible | Tester sur une URL de spike avant de committer ; retirer la directive si 500 |
-| `.htaccess` de `~/public` ignoré | moyenne | La barrière effective est la règle `[F]` du `.htaccess` racine, pas celui de la cible |
+| `.htaccess` de `~/public` ignoré | moyenne | Les deux garanties (exécutables, listing) sont portées par le `.htaccess` racine ; celui de la cible n'est que de la profondeur |
+| `Options` refusé hors DocumentRoot → 500 | faible | `.htaccess` de la cible installé dès la phase 0 ; retirer la ligne `Options` si 500 |
+| Contournement `shell.php.jpg` | faible | Motif « extension n'importe où » dans les trois `.htaccess`, avec cas de régression |
 | Même chemin relatif dans les deux arborescences | moyenne | Le fichier déployé gagne, la donnée devient invisible sans erreur. Contrôle possible en CI : intersection des deux listes |
 | Un futur `--copy-links` dans le workflow | faible | Test `test -L` en phase 4 |
 | Nouveau dossier d'upload créé sous `public_html` par oubli | moyenne | `vg_data_path()` comme seule API d'écriture + contrôle CI |
