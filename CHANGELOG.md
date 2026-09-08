@@ -4,6 +4,12 @@ Tous les changements notables de ce projet sont documentés dans ce fichier.
 
 Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 2026-09-08
+
+### Fixed
+
+- Sélecteur admin d'arrêt existant sur `/ajout/ajout_bus.php` : le lien de navigation utilisait une variable `$token` inexistante, donc le rechargement perdait le mode admin. Il pointe désormais vers `$config['admin_token']`, reflète l'arrêt courant (`selected`) et affiche le nombre d'arrêts en base.
+
 ## 2026-08-30
 
 ### Fixed
