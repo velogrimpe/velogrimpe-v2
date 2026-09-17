@@ -264,3 +264,32 @@ Content-Type: application/gpx+xml
 
 <gpx><trk><trkseg></gpx>
 ------vg--
+
+### ---------------------------------------------------------------------------
+### Chemins de données (lib/paths.php).
+### NB : velo_descr, velo_variante et velo_varianteformate sont NOT NULL en base.
+### Les requêtes « ajout valide » ci-dessus les omettent et échouent donc sur
+### l'INSERT — les inclure pour exercer réellement l'écriture du GPX.
+### ---------------------------------------------------------------------------
+
+### Le GPX écrit est servi sur son URL historique, que le fichier soit dans le
+### dossier déployé ou dans ~/public (règle de repli du .htaccess racine).
+### Reprendre le velo_id retourné par la redirection de l'ajout valide.
+GET http://localhost:4000/bdd/gpx/{{velo_id}}_gare-test_falaise-test_.gpx
+
+### PROCÉDURE MANUELLE — garantie « pas de ligne orpheline ».
+### vg_data_prepare() est appelé AVANT l'INSERT : si le dossier de données est
+### inutilisable, la contribution est refusée sans rien écrire en base, et le
+### contributeur peut renvoyer son formulaire (fichier compris).
+###
+### Attention : rendre le dossier absent ne suffit PAS à tester l'échec,
+### vg_data_prepare() le recrée. Il faut que mkdir échoue — remplacer le dossier
+### par un fichier du même nom le garantit, y compris quand PHP tourne en root :
+###
+###   docker exec velogrimpe mv /opt/lampp/htdocs/bdd/gpx /opt/lampp/htdocs/bdd/gpx_BAK
+###   docker exec velogrimpe touch /opt/lampp/htdocs/bdd/gpx
+###   # rejouer l'ajout valide ci-dessus
+###   #   attendu : "Le dossier des traces GPX est indisponible…"
+###   #   ET : SELECT MAX(velo_id) FROM velo;  -- inchangé
+###   docker exec velogrimpe rm /opt/lampp/htdocs/bdd/gpx
+###   docker exec velogrimpe mv /opt/lampp/htdocs/bdd/gpx_BAK /opt/lampp/htdocs/bdd/gpx

@@ -86,9 +86,20 @@ séparément.
 
 **Databases:**
 
-- `u829510062_bdd` - Main DB (falaises, velo, gares, villes, train, bus_*,
+- `u829510062_bdd` - Main DB (falaises, velo, gares, villes, train, bus\_\*,
   sorties, pages, newsletters…). Nom et identifiants dans `config.php` ;
   connexion via `public_html/database/velogrimpe.php`.
+
+**Chemins de données (`public_html/lib/paths.php`) :**
+
+Les contenus téléversés et générés (`bdd/`, `images/`, `open-data/`) sont des
+données non versionnées. **Aucun chemin ne se construit à la main** : tout passe
+par `vg_data_path()` / `vg_data_url()` / `vg_data_exists()` / `vg_data_prepare()`,
+en lecture comme en écriture. Les arguments sont des chemins de l'espace d'URL
+(`'bdd/gpx/x.gpx'`), pas des chemins disque.
+
+Détails et règles `.htaccess` : section « Chemins de données » de
+`public_html/README.md`.
 
 **Vue-PHP Integration:**
 

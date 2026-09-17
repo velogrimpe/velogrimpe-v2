@@ -6,3 +6,67 @@
 ###
 GET {{url}}/api/private/send_newsletter.php?slug={{slug}}
 Authorization: Bearer ADMIN_TOKEN
+
+### ---------------------------------------------------------------------------
+### upload-image — NON-RÉGRESSION D'URL, l'assertion la plus importante ici.
+###
+### L'URL renvoyée est stockée telle quelle en base (newsletters.sections).
+### Elle DOIT rester /bdd/images_news/<slug>/<fichier>, SANS préfixe /public,
+### quelle que soit la valeur de VG_DATA_MOUNT dans lib/paths.php — sinon la
+### bascule réécrit silencieusement toutes les images déjà référencées.
+###
+### La version précédente dérivait ce préfixe par
+### str_replace(DOCUMENT_ROOT, '', $baseDir), qui ne matche plus à travers le
+### lien symbolique du point de montage. Ne jamais y revenir.
+POST http://localhost:4000/api/private/newsletter/upload-image.php
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="slug"
+
+test-migration
+------vg
+Content-Disposition: form-data; name="image"; filename="test.png"
+Content-Type: image/png
+
+< ./fixtures/test.png
+------vg--
+
+### L'URL renvoyée répond bien (reprendre la valeur de "url" ci-dessus)
+GET http://localhost:4000{{url}}
+
+### Slug qui se réduit à la chaîne vide après nettoyage => 400 "slug invalide"
+### (sinon le chemin devenait bdd/images_news//<fichier>, donc une écriture
+### dans le dossier parent)
+POST http://localhost:4000/api/private/newsletter/upload-image.php
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="slug"
+
+...
+------vg
+Content-Disposition: form-data; name="image"; filename="test.png"
+Content-Type: image/png
+
+< ./fixtures/test.png
+------vg--
+
+### Tentative de traversée : le slug est neutralisé en "__etc", l'écriture reste
+### confinée dans bdd/images_news/ => 200 avec une URL sans remontée
+POST http://localhost:4000/api/private/newsletter/upload-image.php
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="slug"
+
+../../etc
+------vg
+Content-Disposition: form-data; name="image"; filename="test.png"
+Content-Type: image/png
+
+< ./fixtures/test.png
+------vg--

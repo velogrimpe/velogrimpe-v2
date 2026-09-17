@@ -37,3 +37,18 @@ GET http://localhost:4000/open-data/download.php?f=complet
 
 ### Slug inconnu -> 404
 GET http://localhost:4000/open-data/download.php?f=nimportequoi
+
+### ---------------------------------------------------------------------------
+### Chemins de données (lib/paths.php).
+### Le cron écrit les 5 exports via vg_data_path('open-data/…') et download.php
+### les relit par le même helper : les URL canoniques ci-dessus restent valables
+### avant comme après la bascule de VG_DATA_MOUNT, sans changement de .htaccess.
+###
+### Le cron appelle vg_data_prepare('open-data') AVANT l'agrégation (~30 s) :
+### un dossier inutilisable échoue immédiatement plutôt qu'après le calcul.
+### ---------------------------------------------------------------------------
+
+### Contrôle après exécution du cron : les 5 fichiers doivent être réécrits
+### (comparer les dates) et répondre 200 sur leurs URL canoniques ci-dessus.
+### Le nombre de features est retourné par le cron lui-même :
+###   {"falaises":N,"itineraires_velo":N,"gares":N,"details":N,"complet":N}

@@ -1,0 +1,1 @@
+- [ ] `imagedestroy($img)` semble dépréciée en php > 8.0.0
