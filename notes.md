@@ -1,3 +1,1 @@
-- [ ] faire en sorte que les commentaires tentent de récupérer nom/email depuis le store (local storage ?)
 - [ ] améliorer la mécanique de zoom de la page oblyk
-- [ ] passe de text fix

@@ -20,11 +20,16 @@ export interface VelogrimpeGlobal {
 }
 
 // From contrib-storage.js
+export interface ContribFieldIds {
+  nomId?: string
+  emailId?: string
+}
+
 export interface ContribStorage {
   getContribInfo: () => { nom: string; email: string }
   saveContribInfo: (nom: string, email: string) => void
-  prefillContribInputs: () => void
-  attachFormSaveListener: (form: HTMLFormElement) => void
+  prefillContribInputs: (fields?: ContribFieldIds) => void
+  attachFormSaveListener: (form: HTMLFormElement, fields?: ContribFieldIds) => void
 }
 
 declare global {

@@ -46,4 +46,28 @@ test.describe('Falaise page', () => {
     await villeSelector.selectOption(villeId!)
     await expect(page).toHaveURL(new RegExp(`ville_id=${villeId}`))
   })
+
+  test('le formulaire de récit reprend nom/email mémorisés', async ({ page }) => {
+    await page.goto(`/falaise.php?falaise_id=${testFalaiseId}`)
+
+    // Infos contributeur déjà mémorisées par un précédent formulaire de contribution
+    await page.evaluate(() => {
+      localStorage.setItem('velogrimpe_contrib_nom', 'Jeanne Grimpe')
+      localStorage.setItem('velogrimpe_contrib_email', 'jeanne@example.com')
+    })
+    await page.reload()
+
+    await page.getByRole('button', { name: /Raconter ma sortie/i }).click()
+
+    await expect(page.locator('#nom')).toHaveValue('Jeanne Grimpe')
+    await expect(page.locator('#email')).toHaveValue('jeanne@example.com')
+
+    // Le dialogue de vérification d'email est lui aussi pré-rempli
+    await page.locator('#commentFormModal .btn.btn-outline').click()
+    const editButton = page.locator('#comments button[onclick^="editComment"]').first()
+    if (await editButton.count()) {
+      await editButton.click()
+      await expect(page.locator('#emailPromptEmail')).toHaveValue('jeanne@example.com')
+    }
+  })
 })
