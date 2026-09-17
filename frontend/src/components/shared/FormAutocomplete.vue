@@ -53,12 +53,18 @@ function onSelect(option: AutocompleteOption) {
   emit("select", item ?? null, option.value);
 }
 
-// Délègue la validation "required" à l'Autocomplete sous-jacent (cf. validate()).
-const autocompleteRef = ref<{ validate: () => boolean } | null>(null);
+// Délègue la validation "required" et le focus à l'Autocomplete sous-jacent.
+const autocompleteRef = ref<{
+  validate: () => boolean;
+  focus: () => void;
+} | null>(null);
 function validate(): boolean {
   return autocompleteRef.value?.validate() ?? true;
 }
-defineExpose({ validate });
+function focus(): void {
+  autocompleteRef.value?.focus();
+}
+defineExpose({ validate, focus });
 </script>
 
 <template>

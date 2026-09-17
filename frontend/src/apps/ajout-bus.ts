@@ -1,7 +1,25 @@
 import { createApp, h, ref, type Ref } from 'vue'
 import AjoutBus from '@/components/ajout/AjoutBus.vue'
+import FalaisesLiees from '@/components/ajout/FalaisesLiees.vue'
 import RichTextField from '@/components/shared/RichTextField.vue'
 import { postBusStop } from '@/utils/bus-api'
+
+interface FalaiseItem {
+  id: number
+  nom: string
+  [key: string]: unknown
+}
+
+// Pont posé par le script carte inline de ajout_bus.php : il détient l'état des
+// liaisons (Set + hidden #arret_falaise_ids) et notifie par événement.
+declare global {
+  interface Window {
+    busFalaises?: FalaiseItem[]
+    busSetFalaiseLinked?: (id: number, linked: boolean) => void
+    busFocusFalaise?: (id: number) => void
+    busFitLinkedFalaises?: () => void
+  }
+}
 
 interface ArretItem {
   id: number
@@ -44,6 +62,41 @@ document.addEventListener('DOMContentLoaded', () => {
     getLignes: () => unknown[]
     getLiaisons: () => unknown[]
     hydrate: (d: unknown) => Promise<void>
+  }
+
+  // --- Liste des falaises liées (alternative à la carte) ---
+  const falaisesMountEl = document.getElementById('vue-falaises-liees')
+  if (falaisesMountEl) {
+    // État courant : le hidden est déjà rempli si la page a pré-lié des falaises
+    // (?falaise_ids=…), ce qui se produit avant que l'écoute ci-dessous démarre.
+    const linkedIds = ref<number[]>(
+      ((document.getElementById('arret_falaise_ids') as HTMLInputElement | null)?.value ?? '')
+        .split(',')
+        .map((s) => parseInt(s.trim(), 10))
+        .filter((n) => !isNaN(n)),
+    )
+    document.addEventListener('velogrimpe:bus-falaises-changed', (e) => {
+      const detail = (e as CustomEvent<{ ids?: number[] }>).detail
+      linkedIds.value = (detail?.ids ?? []).map(Number)
+    })
+    createApp({
+      setup() {
+        return () =>
+          h(FalaisesLiees, {
+            falaises: window.busFalaises ?? [],
+            linkedIds: linkedIds.value,
+            onLink: (id: number) => {
+              window.busSetFalaiseLinked?.(id, true)
+              // Cadrage sur l'ensemble arrêt + falaises liées, pas sur la seule ajoutée.
+              window.busFitLinkedFalaises?.()
+            },
+            onUnlink: (id: number) => window.busSetFalaiseLinked?.(id, false),
+            onCenter: (id: number) => window.busFocusFalaise?.(id),
+          })
+      },
+    }).mount(falaisesMountEl)
+  } else {
+    console.warn('[velogrimpe] #vue-falaises-liees mount point not found')
   }
 
   // --- Champs RichText autonomes (commentaire de l'arrêt) ---

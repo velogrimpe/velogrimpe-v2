@@ -33,7 +33,9 @@ tests/e2e/
 ├── navigation.spec.ts    # Tests de navigation entre pages
 ├── carte.spec.ts         # Tests de la carte Leaflet
 ├── falaise.spec.ts       # Tests des pages falaise
-└── ajout-falaise.spec.ts # Tests du formulaire d'ajout
+├── ajout-falaise.spec.ts # Tests du formulaire d'ajout
+├── ajout-bus-falaises.spec.ts # Falaises liées d'un arrêt de bus (liste + carte)
+└── autocomplete.spec.ts  # Tests des champs autocomplete
 ```
 
 ## Écrire un nouveau test

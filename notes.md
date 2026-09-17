@@ -1,2 +1,3 @@
-- [x] `imagedestroy($img)` semble dépréciée en php > 8.0.0 — supprimé de `lib/admin_image_upload.php` (no-op depuis 8.0, déprécié en 8.5)
 - [ ] faire en sorte que les commentaires tentent de récupérer nom/email depuis le store (local storage ?)
+- [ ] améliorer la mécanique de zoom de la page oblyk
+- [ ] passe de text fix
