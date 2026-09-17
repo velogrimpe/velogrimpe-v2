@@ -1,1 +1,0 @@
-- [ ] améliorer la mécanique de zoom de la page oblyk
