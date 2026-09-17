@@ -127,40 +127,40 @@ Content-Type: image/webp
 ------VelogrimpeBoundary--
 
 ### Vérification : le shell de l'incident n'est plus exécutable (404/403, jamais "pwned")
-GET http://localhost:4000/bdd/images_falaises/446_test-falaise_img1.php
+GET http://localhost:4000/public/images_falaises/446_test-falaise_img1.php
 
-### Vérification : les images légitimes restent servies malgré bdd/.htaccess => 200 image/webp
-GET http://localhost:4000/bdd/images_falaises/140_saint-leger-du-ventoux_img1.webp
+### Vérification : les images légitimes restent servies malgré public/.htaccess => 200 image/webp
+GET http://localhost:4000/public/images_falaises/140_saint-leger-du-ventoux_img1.webp
 
 ### Vérification : les traces GPX restent servies => 200 application/gpx+xml
-GET http://localhost:4000/bdd/gpx/101_aix-les-bains_la-balme-de-yenne_.gpx
+GET http://localhost:4000/public/gpx/101_aix-les-bains_la-balme-de-yenne_.gpx
 
 ### Vérification : plus de listing des dossiers de données => 403
-GET http://localhost:4000/bdd/images_falaises/
+GET http://localhost:4000/public/images_falaises/
 
 ### ---------------------------------------------------------------------------
-### Point de montage des données (public_html/public -> ../public).
-### Les contenus téléversés sont joignables par deux URLs : l'URL publique
-### (/bdd/…, résolue vers le point de montage par le .htaccess racine) et celle
-### du point de montage (/public/bdd/…). Les deux doivent offrir les mêmes
-### garanties, sinon on rouvre la faille de juillet 2026.
+### Contenus statiques : /public/… est la forme canonique (chemin disque = URL).
+### Les anciennes URL /bdd/… redirigent en 301. Les deux préfixes doivent offrir
+### les mêmes garanties, sinon on rouvre la faille de juillet 2026.
 ### ---------------------------------------------------------------------------
 
-### Aucun PHP exécuté sous le point de montage => 403
-GET http://localhost:4000/public/bdd/images_falaises/shell.php
+### Aucun PHP exécuté depuis les données => 403
+GET http://localhost:4000/public/images_falaises/shell.php
 
 ### Extension au milieu du nom (contournement AddHandler) => 403
-GET http://localhost:4000/public/bdd/images_falaises/shell.php.jpg
+GET http://localhost:4000/public/images_falaises/shell.php.jpg
 
-### Aucun listing du point de montage => 403
+### L'ancien préfixe est refusé NET, pas redirigé puis refusé => 403
+GET http://localhost:4000/bdd/images_falaises/shell.php
+
+### Aucun listing => 403, sur les deux préfixes
 GET http://localhost:4000/public/
 
-### Idem sur un sous-dossier => 403
-GET http://localhost:4000/public/bdd/images_falaises/
+###
+GET http://localhost:4000/public/gpx/
 
-### Aucun script servi depuis l'arborescence de données => 403
-GET http://localhost:4000/public/open-data/download.php?f=falaises
+###
+GET http://localhost:4000/bdd/gpx/
 
-### Une image téléversée reste servie sur son URL publique, alors que le fichier
-### vit dans ~/public. Reprendre le falaise_id d'un ajout avec image.
-GET http://localhost:4000/bdd/images_falaises/{{falaise_id}}_{{nomformate}}_img1.webp
+### Redirection des anciennes URL vers la forme canonique => 301 puis 200
+GET http://localhost:4000/bdd/images_falaises/140_saint-leger-du-ventoux_img1.webp

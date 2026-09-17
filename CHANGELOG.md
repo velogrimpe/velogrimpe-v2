@@ -4,6 +4,17 @@ Tous les changements notables de ce projet sont documentés dans ce fichier.
 
 Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 2026-09-17
+
+### Added
+
+- Éditeur riche des articles et des newsletters : le bouton image propose désormais « Téléverser une image… » (sélecteur de fichier, même traitement serveur que le copier-coller) à côté de l'insertion par URL, jusque-là seule possibilité.
+- Éditeur riche : nouveau bouton « pièce jointe » (trombone) qui téléverse un fichier (PDF, tableur, archive…) et insère un lien vers lui — sur la sélection courante si elle n'est pas vide, sinon un lien libellé par le nom d'origine du fichier. Routes `api/private/pages/upload-file.php` et `api/private/newsletter/upload-file.php`, fichiers stockés dans `fichiers_pages/<slug>/` et `fichiers_news/<slug>/`. Contrairement aux images, le fichier n'est pas réencodé : `lib/admin_file_upload.php` s'appuie donc sur une allowlist d'extensions (sans `svg` ni `html`), un refus des contenus reconnus comme HTML/SVG, un nom de fichier entièrement reconstruit (les doubles extensions du type `rapport.php.pdf` ne survivent pas) et un plafond de 20 Mo. Tests : `tests/uploads.http`.
+
+### Changed
+
+- `lib/admin_image_upload.php` et `lib/admin_file_upload.php` partagent `lib/admin_upload.php` (jeton admin, méthode, nettoyage du slug). Les codes et messages d'erreur de l'upload d'image sont inchangés, à une exception près : un échec de téléversement autre que « pas de fichier » (typiquement le dépassement de `upload_max_filesize`) renvoie maintenant un message dédié au lieu de « No image uploaded », qui envoyait chercher au mauvais endroit.
+
 ## 2026-09-08
 
 ### Added

@@ -64,8 +64,8 @@ Content-Type: application/json
 ### upload-image — NON-RÉGRESSION D'URL, l'assertion la plus importante ici.
 ###
 ### L'URL renvoyée est stockée telle quelle en base (pages.sections / pages.banner_img).
-### Elle DOIT rester /bdd/images_pages/<slug>/<fichier>, SANS préfixe /public :
-### c'est une URL publique, elle ne reflète pas l'emplacement de stockage.
+### Elle DOIT être /public/images_pages/<slug>/<fichier> : c'est la forme canonique
+### produite par vg_data_url(), chemin disque et URL coïncident.
 
 POST http://localhost:4000/api/private/pages/upload-image.php
 Authorization: Bearer ADMIN_TOKEN
@@ -86,7 +86,7 @@ Content-Type: image/png
 GET http://localhost:4000{{url}}
 
 ### Slug qui se réduit à la chaîne vide après nettoyage => 400 "slug invalide"
-### (sinon le chemin devenait bdd/images_pages//<fichier>, donc une écriture
+### (sinon le chemin devenait images_pages//<fichier>, donc une écriture
 ### dans le dossier parent)
 POST http://localhost:4000/api/private/pages/upload-image.php
 Authorization: Bearer ADMIN_TOKEN
@@ -104,7 +104,7 @@ Content-Type: image/png
 ------vg--
 
 ### Tentative de traversée : le slug est neutralisé en "__etc", l'écriture reste
-### confinée dans bdd/images_pages/ => 200 avec une URL sans remontée
+### confinée dans images_pages/ => 200 avec une URL sans remontée
 POST http://localhost:4000/api/private/pages/upload-image.php
 Authorization: Bearer ADMIN_TOKEN
 Content-Type: multipart/form-data; boundary=----vg

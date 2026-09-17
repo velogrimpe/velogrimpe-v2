@@ -1,6 +1,6 @@
 ### add_velo.php — soumission du formulaire d'ajout d'itinéraire vélo (multipart/form-data)
 ### ATTENTION : un envoi valide insère réellement une ligne `velo` et écrit un fichier GPX
-### dans /bdd/gpx/. À n'exécuter que sur un environnement de test.
+### dans public/gpx/. À n'exécuter que sur un environnement de test.
 ###
 ### Comportement vérifié ici :
 ### - validation des champs obligatoires et du fichier GPX
@@ -56,7 +56,7 @@ Content-Disposition: form-data; name="velo_dmoins"
 ------vg--
 
 ### Ajout valide avec GPX contenant des waypoints => redirection vers confirmation_velo.php
-### Après exécution : vérifier que le fichier écrit dans /bdd/gpx/ ne contient plus de <wpt>
+### Après exécution : vérifier que le fichier écrit dans public/gpx/ ne contient plus de <wpt>
 ### mais conserve les <trkpt>.
 POST http://localhost:4000/api/add_velo.php
 Content-Type: multipart/form-data; boundary=----vg
@@ -119,7 +119,7 @@ Content-Type: application/gpx+xml
 ### ---------------------------------------------------------------------------
 
 ### Traversée de répertoire via velo_varianteformate
-### => "Champ velo_varianteformate invalide", et AUCUN fichier écrit hors de /bdd/gpx/
+### => "Champ velo_varianteformate invalide", et AUCUN fichier écrit hors de public/gpx/
 POST http://localhost:4000/api/add_velo.php
 Content-Type: multipart/form-data; boundary=----vg
 
@@ -272,8 +272,11 @@ Content-Type: application/gpx+xml
 ### l'INSERT — les inclure pour exercer réellement l'écriture du GPX.
 ### ---------------------------------------------------------------------------
 
-### Le GPX écrit dans ~/public reste servi sur son URL publique /bdd/gpx/…
+### Le GPX est servi sur son URL canonique /public/gpx/… (chemin disque = URL).
 ### Reprendre le velo_id retourné par la redirection de l'ajout valide.
+GET http://localhost:4000/public/gpx/{{velo_id}}_gare-test_falaise-test_.gpx
+
+### L'ancienne URL /bdd/… redirige en 301 vers la forme canonique
 GET http://localhost:4000/bdd/gpx/{{velo_id}}_gare-test_falaise-test_.gpx
 
 ### PROCÉDURE MANUELLE — garantie « pas de ligne orpheline ».
@@ -285,10 +288,10 @@ GET http://localhost:4000/bdd/gpx/{{velo_id}}_gare-test_falaise-test_.gpx
 ### vg_data_prepare() le recrée. Il faut que mkdir échoue — remplacer le dossier
 ### par un fichier du même nom le garantit, y compris quand PHP tourne en root :
 ###
-###   docker exec velogrimpe mv /opt/lampp/htdocs/bdd/gpx /opt/lampp/htdocs/bdd/gpx_BAK
-###   docker exec velogrimpe touch /opt/lampp/htdocs/bdd/gpx
+###   docker exec velogrimpe mv /opt/lampp/public/gpx /opt/lampp/public/gpx_BAK
+###   docker exec velogrimpe touch /opt/lampp/public/gpx
 ###   # rejouer l'ajout valide ci-dessus
 ###   #   attendu : "Le dossier des traces GPX est indisponible…"
 ###   #   ET : SELECT MAX(velo_id) FROM velo;  -- inchangé
-###   docker exec velogrimpe rm /opt/lampp/htdocs/bdd/gpx
-###   docker exec velogrimpe mv /opt/lampp/htdocs/bdd/gpx_BAK /opt/lampp/htdocs/bdd/gpx
+###   docker exec velogrimpe rm /opt/lampp/public/gpx
+###   docker exec velogrimpe mv /opt/lampp/public/gpx_BAK /opt/lampp/public/gpx

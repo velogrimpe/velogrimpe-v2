@@ -1,0 +1,154 @@
+@url=http://localhost:4000
+@token=ADMIN_TOKEN
+
+### ---------------------------------------------------------------------------
+### upload-file — pièce jointe insérée comme lien dans l'éditeur riche.
+###
+### L'URL renvoyée est stockée telle quelle en base (pages.sections,
+### newsletters.sections) : elle doit sortir de vg_data_url(), donc
+### /public/fichiers_pages/<slug>/<nom>-<alea>.<ext>.
+
+### Cas nominal (pages) => 200 { "url": "/public/fichiers_pages/…", "name": "test.pdf" }
+POST {{url}}/api/private/pages/upload-file.php
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="slug"
+
+test-uploads
+------vg
+Content-Disposition: form-data; name="file"; filename="Notice d'accès (été).pdf"
+Content-Type: application/pdf
+
+< ./fixtures/test.pdf
+------vg--
+
+### L'URL renvoyée répond bien (reprendre la valeur de "url" ci-dessus)
+GET {{url}}/public/fichiers_pages/test-uploads/notice-d-acces-ete-XXXXXXXX.pdf
+
+### Cas nominal (newsletter) => 200, URL sous /public/fichiers_news/
+POST {{url}}/api/private/newsletter/upload-file.php
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="slug"
+
+test-uploads
+------vg
+Content-Disposition: form-data; name="file"; filename="test.pdf"
+Content-Type: application/pdf
+
+< ./fixtures/test.pdf
+------vg--
+
+### Sans jeton => 403
+POST {{url}}/api/private/pages/upload-file.php
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="slug"
+
+test-uploads
+------vg
+Content-Disposition: form-data; name="file"; filename="test.pdf"
+Content-Type: application/pdf
+
+< ./fixtures/test.pdf
+------vg--
+
+### Extension hors allowlist => 400 "Type de fichier non autorisé : .php"
+### (le fichier ne doit jamais atteindre le disque)
+POST {{url}}/api/private/pages/upload-file.php
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="slug"
+
+test-uploads
+------vg
+Content-Disposition: form-data; name="file"; filename="shell.php"
+Content-Type: application/pdf
+
+< ./fixtures/test.pdf
+------vg--
+
+### Double extension : seul le dernier segment compte, le nom est reconstruit
+### => 200 avec une URL en .pdf, jamais .php
+POST {{url}}/api/private/pages/upload-file.php
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="slug"
+
+test-uploads
+------vg
+Content-Disposition: form-data; name="file"; filename="shell.php.pdf"
+Content-Type: application/pdf
+
+< ./fixtures/test.pdf
+------vg--
+
+### Contenu HTML déguisé en .pdf => 400 "Contenu de fichier non autorisé"
+### (servi depuis l'origine du site, il exécuterait du JavaScript)
+POST {{url}}/api/private/pages/upload-file.php
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="slug"
+
+test-uploads
+------vg
+Content-Disposition: form-data; name="file"; filename="piege.pdf"
+Content-Type: application/pdf
+
+<html><body><script>alert(1)</script></body></html>
+------vg--
+
+### Slug qui se réduit à la chaîne vide après nettoyage => 400 "slug invalide"
+POST {{url}}/api/private/pages/upload-file.php
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="slug"
+
+...
+------vg
+Content-Disposition: form-data; name="file"; filename="test.pdf"
+Content-Type: application/pdf
+
+< ./fixtures/test.pdf
+------vg--
+
+### Tentative de traversée : le slug est neutralisé en "__etc", l'écriture reste
+### confinée dans fichiers_pages/ => 200 avec une URL sans remontée
+POST {{url}}/api/private/pages/upload-file.php
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="slug"
+
+../../etc
+------vg
+Content-Disposition: form-data; name="file"; filename="test.pdf"
+Content-Type: application/pdf
+
+< ./fixtures/test.pdf
+------vg--
+
+### Sans fichier => 400 "Aucun fichier envoyé"
+POST {{url}}/api/private/pages/upload-file.php
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="slug"
+
+test-uploads
+------vg--

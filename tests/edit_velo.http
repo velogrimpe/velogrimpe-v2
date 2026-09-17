@@ -1,6 +1,6 @@
 ### edit_velo.php — soumission du formulaire d'édition d'itinéraire vélo (multipart/form-data)
 ### ATTENTION : un envoi valide modifie réellement la ligne `velo` et, si un GPX est fourni,
-### REMPLACE le fichier dans /bdd/gpx/ (l'ancien est archivé dans /bdd/gpx-historique/).
+### REMPLACE le fichier dans public/gpx/ (l'ancien est archivé dans public/gpx-historique/).
 ### À n'exécuter que sur un environnement de test.
 ###
 ### Trois modes (D010), déterminés par le token admin et velo_public de l'itinéraire :
@@ -133,7 +133,7 @@ test@example.com
 ------vg--
 
 ### Remplacement du GPX (fixture avec waypoints)
-### Après exécution : le fichier /bdd/gpx/8_amberieu-en-bugey_amberieu-saleze_option-nord.gpx
+### Après exécution : le fichier public/gpx/8_amberieu-en-bugey_amberieu-saleze_option-nord.gpx
 ### ne contient plus de <wpt> mais conserve les <trkpt>. PENSER À RESTAURER L'ORIGINAL.
 POST http://localhost:4000/api/edit_velo.php
 Content-Type: multipart/form-data; boundary=----vg

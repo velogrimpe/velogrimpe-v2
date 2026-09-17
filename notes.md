@@ -1,2 +1,2 @@
 - [ ] `imagedestroy($img)` semble dépréciée en php > 8.0.0
-- [ ] Ajouter la possibilité de faire un upload d'image en alternative à l'URL (même comportement que le copier-coller, mais depuis un input de type file)
+- [ ] se passer de VG_DATA_PREFIXES, permettre de créer et référencer des fichiers librement dans ce dossier.

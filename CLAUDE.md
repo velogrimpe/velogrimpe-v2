@@ -19,7 +19,7 @@ velo-grimpe-v2/
 │   ├── dist/                  # Built frontend assets
 │   └── public -> ../public    # Symlink vers le dossier de données
 ├── public/                    # Données hors web root (git-ignored)
-│   ├── bdd/                   # GPX, images falaises, GeoJSON barres
+│   ├── gpx/ barres/ …         # GPX, images falaises, GeoJSON barres, zones…
 │   ├── images/                # Uploads admin
 │   └── open-data/             # Exports GeoJSON
 └── frontend/                  # Vue.js + Vite source
@@ -32,7 +32,7 @@ velo-grimpe-v2/
 
 ```bash
 # Docker container: velogrimpe, port 4000. À lancer depuis la racine du repo.
-# `public/` est git-ignoré : le créer avant (mkdir -p public/{bdd,images,open-data})
+# `public/` est git-ignoré : le créer avant (mkdir -p public/{gpx,barres,images,open-data})
 # sinon le bind échoue. Monté en lecture/écriture : c'est le dossier de données
 # (uploads images/GPX, GeoJSON générés), cible du symlink public_html/public.
 docker run --platform linux/x86_64 --name velogrimpe -p 4001:22 -p 4000:80 -d \
@@ -97,7 +97,7 @@ Les contenus téléversés et générés vivent **hors du dossier déployé**, d
 `public_html/public -> ../public`. **Aucun chemin ne se construit à la main** :
 tout passe par `vg_data_path()` / `vg_data_url()` / `vg_data_exists()` /
 `vg_data_prepare()`, en lecture comme en écriture. Les arguments sont des
-chemins de l'espace d'URL (`'bdd/gpx/x.gpx'`), pas des chemins disque.
+chemins relatifs à la racine des données (`'gpx/x.gpx'`), pas des chemins disque.
 
 - `vg_data_url()` ne dépend jamais de l'emplacement de stockage : ces URL sont
   stockées en base, publiées et envoyées par mail. Ne jamais dériver une URL par
@@ -106,10 +106,11 @@ chemins de l'espace d'URL (`'bdd/gpx/x.gpx'`), pas des chemins disque.
 - `vg_data_prepare()` s'appelle **avant la première mutation** (avant l'`INSERT`,
   avant `move_uploaded_file`) : c'est le seul point où un échec ne laisse pas de
   ligne sans fichier.
-- Les URL publiques restent `/bdd/…` et `/images/…` : une règle du `.htaccess`
-  racine les résout vers le point de montage quand le fichier n'est pas dans le
-  dossier déployé. Ce repli est une règle **Apache** — il ne couvre pas les
-  lectures disque de PHP, qui visent toujours `public/`.
+- Chemin disque et URL coïncident : `public/gpx/x.gpx` est servi à
+  `/public/gpx/x.gpx`. Deux exceptions qui n'utilisent pas `vg_data_url()` :
+  `open-data/` (servi par `download.php`, URL `/open-data/*.geojson`) et
+  `images/` (encore dupliqué avec `public_html/images`, URL `/images/…`).
+- Les anciennes URL `/bdd/…` sont redirigées en 301 par le `.htaccess` racine.
 
 Détails et règles `.htaccess` : section « Chemins de données » de
 `public_html/README.md`.
