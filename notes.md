@@ -1,2 +1,2 @@
-- [ ] `imagedestroy($img)` semble dépréciée en php > 8.0.0
-- [ ] se passer de VG_DATA_PREFIXES, permettre de créer et référencer des fichiers librement dans ce dossier.
+- [x] `imagedestroy($img)` semble dépréciée en php > 8.0.0 — supprimé de `lib/admin_image_upload.php` (no-op depuis 8.0, déprécié en 8.5)
+- [ ] faire en sorte que les commentaires tentent de récupérer nom/email depuis le store (local storage ?)
