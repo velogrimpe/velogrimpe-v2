@@ -15,6 +15,11 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 - `lib/admin_image_upload.php` et `lib/admin_file_upload.php` partagent `lib/admin_upload.php` (jeton admin, méthode, nettoyage du slug). Les codes et messages d'erreur de l'upload d'image sont inchangés, à une exception près : un échec de téléversement autre que « pas de fichier » (typiquement le dépassement de `upload_max_filesize`) renvoie maintenant un message dédié au lieu de « No image uploaded », qui envoyait chercher au mauvais endroit.
 
+### Fixed
+
+- Fiche falaise : le lien « Trace GPS » d'un itinéraire ne s'affichait jamais, sur aucune falaise. L'existence du fichier était testée par `file_exists()` sur l'URL `/public/gpx/…`, donc sur un chemin absolu système qui n'existe pas. Le nom vient maintenant de `velo_gpx_rel()` et l'existence de `vg_data_exists()`.
+- `api/private/crons/export_open_data.php` : la réponse liste les itinéraires écartés de `itineraires-velo.geojson` (`itineraires_velo_sans_gpx_details` : `velo_id`, falaise, GPX attendu, raison) au lieu du seul compteur, qui obligeait à re-croiser les exports à la main. Le nom du GPX y est aussi reconstruit par `velo_gpx_rel()`, plus par concaténation locale.
+
 ## 2026-09-08
 
 ### Added
