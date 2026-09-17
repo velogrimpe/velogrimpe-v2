@@ -92,11 +92,24 @@ séparément.
 
 **Chemins de données (`public_html/lib/paths.php`) :**
 
-Les contenus téléversés et générés (`bdd/`, `images/`, `open-data/`) sont des
-données non versionnées. **Aucun chemin ne se construit à la main** : tout passe
-par `vg_data_path()` / `vg_data_url()` / `vg_data_exists()` / `vg_data_prepare()`,
-en lecture comme en écriture. Les arguments sont des chemins de l'espace d'URL
-(`'bdd/gpx/x.gpx'`), pas des chemins disque.
+Les contenus téléversés et générés vivent **hors du dossier déployé**, dans
+`public/` à la racine du dépôt (git-ignoré), atteint par le symlink versionné
+`public_html/public -> ../public`. **Aucun chemin ne se construit à la main** :
+tout passe par `vg_data_path()` / `vg_data_url()` / `vg_data_exists()` /
+`vg_data_prepare()`, en lecture comme en écriture. Les arguments sont des
+chemins de l'espace d'URL (`'bdd/gpx/x.gpx'`), pas des chemins disque.
+
+- `vg_data_url()` ne dépend jamais de l'emplacement de stockage : ces URL sont
+  stockées en base, publiées et envoyées par mail. Ne jamais dériver une URL par
+  `str_replace(DOCUMENT_ROOT, …)` sur un chemin disque — à travers le symlink,
+  la cible est hors `DOCUMENT_ROOT`.
+- `vg_data_prepare()` s'appelle **avant la première mutation** (avant l'`INSERT`,
+  avant `move_uploaded_file`) : c'est le seul point où un échec ne laisse pas de
+  ligne sans fichier.
+- Les URL publiques restent `/bdd/…` et `/images/…` : une règle du `.htaccess`
+  racine les résout vers le point de montage quand le fichier n'est pas dans le
+  dossier déployé. Ce repli est une règle **Apache** — il ne couvre pas les
+  lectures disque de PHP, qui visent toujours `public/`.
 
 Détails et règles `.htaccess` : section « Chemins de données » de
 `public_html/README.md`.

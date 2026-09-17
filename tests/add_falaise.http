@@ -140,10 +140,10 @@ GET http://localhost:4000/bdd/images_falaises/
 
 ### ---------------------------------------------------------------------------
 ### Point de montage des données (public_html/public -> ../public).
-### Les contenus téléversés sont joignables par deux URLs : l'historique
-### (/bdd/…, servie directement ou par la règle de repli du .htaccess racine) et
-### celle du point de montage (/public/bdd/…). Les deux doivent offrir les mêmes
-### garanties, sinon la migration rouvre la faille de juillet 2026.
+### Les contenus téléversés sont joignables par deux URLs : l'URL publique
+### (/bdd/…, résolue vers le point de montage par le .htaccess racine) et celle
+### du point de montage (/public/bdd/…). Les deux doivent offrir les mêmes
+### garanties, sinon on rouvre la faille de juillet 2026.
 ### ---------------------------------------------------------------------------
 
 ### Aucun PHP exécuté sous le point de montage => 403
@@ -158,18 +158,9 @@ GET http://localhost:4000/public/
 ### Idem sur un sous-dossier => 403
 GET http://localhost:4000/public/bdd/images_falaises/
 
-### Le download.php résiduel de la copie initiale ne doit pas s'exécuter => 403
+### Aucun script servi depuis l'arborescence de données => 403
 GET http://localhost:4000/public/open-data/download.php?f=falaises
 
-### Repli : un fichier présent uniquement dans ~/public reste servi sur son URL
-### historique. C'est le mécanisme qui rend la bascule de VG_DATA_MOUNT
-### transparente pour le front et pour les URLs stockées en base.
-### Préparation : echo test > public/bdd/gpx/_vg-test-repli.gpx  (et non dans public_html/)
-### Attendu : 200 + le contenu du fichier.
-GET http://localhost:4000/bdd/gpx/_vg-test-repli.gpx
-
-### PIÈGE À CONNAÎTRE : la règle de repli est conditionnée par !-f, donc un
-### fichier resté dans le dossier déployé GAGNE sur son homologue du point de
-### montage, silencieusement. Créer le même chemin relatif des deux côtés avec
-### des contenus différents renvoie la version de public_html/.
-### => Le déplacement des données à la MEP doit être un déplacement, pas une copie.
+### Une image téléversée reste servie sur son URL publique, alors que le fichier
+### vit dans ~/public. Reprendre le falaise_id d'un ajout avec image.
+GET http://localhost:4000/bdd/images_falaises/{{falaise_id}}_{{nomformate}}_img1.webp

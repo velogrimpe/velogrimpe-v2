@@ -11,9 +11,8 @@ Authorization: Bearer ADMIN_TOKEN
 ### upload-image — NON-RÉGRESSION D'URL, l'assertion la plus importante ici.
 ###
 ### L'URL renvoyée est stockée telle quelle en base (newsletters.sections).
-### Elle DOIT rester /bdd/images_news/<slug>/<fichier>, SANS préfixe /public,
-### quelle que soit la valeur de VG_DATA_MOUNT dans lib/paths.php — sinon la
-### bascule réécrit silencieusement toutes les images déjà référencées.
+### Elle DOIT rester /bdd/images_news/<slug>/<fichier>, SANS préfixe /public :
+### c'est une URL publique, elle ne reflète pas l'emplacement de stockage.
 ###
 ### La version précédente dérivait ce préfixe par
 ### str_replace(DOCUMENT_ROOT, '', $baseDir), qui ne matche plus à travers le

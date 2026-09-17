@@ -272,8 +272,7 @@ Content-Type: application/gpx+xml
 ### l'INSERT — les inclure pour exercer réellement l'écriture du GPX.
 ### ---------------------------------------------------------------------------
 
-### Le GPX écrit est servi sur son URL historique, que le fichier soit dans le
-### dossier déployé ou dans ~/public (règle de repli du .htaccess racine).
+### Le GPX écrit dans ~/public reste servi sur son URL publique /bdd/gpx/…
 ### Reprendre le velo_id retourné par la redirection de l'ajout valide.
 GET http://localhost:4000/bdd/gpx/{{velo_id}}_gare-test_falaise-test_.gpx
 
