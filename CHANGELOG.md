@@ -14,10 +14,13 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ### Changed
 
+- Suppression de l'entrée Vite `carte-search` et de `frontend/src/apps/carte-search.ts`, morts depuis que la recherche de falaise/gare a rejoint le contrôle de filtres de la carte : aucune page ne rendait plus le point de montage `#vue-search` ni ne chargeait `dist/carte-search.js`. Le composant `SearchAutocomplete.vue`, lui, reste utilisé (monté par `CarteMapFilters.vue`).
+
 - `lib/admin_image_upload.php` et `lib/admin_file_upload.php` partagent `lib/admin_upload.php` (jeton admin, méthode, nettoyage du slug). Les codes et messages d'erreur de l'upload d'image sont inchangés, à une exception près : un échec de téléversement autre que « pas de fichier » (typiquement le dépassement de `upload_max_filesize`) renvoie maintenant un message dédié au lieu de « No image uploaded », qui envoyait chercher au mauvais endroit.
 
 ### Fixed
 
+- Tests e2e : la suite repasse au vert (15 tests en échec). Trois causes, toutes côté tests : le sprite d'icônes inliné par le footer rend `#map` ambigu (un `<symbol id="map">` s'ajoute au conteneur de carte) ; les champs autocomplete protégés de l'autofill sont `readonly` tant qu'ils n'ont pas le focus, donc un `fill()` direct échoue ; et la recherche de la carte n'est plus un bloc `#vue-search` autonome mais vit dans le contrôle de filtres, repliée derrière un bouton. Au passage, des tests qui passaient sans rien vérifier (exposition, filtre insensible aux accents, caractères spéciaux, sélecteur de ville) assertent maintenant un comportement réel.
 - Fiche falaise : le lien « Trace GPS » d'un itinéraire ne s'affichait jamais, sur aucune falaise. L'existence du fichier était testée par `file_exists()` sur l'URL `/public/gpx/…`, donc sur un chemin absolu système qui n'existe pas. Le nom vient maintenant de `velo_gpx_rel()` et l'existence de `vg_data_exists()`.
 - `api/private/crons/export_open_data.php` : la réponse liste les itinéraires écartés de `itineraires-velo.geojson` (`itineraires_velo_sans_gpx_details` : `velo_id`, falaise, GPX attendu, raison) au lieu du seul compteur, qui obligeait à re-croiser les exports à la main. Le nom du GPX y est aussi reconstruit par `velo_gpx_rel()`, plus par concaténation locale.
 

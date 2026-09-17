@@ -23,7 +23,7 @@ velo-grimpe-v2/
 │   ├── images/                # Uploads admin
 │   └── open-data/             # Exports GeoJSON
 └── frontend/                  # Vue.js + Vite source
-    └── vite.config.ts         # Vite config with 11 entry points
+    └── vite.config.ts         # Vite config with 22 entry points
 ```
 
 ## Tech Stack

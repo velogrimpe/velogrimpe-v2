@@ -5,7 +5,9 @@ Tests end-to-end avec Playwright.
 ## Prérequis
 
 - Le serveur PHP doit tourner sur `http://localhost:4000`
-- Docker container `velogrimpe-2` démarré
+- Le conteneur Docker `velogrimpe` démarré, avec la base seedée (cf. CLAUDE.md)
+- Les tests lisent les données réelles de la base locale (falaises, gares, villes) :
+  une base vide les fait échouer
 
 ## Commandes
 

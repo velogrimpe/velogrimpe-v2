@@ -56,8 +56,13 @@ test.describe('Carte (Map)', () => {
   })
 
   test('search component exists', async ({ page }) => {
-    // Vue search component should be mounted
-    await expect(page.locator('#vue-search')).toBeVisible()
+    // La recherche est repliée dans le contrôle de filtres : le bouton l'ouvre.
+    // Ciblé par son title : le libellé texte est masqué en viewport mobile.
+    const bouton = page.locator('#vue-map-filters button[title="Rechercher une falaise ou une gare"]')
+    await expect(bouton).toBeVisible()
+
+    await bouton.click()
+    await expect(page.locator('#vue-map-filters input[type="text"]')).toBeVisible()
   })
 })
 

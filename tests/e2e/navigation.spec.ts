@@ -23,8 +23,9 @@ test.describe('Navigation', () => {
     // Should be on carte page
     await expect(page).toHaveURL(/carte/)
 
-    // Map container should exist
-    await expect(page.locator('#map')).toBeVisible()
+    // Le conteneur de carte : on le cherche dans <main>, car le sprite d'icônes
+    // inliné par le footer contient aussi un <symbol id="map">.
+    await expect(page.locator('main #map')).toBeVisible()
   })
 
   test('can navigate to tableau page', async ({ page }) => {

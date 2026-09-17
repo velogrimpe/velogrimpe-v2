@@ -35,13 +35,15 @@ test.describe('Falaise page', () => {
   test('ville selector works', async ({ page }) => {
     await page.goto(`/falaise.php?falaise_id=${testFalaiseId}`)
 
-    // Look for ville/city selector
-    const villeSelector = page.locator('select[name*="ville"], #ville, [id*="ville"] select')
+    // Le choix d'une ville de départ recharge la page sur cette ville.
+    const villeSelector = page.locator('select[name="ville_id"]')
+    await expect(villeSelector).toBeVisible()
 
-    if (await villeSelector.isVisible()) {
-      // Get initial options count
-      const optionsCount = await villeSelector.locator('option').count()
-      expect(optionsCount).toBeGreaterThan(0)
-    }
+    const villes = villeSelector.locator('option[value]:not([value=""])')
+    expect(await villes.count()).toBeGreaterThan(0)
+
+    const villeId = await villes.first().getAttribute('value')
+    await villeSelector.selectOption(villeId!)
+    await expect(page).toHaveURL(new RegExp(`ville_id=${villeId}`))
   })
 })

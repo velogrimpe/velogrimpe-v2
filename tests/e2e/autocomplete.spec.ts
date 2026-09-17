@@ -1,4 +1,17 @@
-import { test, expect, Page } from '@playwright/test'
+import { test, expect, Locator, Page } from '@playwright/test'
+
+/**
+ * Saisit du texte dans un champ autocomplete.
+ *
+ * Certains de ces champs (option `preventAutofill`, cf. Autocomplete.vue) sont
+ * `readonly` tant qu'ils n'ont pas le focus, pour que les gestionnaires de mots
+ * de passe n'y injectent rien. Un `fill()` direct échoue donc : il faut cliquer
+ * d'abord, comme le ferait un utilisateur.
+ */
+async function saisir(input: Locator, texte: string) {
+  await input.click()
+  await input.fill(texte)
+}
 
 /**
  * Helper pour tester un champ autocomplete
@@ -17,11 +30,8 @@ async function testAutocomplete(
   const input = page.locator(inputSelector)
   await expect(input).toBeVisible()
 
-  // Vider le champ d'abord
-  await input.clear()
-
-  // Taper le texte de recherche
-  await input.fill(searchText)
+  // Taper le texte de recherche (saisir() remplace le contenu existant)
+  await saisir(input, searchText)
 
   // Attendre que le dropdown apparaisse
   const dropdown = page.locator('.autocomplete-list')
@@ -53,11 +63,13 @@ async function testAutocomplete(
 async function testAutocompleteKeyboard(
   page: Page,
   inputSelector: string,
-  searchText: string
+  searchText: string,
+  // La recherche de la carte se replie une fois l'option choisie : le champ
+  // disparaît alors au lieu de porter la valeur sélectionnée.
+  options: { seFermeApresSelection?: boolean } = {}
 ) {
   const input = page.locator(inputSelector)
-  await input.clear()
-  await input.fill(searchText)
+  await saisir(input, searchText)
 
   // Attendre le dropdown
   const dropdown = page.locator('.autocomplete-list')
@@ -83,6 +95,11 @@ async function testAutocompleteKeyboard(
   // Le dropdown devrait se fermer
   await expect(dropdown).not.toBeVisible()
 
+  if (options.seFermeApresSelection) {
+    await expect(input).toHaveCount(0)
+    return
+  }
+
   // L'input devrait avoir une valeur
   const value = await input.inputValue()
   expect(value.length).toBeGreaterThan(0)
@@ -100,7 +117,7 @@ test.describe('Autocomplete - Ajout Falaise', () => {
 
   test('autocomplete falaise affiche des suggestions', async ({ page }) => {
     const input = page.locator('#vue-ajout-falaise input[type="text"]')
-    await input.fill('Pont')
+    await saisir(input, 'Pont')
 
     const dropdown = page.locator('.autocomplete-list')
     await expect(dropdown).toBeVisible()
@@ -130,7 +147,7 @@ test.describe('Autocomplete - Ajout Falaise', () => {
 
   test('autocomplete falaise - Escape vide le champ', async ({ page }) => {
     const input = page.locator('#vue-ajout-falaise input[type="text"]')
-    await input.fill('Pont')
+    await saisir(input, 'Pont')
 
     const dropdown = page.locator('.autocomplete-list')
     await expect(dropdown).toBeVisible()
@@ -142,19 +159,22 @@ test.describe('Autocomplete - Ajout Falaise', () => {
   })
 
   test('autocomplete falaise - filtre insensible aux accents', async ({ page }) => {
-    const input = page.locator('#vue-ajout-falaise input[type="text"]')
+    // On prend une vraie falaise accentuée du catalogue de la page, et on la
+    // cherche sans ses accents : elle doit quand même être proposée.
+    const accentuee = await page.evaluate(() => {
+      const el = document.getElementById('vue-ajout-falaise')
+      const falaises = JSON.parse(el?.dataset.falaises || '[]') as { nom: string }[]
+      return falaises.map((f) => f.nom).find((nom) => /[éèêëàâîïôöûùç]/i.test(nom)) ?? null
+    })
+    expect(accentuee, 'aucune falaise accentuée dans le jeu de données').not.toBeNull()
 
-    // Taper sans accent
-    await input.fill('cret')
+    const sansAccent = accentuee!.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    const input = page.locator('#vue-ajout-falaise input[type="text"]')
+    await saisir(input, sansAccent)
 
     const dropdown = page.locator('.autocomplete-list')
     await expect(dropdown).toBeVisible()
-
-    // Devrait trouver des falaises avec "crêt" ou "crét"
-    const options = dropdown.locator('li')
-    const count = await options.count()
-    // On vérifie juste que le filtre fonctionne
-    expect(count).toBeGreaterThanOrEqual(0)
+    await expect(dropdown.locator('li').filter({ hasText: accentuee! }).first()).toBeVisible()
   })
 })
 
@@ -172,7 +192,7 @@ test.describe('Autocomplete - Ajout Vélo', () => {
     // Le premier container est la gare
     const gareContainer = page.locator('#vue-ajout-velo > div > div').first()
     const gareInput = gareContainer.locator('input[type="text"]')
-    await gareInput.fill('Lyon')
+    await saisir(gareInput, 'Lyon')
 
     const dropdown = gareContainer.locator('.autocomplete-list')
     await expect(dropdown).toBeVisible()
@@ -185,7 +205,7 @@ test.describe('Autocomplete - Ajout Vélo', () => {
   test('autocomplete gare sélectionne une option et remplit le champ caché', async ({ page }) => {
     const gareContainer = page.locator('#vue-ajout-velo > div > div').first()
     const gareInput = gareContainer.locator('input[type="text"]')
-    await gareInput.fill('Lyon')
+    await saisir(gareInput, 'Lyon')
 
     const dropdown = gareContainer.locator('.autocomplete-list')
     await expect(dropdown).toBeVisible()
@@ -204,7 +224,7 @@ test.describe('Autocomplete - Ajout Vélo', () => {
     // Le deuxième container est la falaise
     const falaiseContainer = page.locator('#vue-ajout-velo > div > div').nth(1)
     const falaiseInput = falaiseContainer.locator('input[type="text"]')
-    await falaiseInput.fill('Pont')
+    await saisir(falaiseInput, 'Pont')
 
     const dropdown = falaiseContainer.locator('.autocomplete-list')
     await expect(dropdown).toBeVisible()
@@ -217,7 +237,7 @@ test.describe('Autocomplete - Ajout Vélo', () => {
   test('autocomplete falaise sélectionne une option et remplit le champ caché', async ({ page }) => {
     const falaiseContainer = page.locator('#vue-ajout-velo > div > div').nth(1)
     const falaiseInput = falaiseContainer.locator('input[type="text"]')
-    await falaiseInput.fill('Pont')
+    await saisir(falaiseInput, 'Pont')
 
     const dropdown = falaiseContainer.locator('.autocomplete-list')
     await expect(dropdown).toBeVisible()
@@ -237,12 +257,12 @@ test.describe('Autocomplete - Ajout Vélo', () => {
 
     // Sélectionner une gare
     const gareInput = gareContainer.locator('input[type="text"]')
-    await gareInput.fill('Lyon')
+    await saisir(gareInput, 'Lyon')
     await gareContainer.locator('.autocomplete-list li').filter({ hasText: /Lyon/ }).first().click()
 
     // Sélectionner une falaise
     const falaiseInput = falaiseContainer.locator('input[type="text"]')
-    await falaiseInput.fill('Pont')
+    await saisir(falaiseInput, 'Pont')
     await falaiseContainer.locator('.autocomplete-list li').filter({ hasText: /Pont/ }).first().click()
 
     // Vérifier les deux champs cachés
@@ -257,7 +277,7 @@ test.describe('Autocomplete - Ajout Vélo', () => {
     const gareContainer = page.locator('#vue-ajout-velo > div > div').first()
     const gareInput = gareContainer.locator('input[type="text"]')
 
-    await gareInput.fill('Lyon')
+    await saisir(gareInput, 'Lyon')
 
     const dropdown = gareContainer.locator('.autocomplete-list')
     await expect(dropdown).toBeVisible()
@@ -289,7 +309,7 @@ test.describe('Autocomplete - Ajout Train', () => {
 
   test('autocomplete gare affiche des suggestions', async ({ page }) => {
     const input = page.locator('#vue-ajout-train input[type="text"]')
-    await input.fill('Dijon')
+    await saisir(input, 'Dijon')
 
     const dropdown = page.locator('.autocomplete-list')
     await expect(dropdown).toBeVisible()
@@ -301,7 +321,7 @@ test.describe('Autocomplete - Ajout Train', () => {
 
   test('autocomplete gare sélectionne une option', async ({ page }) => {
     const input = page.locator('#vue-ajout-train input[type="text"]')
-    await input.fill('Dijon')
+    await saisir(input, 'Dijon')
 
     const dropdown = page.locator('.autocomplete-list')
     await expect(dropdown).toBeVisible()
@@ -320,7 +340,7 @@ test.describe('Autocomplete - Ajout Train', () => {
 
   test('autocomplete gare remplit aussi train_arrivee', async ({ page }) => {
     const input = page.locator('#vue-ajout-train input[type="text"]')
-    await input.fill('Dijon')
+    await saisir(input, 'Dijon')
 
     const dropdown = page.locator('.autocomplete-list')
     await expect(dropdown).toBeVisible()
@@ -340,14 +360,20 @@ test.describe('Autocomplete - Ajout Train', () => {
 // =============================================================================
 
 test.describe('Autocomplete - Carte recherche', () => {
+  // La recherche n'est plus un bloc autonome (#vue-search) : elle vit dans le
+  // contrôle de filtres de la carte, repliée derrière un bouton « Rechercher ».
+  const RECHERCHE = '#vue-map-filters input[type="text"]'
+
   test.beforeEach(async ({ page }) => {
     await page.goto('/carte.php')
-    await page.waitForSelector('#vue-search')
+    await page.waitForSelector('#vue-map-filters')
+    await page.locator('#vue-map-filters button[title="Rechercher une falaise ou une gare"]').click()
+    await page.waitForSelector(RECHERCHE)
   })
 
   test('autocomplete recherche affiche des suggestions de falaises', async ({ page }) => {
-    const input = page.locator('#vue-search input[type="text"]')
-    await input.fill('Pont')
+    const input = page.locator(RECHERCHE)
+    await saisir(input, 'Pont')
 
     const dropdown = page.locator('.autocomplete-list')
     await expect(dropdown).toBeVisible()
@@ -359,8 +385,8 @@ test.describe('Autocomplete - Carte recherche', () => {
   })
 
   test('autocomplete recherche affiche des suggestions de gares', async ({ page }) => {
-    const input = page.locator('#vue-search input[type="text"]')
-    await input.fill('Lyon')
+    const input = page.locator(RECHERCHE)
+    await saisir(input, 'Lyon')
 
     const dropdown = page.locator('.autocomplete-list')
     await expect(dropdown).toBeVisible()
@@ -372,8 +398,8 @@ test.describe('Autocomplete - Carte recherche', () => {
   })
 
   test('sélectionner une falaise émet un événement', async ({ page }) => {
-    const input = page.locator('#vue-search input[type="text"]')
-    await input.fill('Pont')
+    const input = page.locator(RECHERCHE)
+    await saisir(input, 'Pont')
 
     const dropdown = page.locator('.autocomplete-list')
     await expect(dropdown).toBeVisible()
@@ -398,8 +424,8 @@ test.describe('Autocomplete - Carte recherche', () => {
   })
 
   test('sélectionner une gare émet un événement', async ({ page }) => {
-    const input = page.locator('#vue-search input[type="text"]')
-    await input.fill('Lyon')
+    const input = page.locator(RECHERCHE)
+    await saisir(input, 'Lyon')
 
     const dropdown = page.locator('.autocomplete-list')
     await expect(dropdown).toBeVisible()
@@ -424,11 +450,9 @@ test.describe('Autocomplete - Carte recherche', () => {
   })
 
   test('navigation clavier sur recherche', async ({ page }) => {
-    await testAutocompleteKeyboard(
-      page,
-      '#vue-search input[type="text"]',
-      'Lyon'
-    )
+    await testAutocompleteKeyboard(page, RECHERCHE, 'Lyon', {
+      seFermeApresSelection: true,
+    })
   })
 })
 
@@ -441,32 +465,30 @@ test.describe('Autocomplete - Robustesse', () => {
     await page.goto('/ajout/ajout_falaise.php')
     await page.waitForSelector('#vue-ajout-falaise')
 
+    // À enregistrer avant les saisies à risque, sinon rien n'est capté.
+    const errors: string[] = []
+    page.on('pageerror', (err) => errors.push(err.message))
+
     const input = page.locator('#vue-ajout-falaise input[type="text"]')
 
     // Caractères spéciaux
-    await input.fill('<script>alert("xss")</script>')
+    await saisir(input, '<script>alert("xss")</script>')
     // Pas d'erreur JS, le dropdown peut être vide ou pas
     await page.waitForTimeout(200)
 
     // Emoji
-    await input.clear()
-    await input.fill('🧗‍♂️')
+    await saisir(input, '🧗‍♂️')
     await page.waitForTimeout(200)
 
     // Guillemets
-    await input.clear()
-    await input.fill('"test"')
+    await saisir(input, '"test"')
     await page.waitForTimeout(200)
 
-    // Pas d'erreur console critique
-    const errors: string[] = []
-    page.on('pageerror', (err) => errors.push(err.message))
+    await saisir(input, 'test normal')
 
-    await input.clear()
-    await input.fill('test normal')
-
-    // Pas d'erreurs fatales
-    expect(errors.filter(e => e.includes('TypeError') || e.includes('SyntaxError'))).toHaveLength(0)
+    // Aucune erreur JS, et le champ reste utilisable.
+    expect(errors).toEqual([])
+    await expect(input).toHaveValue('test normal')
   })
 
   test('autocomplete fonctionne après navigation retour', async ({ page }) => {
@@ -483,7 +505,7 @@ test.describe('Autocomplete - Robustesse', () => {
 
     // L'autocomplete devrait fonctionner
     const input = page.locator('#vue-ajout-falaise input[type="text"]')
-    await input.fill('Pont')
+    await saisir(input, 'Pont')
 
     const dropdown = page.locator('.autocomplete-list')
     await expect(dropdown).toBeVisible()

@@ -14,7 +14,6 @@ export default defineConfig({
         main: resolve(__dirname, "src/apps/main.ts"),
         // 'map' is built separately with esbuild for IIFE format (see build-map.ts)
         "carte-info": resolve(__dirname, "src/apps/carte-info.ts"),
-        "carte-search": resolve(__dirname, "src/apps/carte-search.ts"),
         tableau: resolve(__dirname, "src/apps/tableau.ts"),
         utils: resolve(__dirname, "src/apps/utils.ts"),
         "ajout-velo": resolve(__dirname, "src/apps/ajout-velo.ts"),

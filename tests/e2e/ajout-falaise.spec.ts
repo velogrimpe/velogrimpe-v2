@@ -20,7 +20,9 @@ test.describe('Ajout Falaise form', () => {
     const autocompleteInput = page.locator('#vue-ajout-falaise input[type="text"]').first()
     await expect(autocompleteInput).toBeVisible()
 
-    // Type something to test autocomplete
+    // Le champ est readonly tant qu'il n'a pas le focus (protection anti-autofill,
+    // cf. Autocomplete.vue) : on clique avant d'écrire.
+    await autocompleteInput.click()
     await autocompleteInput.fill('test')
 
     // Input should have the value
@@ -43,25 +45,32 @@ test.describe('Ajout Falaise form', () => {
   })
 
   test('required fields are marked', async ({ page }) => {
-    // Try to submit empty form
-    const submitButton = page.locator('button[type="submit"]')
-    await submitButton.click()
-
-    // Form should not submit (required fields)
-    // We should still be on the same page
+    // Le formulaire vide ne part pas…
+    await page.locator('button[type="submit"]').click()
     await expect(page).toHaveURL(/ajout_falaise/)
+
+    // …et c'est bien la validation qui l'en empêche : au moins un champ
+    // obligatoire est en erreur.
+    const invalides = page.locator('form#form :invalid')
+    expect(await invalides.count()).toBeGreaterThan(0)
   })
 
   test('exposition selectors work', async ({ page }) => {
-    // Wait for Vue components
     await page.waitForSelector('#vue-exposhort1')
+    const expo = page.locator('#vue-exposhort1')
 
-    // Click on exposition dropdown
-    const expoSelect = page.locator('#vue-exposhort1')
-    await expoSelect.click()
+    // Le champ ouvre une liste d'orientations…
+    await expo.click()
+    const options = expo.locator('.absolute .badge')
+    await expect(options.first()).toBeVisible()
 
-    // Options should appear
-    await page.waitForTimeout(200)
+    // …et le choix alimente le champ envoyé au serveur (valeurs entre
+    // apostrophes, comme les attend l'insertion : 'N', 'N','E'…).
+    const choisie = (await options.first().textContent())?.trim() ?? ''
+    await options.first().click()
+    await expect(expo.locator('input[name="falaise_exposhort1"]')).toHaveValue(
+      new RegExp(`'${choisie}'`),
+    )
   })
 
   test('rose des vents preview updates', async ({ page }) => {
