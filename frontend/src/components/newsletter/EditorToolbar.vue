@@ -1,10 +1,30 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { Editor } from '@tiptap/vue-3'
+import type { FileUploader, ImageUploader } from '@/types/upload'
 
 const props = defineProps<{
   editor: Editor
+  /** Téléversement d'image ; absent, seule l'insertion par URL est proposée. */
+  uploadImage?: ImageUploader
+  /** Téléversement de pièce jointe ; absent, le bouton n'est pas affiché. */
+  uploadFile?: FileUploader
 }>()
+
+// Inputs fichier cachés : un clic de bouton les déclenche, le navigateur ouvre
+// son sélecteur natif.
+const imageInput = ref<HTMLInputElement | null>(null)
+const fileInput = ref<HTMLInputElement | null>(null)
+
+// Téléversement en cours ('image' | 'file') : désactive les deux boutons et
+// affiche un spinner, l'aller-retour serveur n'étant pas instantané.
+const busy = ref<'image' | 'file' | null>(null)
+
+// Filtre du sélecteur natif. Doit rester aligné sur l'allowlist du serveur
+// (vg_file_upload_allowed_extensions(), lib/admin_file_upload.php) : ici c'est
+// un confort de saisie, la validation qui fait foi est celle du serveur.
+const FILE_ACCEPT =
+  '.pdf,.doc,.docx,.odt,.rtf,.xls,.xlsx,.ods,.csv,.ppt,.pptx,.odp,.txt,.md,.zip,.gpx,.kml,.geojson,.jpg,.jpeg,.png,.webp,.gif'
 
 function setLink() {
   const previousUrl = props.editor.getAttributes('link').href
@@ -21,10 +41,82 @@ function setLink() {
   }).run()
 }
 
-function addImage() {
+function addImageFromUrl() {
+  closeDropdown()
   const url = window.prompt("URL de l'image :")
   if (url) {
     props.editor.chain().focus().setImage({ src: url }).run()
+  }
+}
+
+/** Ferme le menu DaisyUI, qui reste ouvert tant que l'élément a le focus. */
+function closeDropdown() {
+  ;(document.activeElement as HTMLElement | null)?.blur()
+}
+
+function pickImage() {
+  closeDropdown()
+  imageInput.value?.click()
+}
+
+/** Téléverse l'image choisie et l'insère — même chemin que le copier-coller. */
+async function onImagePicked(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  // Réinitialisé tout de suite : sans ça, re-choisir le même fichier après une
+  // suppression n'émet pas de nouvel événement `change`.
+  input.value = ''
+  if (!file || !props.uploadImage) return
+
+  busy.value = 'image'
+  try {
+    const url = await props.uploadImage(file)
+    if (url) {
+      props.editor.chain().focus().setImage({ src: url }).run()
+    }
+  } finally {
+    busy.value = null
+  }
+}
+
+function pickFile() {
+  fileInput.value?.click()
+}
+
+/**
+ * Téléverse le fichier choisi et insère un lien vers lui : sur la sélection
+ * courante si elle n'est pas vide, sinon un nouveau lien libellé par le nom
+ * d'origine du fichier.
+ */
+async function onFilePicked(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file || !props.uploadFile) return
+
+  busy.value = 'file'
+  try {
+    const uploaded = await props.uploadFile(file)
+    if (!uploaded) return
+    const attrs = { href: uploaded.url, target: '_blank', rel: 'noopener' }
+    if (props.editor.state.selection.empty) {
+      props.editor
+        .chain()
+        .focus()
+        .insertContent({
+          type: 'text',
+          text: uploaded.name,
+          marks: [{ type: 'link', attrs }],
+        })
+        // La marque lien est « inclusive » (autolink) : sans ce retrait, le
+        // texte tapé juste après le lien en ferait partie.
+        .unsetMark('link')
+        .run()
+    } else {
+      props.editor.chain().focus().extendMarkRange('link').setLink(attrs).run()
+    }
+  } finally {
+    busy.value = null
   }
 }
 
@@ -251,14 +343,49 @@ function unsetHighlight() {
 
     <span class="w-px h-5 bg-base-300 mx-1"></span>
 
-    <!-- Image & separator -->
+    <!-- Image : téléversement ou URL -->
+    <div v-if="uploadImage" class="dropdown">
+      <div
+        tabindex="0"
+        role="button"
+        class="btn btn-xs btn-ghost"
+        :class="{ 'btn-disabled': busy !== null }"
+        title="Image"
+      >
+        <span v-if="busy === 'image'" class="loading loading-spinner loading-xs"></span>
+        <svg v-else class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      </div>
+      <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-10 w-60 p-2 shadow border border-base-300">
+        <li><button type="button" @click="pickImage">Téléverser une image…</button></li>
+        <li><button type="button" @click="addImageFromUrl">Insérer depuis une URL…</button></li>
+      </ul>
+    </div>
     <button
+      v-else
       class="btn btn-xs btn-ghost"
-      @click="addImage"
+      @click="addImageFromUrl"
       title="Image (URL)"
     >
       <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
     </button>
+
+    <!-- Pièce jointe : téléverse un fichier et insère un lien vers lui -->
+    <button
+      v-if="uploadFile"
+      class="btn btn-xs btn-ghost"
+      :disabled="busy !== null"
+      @click="pickFile"
+      title="Joindre un fichier (PDF, tableur…)"
+    >
+      <span v-if="busy === 'file'" class="loading loading-spinner loading-xs"></span>
+      <svg v-else class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+    </button>
+
+    <!-- Sélecteurs natifs, déclenchés par les boutons ci-dessus -->
+    <input ref="imageInput" type="file" accept="image/*" class="hidden" @change="onImagePicked" />
+    <input ref="fileInput" type="file" :accept="FILE_ACCEPT" class="hidden" @change="onFilePicked" />
+
+    <!-- Séparateur horizontal -->
     <button
       class="btn btn-xs btn-ghost"
       @click="editor.chain().focus().setHorizontalRule().run()"

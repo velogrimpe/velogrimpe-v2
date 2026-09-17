@@ -2,10 +2,12 @@
 import { ref, computed } from 'vue'
 import type { PageSection } from '@/types/page'
 import SectionTextEditor from '@/components/newsletter/SectionTextEditor.vue'
+import type { FileUploader, ImageUploader } from '@/types/upload'
 
 const props = defineProps<{
   section: Extract<PageSection, { type: 'iframe' }>
-  upload: (file: File) => Promise<string | null>
+  upload: ImageUploader
+  uploadFile?: FileUploader
 }>()
 
 const emit = defineEmits<{
@@ -39,6 +41,7 @@ function update(patch: Partial<Extract<PageSection, { type: 'iframe' }>>) {
       <SectionTextEditor
         :html="section.intro_html ?? ''"
         :upload="upload"
+        :upload-file="uploadFile"
         @update:html="update({ intro_html: $event })"
       />
     </div>

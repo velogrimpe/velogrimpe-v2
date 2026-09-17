@@ -113,6 +113,7 @@ function moveRegion(index: number, direction: -1 | 1) {
       <SectionTextEditor
         :html="section.intro_html ?? ''"
         :upload="(file) => store.uploadImage(file, slug)"
+        :upload-file="(file) => store.uploadFile(file, slug)"
         @update:html="updateIntroHtml"
       />
     </div>

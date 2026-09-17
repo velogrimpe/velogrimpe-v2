@@ -287,6 +287,7 @@ function goBack() {
           v-if="section.type === 'text'"
           :html="section.html"
           :upload="(file) => store.uploadImage(file, page.slug)"
+          :upload-file="(file) => store.uploadFile(file, page.slug)"
           @update:html="updateSectionHtml(i, $event)"
         />
 
@@ -294,6 +295,7 @@ function goBack() {
           v-else-if="section.type === 'iframe'"
           :section="section"
           :upload="(file) => store.uploadImage(file, page.slug)"
+          :upload-file="(file) => store.uploadFile(file, page.slug)"
           @update:section="updateSection(i, $event)"
         />
       </div>

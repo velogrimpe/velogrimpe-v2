@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { Newsletter } from '@/types/newsletter'
+import type { UploadedFile } from '@/types/upload'
 
 export const useNewsletterStore = defineStore('newsletter', () => {
   const list = ref<Newsletter[]>([])
@@ -121,6 +122,35 @@ export const useNewsletterStore = defineStore('newsletter', () => {
     }
   }
 
+  async function uploadFile(file: File, slug: string): Promise<UploadedFile | null> {
+    if (!slug) {
+      error.value = 'Renseignez le slug avant de téléverser un fichier'
+      return null
+    }
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('slug', slug)
+      const res = await fetch('/api/private/newsletter/upload-file.php', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + getToken() },
+        body: formData,
+      })
+      const text = await res.text()
+      let data: any
+      try {
+        data = JSON.parse(text)
+      } catch {
+        throw new Error('Réponse serveur invalide : ' + text.substring(0, 200))
+      }
+      if (!res.ok) throw new Error(data.error ?? text)
+      return { url: data.url, name: data.name }
+    } catch (e: any) {
+      error.value = e.message
+      return null
+    }
+  }
+
   function getPreviewUrl(id: number, format: 'web' | 'email'): string {
     return `/api/private/newsletter/render.php?id=${id}&format=${format}&token=${getToken()}`
   }
@@ -167,6 +197,7 @@ export const useNewsletterStore = defineStore('newsletter', () => {
     save,
     deleteNewsletter,
     uploadImage,
+    uploadFile,
     getPreviewUrl,
     sendNewsletter,
     getSendStatus,

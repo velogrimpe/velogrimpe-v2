@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { CmsPage } from '@/types/page'
+import type { UploadedFile } from '@/types/upload'
 
 export const usePagesStore = defineStore('pages', () => {
   const list = ref<CmsPage[]>([])
@@ -113,6 +114,35 @@ export const usePagesStore = defineStore('pages', () => {
     }
   }
 
+  async function uploadFile(file: File, slug: string): Promise<UploadedFile | null> {
+    if (!slug) {
+      error.value = 'Renseignez le slug avant de téléverser un fichier'
+      return null
+    }
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('slug', slug)
+      const res = await fetch('/api/private/pages/upload-file.php', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + getToken() },
+        body: formData,
+      })
+      const text = await res.text()
+      let data: any
+      try {
+        data = JSON.parse(text)
+      } catch {
+        throw new Error('Réponse serveur invalide : ' + text.substring(0, 200))
+      }
+      if (!res.ok) throw new Error(data.error ?? text)
+      return { url: data.url, name: data.name }
+    } catch (e: any) {
+      error.value = e.message
+      return null
+    }
+  }
+
   function getPreviewUrl(slug: string): string {
     return `/p/${slug}?admin=${getToken()}`
   }
@@ -127,6 +157,7 @@ export const usePagesStore = defineStore('pages', () => {
     save,
     deletePage,
     uploadImage,
+    uploadFile,
     getPreviewUrl,
   }
 })

@@ -8,10 +8,14 @@ import EditorToolbar from "./EditorToolbar.vue";
 import { Caption } from "./caption-extension";
 import { ResizableImage } from "./resizable-image";
 import { TextAlign } from "./text-align";
+import type { FileUploader, ImageUploader } from "@/types/upload";
 
 const props = defineProps<{
   html: string;
-  upload: (file: File) => Promise<string | null>;
+  /** Téléversement d'image : collage dans le texte et bouton de la barre. */
+  upload: ImageUploader;
+  /** Téléversement de pièce jointe ; absent, le bouton n'est pas affiché. */
+  uploadFile?: FileUploader;
 }>();
 
 const emit = defineEmits<{
@@ -89,7 +93,11 @@ onBeforeUnmount(() => {
     v-if="editor"
     class="border border-base-300 rounded-lg focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary"
   >
-    <EditorToolbar :editor="editor" />
+    <EditorToolbar
+      :editor="editor"
+      :upload-image="upload"
+      :upload-file="uploadFile"
+    />
     <EditorContent
       :editor="editor"
       class="prose prose-p:my-1 prose-p:first:mt-0 prose-p:last:mb-0 max-w-none bg-base-100 rounded-b-lg [&_.ProseMirror]:min-h-[200px] [&_.ProseMirror]:p-1 [&_.ProseMirror]:cursor-text [&_.ProseMirror]:outline-none"

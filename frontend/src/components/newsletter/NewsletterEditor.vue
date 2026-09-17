@@ -237,6 +237,7 @@ function goBack() {
           v-if="section.type === 'text'"
           :html="section.html ?? ''"
           :upload="(file) => store.uploadImage(file, newsletter.slug)"
+          :upload-file="(file) => store.uploadFile(file, newsletter.slug)"
           @update:html="updateSectionHtml(i, $event)"
         />
 
