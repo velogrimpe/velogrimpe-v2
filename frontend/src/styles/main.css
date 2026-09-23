@@ -145,6 +145,25 @@
 }
 
 /*
+ * Popup de confirmation de placement (clic sur la carte des formulaires
+ * d'ajout falaise/bus) : ne contient qu'un bouton, le padding par défaut de
+ * Leaflet (pensé pour du texte) est disproportionné.
+ */
+.vg-placement-popup .leaflet-popup-content-wrapper {
+  padding: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+}
+.vg-placement-popup .leaflet-popup-content {
+  margin: 0;
+}
+.vg-placement-popup .leaflet-popup-tip {
+  width: 12px;
+  height: 12px;
+  background: var(--color-primary);
+}
+
+/*
  * DaisyUI v5 compatibility - form-control was removed in v5
  * Re-implemented for backward compatibility (outside @layer to override DaisyUI)
  */
