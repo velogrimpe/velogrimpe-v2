@@ -25,8 +25,6 @@ Description de la table arrets:
 
 ##### Migration des arrêts de bus
 
-> bus_arrets.id (int) et gares.gare_id (smallint) sont deux espaces d’ID distincts
-
 Les gares sont plus centrales dans le code actuel, donc pas de modification des ids de gares. Après migration du schéma de la table, on réimportera les arrêts de bus dans la nouvelle table arrets.
 
 ##### Gares TER/TGV
