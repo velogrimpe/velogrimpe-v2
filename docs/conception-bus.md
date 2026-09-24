@@ -108,7 +108,7 @@ Voici les steps de zoom et les options d'apparence:
 - Gares TER+TGV : comportement actuel différent selon que la gare est reliée ou non à un itinéraire vélo affiché sur la carte (`gare.access.length`) :
   - Gares hors topo (aucun itinéraire vélo relié) : Rien -z=11-> point (cercle, rayon 4px, contour blanc, noir si TER seul / `#a00` si TGV)
   - Gares topo (reliées à un itinéraire vélo) : Rien -z=9-> icône train (PNG `icone_train_carte.png`, 24px, teinte rouge via la classe CSS `filterred` si TGV)
-- Bus/Tram/Téléphérique : Rien -z=9-> Point jaune ({% Couleur actuelle de l'arrêt de bus %}) -z=11-> icone sur fond jaune, inspiré de l'icone bus actuel.
+- Bus/Tram/Téléphérique : Rien -z=9-> Point jaune (html: gold) -z=11-> icone sur fond jaune (gold), inspiré de l'icone bus actuel.
 
 On garde le même comportement hover/click des gares actuellement. La seule exception est le fait qu'il y aura des itinéraires piétons (liens arrêt -> falaise de la table acces_pieton_falaise) qu'il faut représenter par un trait droit arrêt -> falaise.
 
