@@ -23,6 +23,16 @@ Description de la table arrets:
 - teleph: boolean (l'arrêt est desservi en telephérique)
 - deleted: boolean (arrêt supprimé)
 
+##### Migration des arrêts de bus
+
+> bus_arrets.id (int) et gares.gare_id (smallint) sont deux espaces d’ID distincts
+
+Les gares sont plus centrales dans le code actuel, donc pas de modification des ids de gares. Après migration du schéma de la table, on réimportera les arrêts de bus dans la nouvelle table arrets.
+
+##### Gares TER/TGV
+
+Actuellement notre base est moins expressive : on n'identifie que les gares TGV qui ne sont QUE des gares TGV (pas desservies en TER), mais pas les gares TER+TGV. Il faudra repasser sur l'ensemble des gares TER desservies en TGV, à la main.
+
 #### Références externe des arrêts
 
 Accompagné d'une table de références externes (références sncf, osm, motis, etc.). Il peut y avoir plusieurs références pour un même arret et une même source, pas de contraintes d'unicité, donc.
@@ -35,7 +45,11 @@ Accompagné d'une table de références externes (références sncf, osm, motis,
 
 #### Liaisons Piétonnes Arrêts --> Falaise
 
-Renommer la table bus_arrets_falaise en arrets_falaise et ajouter un champ description
+Renommer la table bus_arrets_falaise en acces_pieton_falaise et ajouter un champ description
+
+#### lignes de transports
+
+cf. section dédiée dans l'étape 7.
 
 ### Etape 2 : Formulaire d'ajout d'arrêt (refonte formulaire ajout bus)
 
@@ -51,7 +65,7 @@ On permet aussi de lier aux falaises (accès piétons uniquement, indiquer que d
 
 Modifier la requête overpass de recherche d'arrêts de bus ou en créer d'autres pour les autres types d'arrêts BTT (mais pas de recherche de gares ter/tgv).
 
-Sur la carte il faudrait ajouter les couches de lignes de trains, montrer les arrêts existants dans la base de données.
+Sur la carte du formulaire, il faudrait ajouter les couches de lignes de trains (pmtiles et layers existants (trainlinesLayer et tgvLayers)), et montrer les arrêts existants dans la base de données.
 Il faut que chaque type d'arrêt soit représenté par un icone différent, représentatif du type (icones existants: train, tgv, aerial-tram (telepherique), tram, bus-stop). Quand il y a plusieurs type voici la priorité d'icone : ter > tgv > tram > telepherique > bus). Cette logique va être réutilisée partout donc il faut factoriser la résolution et la création de marqueurs arrêts.
 
 À l'écran de confirmation proposer d'ajouter un itinéraire vélo au départ de cet arrêt.
@@ -64,7 +78,7 @@ Requête GET sur `https://data.geopf.fr/geocodage/reverse?lon={longitude}&lat={l
 
 - Afficher tous les arrêts déjà en BDD en jaune pâle sur l'éditeur de détail.
 - Afficher les lignes de trains dans une couche optionnelle.
-- Permettre de "lier" un arrêt BTT à la falaise en cliquant dessus (et remplir la table arrets_falaise). Bien indiquer que cela signifie que l'on peut aller de l'arrêt à la falaise à pied.
+- Permettre de "lier" un arrêt BTT à la falaise en cliquant dessus (et remplir la table acces_pieton_falaise). Bien indiquer que cela signifie que l'on peut aller de l'arrêt à la falaise à pied.
 - Permettre de lancer une recherche avec overpass pour faire apparaitre d'autres arrêts BTT non encore en base, et d'en ajouter (avec lien avec la falaise automatique)
 - Permettre de placer un arrêt BTT "à la main" (avec liaison automatique à la falaise).
 - Ajouter un bouton pour proposer d'ajouter un accès vélo depuis un arrêt (train/bus/etc.) = lien (nouvelle fenêtre) vers le formulaire d'ajout velo
@@ -93,14 +107,16 @@ Faire apparaitre tous les arrêts de tous types reliés à des falaises sur la c
 Comme actuellement l'apparence dépend du niveau de zoom (rien > point > icone).
 Voici les steps de zoom et les options d'apparence:
 
-- Gares TER+TGV : {% Comme actuellement, complète ce passage avec les valeurs réelles %}
+- Gares TER+TGV : comportement actuel différent selon que la gare est reliée ou non à un itinéraire vélo affiché sur la carte (`gare.access.length`) :
+  - Gares hors topo (aucun itinéraire vélo relié) : Rien -z=11-> point (cercle, rayon 4px, contour blanc, noir si TER seul / `#a00` si TGV)
+  - Gares topo (reliées à un itinéraire vélo) : Rien -z=9-> icône train (PNG `icone_train_carte.png`, 24px, teinte rouge via la classe CSS `filterred` si TGV)
 - Bus/Tram/Téléphérique : Rien -z=9-> Point jaune ({% Couleur actuelle de l'arrêt de bus %}) -z=11-> icone sur fond jaune, inspiré de l'icone bus actuel.
 
-On garde le même comportement hover/click des gares actuellement. La seule exception est le fait qu'il y aura des itinéraires piétons (liens arrêt -> falaise de la table arrets_falaise) qu'il faut représenter par un trait droit arrêt -> falaise.
+On garde le même comportement hover/click des gares actuellement. La seule exception est le fait qu'il y aura des itinéraires piétons (liens arrêt -> falaise de la table acces_pieton_falaise) qu'il faut représenter par un trait droit arrêt -> falaise.
 
 ### Etape 7 Lignes BTT et représentation
 
-Le but des lignes est de les représenter et de lier les arrêts avec leurs terminus ou arrêts intéressants. Surtout dans le cas des bus qui parcourent des distances longues et sont souvent (mais pas toujours) reliés à des terminaux multi-modaux (gares).
+Le but des lignes est de les représenter et de lier les arrêts BTT avec leurs terminus ou arrêts intéressants. Surtout dans le cas des bus qui parcourent des distances longues et sont souvent (mais pas toujours) reliés à des terminaux multi-modaux (gares). On ne s'occupe pas des lignes de trains (rails) qui sont toujours représentées sur les cartes.
 
 #### Représentation en base de données
 
@@ -130,11 +146,14 @@ Champs:
 - ligne_id FK ligne_transport
 - arret_id FK arrets
 
-#### Gestion des lignes BTT : formulaire d'ajout
+#### Gestion des lignes BTT : formulaire d'ajout (admin uniquement)
 
 Formulaire ajout_ligne.php, avec un search param ligne_id qui permet de modifier une ligne
 
-Permettre d'importer les données depuis un zip GTFS
+Permettre d'importer les données depuis un zip GTFS (Côté front : `fflate` pour dézipper + un parsing CSV maison ou une petite lib (papaparse par ex., browser-compatible)) :
+
+- geometry : lire shapes.txt, et convertir directement en MultiLineString à envoyer à l’API
+- reste des champs : lire agency.txt pour extraire agency_name (-> operateur), agency_url (-> operateur_url)
 
 Champs du formulaire pour alimenter les champs texte.
 
@@ -154,7 +173,17 @@ Quand on clique sur un arrêt BTT relié à une ligne, en plus de montrer les it
 
 ### Etape 8 : Falaises accessibles en bus+marche
 
-// TODO
+Dans le formulaire d'ajout de falaise, prévoir un champ "cette falaise est accessible à pied depuis un arrêt BTT", et si on clique dessus, ça demande lequel, avec possibilité d'en sélectionner plusieurs.
+À l'ajout de la falaise, il faudra créer les accès piétons (acces_pieton_falaise) correspondants.
 
-- dans le formulaire d'ajout de falaise, prévoir un champ "cette falaise est accessible à pied depuis un arrêt BTT", et si on clique dessus, ça demande lequel, et en facultatif ajouter km, d+, d-, avec calculatrice qui donne le temps de marche. Afficher ça automatiquement dans le champ acces_bus de la falaise.
-- permettre de filtrer sur ce critère
+#### Migration des itinéraires vélo (à pied uniquement)
+
+Les itinéraires dans la table velo marqués apieduniquement devront être migrés vers la table acces_pieton_falaise. Prévoir une requête SQL pour la migration.
+
+#### Filtrage sur la carte et dans la page tableau
+
+Permettre de filtrer sur le critère "accessible" à pied en se basant non plus sur velo_apieduniquement mais sur la table acces_pieton_falaise
+
+### Etape 9 : Cleaning anciennes entités / tables liées aux bus
+
+bus_lignes et bus_liaisons deviennent obsolètes.
