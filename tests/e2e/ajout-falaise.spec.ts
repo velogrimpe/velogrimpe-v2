@@ -92,3 +92,40 @@ test.describe('Ajout Falaise - form validation', () => {
     await expect(coordsInput).toHaveValue('44.5,5.5')
   })
 })
+
+test.describe('Ajout Falaise : édition d\'une falaise existante', () => {
+  // Champs relus par fetchAndPrefillData (ajout/ajout_falaise.php) dans la
+  // réponse de /api/fetch_falaise.php, qui ne liste plus ses colonnes par SELECT *
+  const CHAMPS_PREREMPLIS = [
+    'falaise_id', 'falaise_nom', 'falaise_nomformate', 'falaise_latlng',
+    'falaise_zonename', 'falaise_deptname', 'falaise_deptcode',
+    'falaise_cottxt', 'falaise_cotmin', 'falaise_cotmax',
+    'falaise_expotxt', 'falaise_exposhort1', 'falaise_exposhort2',
+    'falaise_voies', 'falaise_nbvoies', 'falaise_topo', 'falaise_matxt', 'falaise_maa', 'falaise_mar',
+    'falaise_gvtxt', 'falaise_gvnb', 'falaise_bloc', 'falaise_rq', 'falaise_hebergement', 'falaise_acces_bus',
+    'falaise_txt1', 'falaise_txt2', 'falaise_txt3', 'falaise_txt4',
+    'falaise_leg1', 'falaise_leg2', 'falaise_leg3', 'falaise_fermee', 'falaise_voletcarto',
+  ]
+  const falaiseId = 39
+
+  test('fetch_falaise renvoie les champs du formulaire, sans le contributeur', async ({ request }) => {
+    const falaise = await (await request.get(`/api/fetch_falaise.php?falaise_id=${falaiseId}`)).json()
+    for (const champ of CHAMPS_PREREMPLIS) expect(falaise, champ).toHaveProperty(champ)
+    expect(falaise).not.toHaveProperty('falaise_contrib')
+  })
+
+  test('le formulaire est prérempli avec la falaise', async ({ page, request }) => {
+    const falaise = await (await request.get(`/api/fetch_falaise.php?falaise_id=${falaiseId}`)).json()
+    await page.goto(`/ajout/ajout_falaise.php?falaise_id=${falaiseId}`)
+
+    await expect(page.locator('#confirmButton')).toHaveText(/Modifier la falaise/)
+    await expect(page.locator('#falaise_latlng')).toHaveValue(falaise.falaise_latlng)
+    await expect(page.locator('#falaise_cotmin')).toHaveValue(falaise.falaise_cotmin)
+    await expect(page.locator('#falaise_maa')).toHaveValue(String(falaise.falaise_maa))
+
+    // Un champ absent de la réponse se préremplit en "undefined"
+    const valeurs = await page.locator('#form input, #form select, #form textarea')
+      .evaluateAll((els) => els.map((el) => (el as HTMLInputElement).value))
+    expect(valeurs).not.toContain('undefined')
+  })
+})

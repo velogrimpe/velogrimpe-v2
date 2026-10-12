@@ -215,13 +215,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const contribStorage = (window as unknown as Record<string, { saveContribInfo?: (n: string, e: string) => void }>).contribStorage
     contribStorage?.saveContribInfo?.(val('nom_prenom'), val('email'))
 
+    // admin : le jeton lui-même (vérifié par confirmation_bus.php), jamais un
+    // booléen. Nom / email restent dans le localStorage, pas dans l'URL.
     const params = new URLSearchParams({
       arret_id: String(result.arret_id),
       type: isEdition ? 'update' : 'insert',
-      admin: payload.admin && payload.admin !== '0' ? '1' : '0',
-      nom_prenom: payload.nom_prenom,
-      email: payload.email,
     })
+    if (payload.admin && payload.admin !== '0') params.set('admin', payload.admin)
     window.location.href = '/ajout/confirmation_bus.php?' + params.toString()
   })
 

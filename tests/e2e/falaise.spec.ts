@@ -32,6 +32,36 @@ test.describe('Falaise page', () => {
     await expect(map.first()).toBeVisible()
   })
 
+  test('la source ne publie pas les emails des contributeurs', async ({ request }) => {
+    const html = await (await request.get(`/falaise.php?falaise_id=${testFalaiseId}`)).text()
+
+    // Ni falaise_contrib ni velo_contrib ("'Nom','email'") dans le JSON injecté
+    expect(html).not.toMatch(/_contrib"/)
+    const data = html.match(/const (falaise|itineraires) = .*;$/gm) ?? []
+    expect(data).toHaveLength(2)
+    for (const line of data) {
+      expect(line).not.toContain('@')
+    }
+
+    // Le nom du contributeur reste affiché
+    expect(html).toMatch(/Falaise ajoutée par\s+\S/)
+  })
+
+  test('la carte affiche les itinéraires vélo et leurs gares', async ({ page }) => {
+    // falaise / itineraires ne portent plus que les champs lus par la carte :
+    // un champ manquant se traduit par une exception JS ou un tracé absent.
+    const errors: string[] = []
+    page.on('pageerror', (e) => errors.push(e.message))
+
+    await page.goto(`/falaise.php?falaise_id=${testFalaiseId}`)
+
+    // Tracé GPX chargé (chemin issu de gpx_path) + étiquette de temps (calculate_time)
+    await expect(page.locator('.vg-velo-tooltip').first()).toBeVisible()
+    await expect(page.locator('.vg-velo-tooltip').first()).toHaveText(/\d/)
+    await expect(page.locator('.leaflet-marker-icon.train-icon').first()).toBeVisible()
+    expect(errors).toEqual([])
+  })
+
   test('ville selector works', async ({ page }) => {
     await page.goto(`/falaise.php?falaise_id=${testFalaiseId}`)
 

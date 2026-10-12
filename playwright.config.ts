@@ -42,6 +42,15 @@ export default defineConfig({
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
+      testIgnore: /no-email\.spec\.ts/,
+    },
+    // Balayage de tout le site (~3500 requêtes) : lancé après les autres tests,
+    // qui sinon dépassent leurs délais sous la charge.
+    {
+      name: "no-email",
+      use: { ...devices["Desktop Chrome"] },
+      testMatch: /no-email\.spec\.ts/,
+      dependencies: ["chromium"],
     },
     // Uncomment to test on Firefox and Safari
     // {

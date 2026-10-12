@@ -4,6 +4,26 @@ Tous les changements notables de ce projet sont documentés dans ce fichier.
 
 Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 2026-10-12
+
+### Security
+
+- `ajout/confirmation_falaise.php` et `ajout/confirmation_bus.php` publiaient le vrai `admin_token` à n'importe quel visiteur : le paramètre `admin` y était lu comme un entier (`?admin=1`) et la page réécrit alors le jeton dans ses liens de mode admin. Ces deux pages, comme `ajout/edit_details_falaise.php`, comparent désormais `admin` au jeton par `hash_equals`, et les liens du parcours (`api/add_falaise.php`, `edit_details_falaise.php`, `frontend/src/apps/ajout-bus.ts`) transmettent le jeton au lieu de `1`, comme le faisaient déjà les parcours vélo et train. **Le jeton de production a pu être relevé : il faut le faire tourner.** Tests : `tests/e2e/admin-token.spec.ts`.
+- `sortie.php` envoyait la ligne complète de la sortie à l'app Vue (`data-sortie`), dont l'email de l'organisateur et les jetons `edit_token` / `delete_token` : n'importe qui pouvait modifier ou supprimer n'importe quelle sortie. La requête suit maintenant le type `Sortie` (`frontend/src/types/sortie.ts`). Tests : `tests/e2e/sortie.spec.ts`.
+- Emails des contributeurs (`falaise_contrib`, `velo_contrib`, format `'Nom','email'`) publiés par des `SELECT *` envoyés tels quels au navigateur : `falaise.php` (fiche et itinéraires), `tableau.php`, `carte.php`, `carte_maplibre.php` et `api/fetch_falaise.php`. Chaque requête liste désormais ses colonnes, limitées à celles que lisent la page, ses scripts et ses apps Vue. Au passage, `tableau.php` pèse 50 à 64 % de moins.
+- Le parcours d'ajout de falaise ne transporte plus le nom et l'email du contributeur dans l'URL (`confirmation_falaise.php` → `edit_details_falaise.php`), où ils finissaient dans les logs d'accès et l'historique : l'éditeur de détails les relit dans le `localStorage` (`contrib-storage.js`), déjà renseigné par le formulaire. Idem pour `confirmation_bus.php`.
+
+### Added
+
+- `tests/e2e/no-email.spec.ts` : aucune adresse mail publiée hors adresses de contact, vérifié sur tout le site (sitemap + crawl des liens, ~3 450 pages), les endpoints JSON publics de chaque falaise et les exports open-data. Il tourne dans un projet Playwright dédié (`no-email`), après les autres tests, qu'il ralentissait au point de leur faire dépasser leurs délais.
+- `sql/contrib_1_ajout_colonnes.sql` et `sql/contrib_2_migration_donnees.sql` : colonnes `contrib` / `contrib_mail` sur `falaises`, `velo` et `train`, et découpe des anciennes chaînes `*_contrib`. Le code ne les utilise pas encore.
+- Tests : `tests/e2e/tableau.spec.ts` (données et rendu Vue), préremplissage du formulaire d'édition de falaise (`ajout-falaise.spec.ts`), carte de la fiche falaise (`falaise.spec.ts`).
+
+### Fixed
+
+- `tableau.php` : l'indication « Aussi accessible à pied » disparaissait quand une variante plus rapide remplaçait une variante accessible à pied (même gare d'arrivée).
+- `carte.php`, `carte_maplibre.php` : aucun marqueur après le passage à des colonnes explicites, faute de `falaise_id` / `gare_id`, qui relient itinéraires, falaises et gares.
+
 ## 2026-09-17
 
 ### Added

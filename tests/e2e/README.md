@@ -26,7 +26,16 @@ bun run test:debug
 
 # Voir le rapport HTML après les tests
 bun run test:report
+
+# Balayage anti-email seul (sans relancer d'abord toute la suite)
+bun run test --project=no-email --no-deps
 ```
+
+`no-email.spec.ts` parcourt tout le site (~3500 pages et endpoints, ~20 s) :
+il tourne dans son propre projet Playwright, après les autres tests, pour ne
+pas les ralentir. Seules les adresses de contact sont autorisées
+(`contact@velogrimpe.fr`, `contact_mail` de `config.php`, contact du
+rassemblement) ; la liste est en tête du fichier.
 
 ## Structure des tests
 
@@ -35,6 +44,10 @@ tests/e2e/
 ├── navigation.spec.ts    # Tests de navigation entre pages
 ├── carte.spec.ts         # Tests de la carte Leaflet
 ├── falaise.spec.ts       # Tests des pages falaise
+├── tableau.spec.ts       # Tableau des falaises par ville (données + rendu Vue)
+├── sortie.spec.ts        # Page sortie (ni jetons ni email de l'organisateur)
+├── no-email.spec.ts      # Aucune adresse mail publiée hors adresses de contact
+├── admin-token.spec.ts   # Le jeton admin ne s'affiche qu'à qui le fournit
 ├── ajout-falaise.spec.ts # Tests du formulaire d'ajout
 ├── ajout-bus-falaises.spec.ts # Falaises liées d'un arrêt de bus (liste + carte)
 └── autocomplete.spec.ts  # Tests des champs autocomplete
