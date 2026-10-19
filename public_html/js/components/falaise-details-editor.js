@@ -163,6 +163,7 @@ export function initFalaiseDetailsEditor(containerId) {
   L.control
     .layers(baseMaps, undefined, { position: "topleft", size: 22 })
     .addTo(map);
+  L.control.locate({ locateOptions: { enableHighAccuracy: true } }).addTo(map);
   L.control
     .scale({
       position: "bottomright",
