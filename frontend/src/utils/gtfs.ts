@@ -142,10 +142,57 @@ export function listRoutes(feed: GtfsFeed): GtfsRoute[] {
   }));
 }
 
+/** Précision des coordonnées stockées : 5 décimales ≈ 1 m. */
+const COORD_DECIMALS = 5;
+/** Tolérance de simplification (degrés, ≈ 3 m) : invisible à l'écran, divise la taille par ~10. */
+const SIMPLIFY_TOLERANCE_DEG = 0.00003;
+
+/** Douglas-Peucker itératif (les shapes GTFS peuvent compter des dizaines de milliers de points). */
+export function simplifyLine(
+  pts: number[][],
+  tolerance = SIMPLIFY_TOLERANCE_DEG,
+): number[][] {
+  if (pts.length <= 2) return pts;
+  const keep = new Uint8Array(pts.length);
+  keep[0] = keep[pts.length - 1] = 1;
+  const stack: [number, number][] = [[0, pts.length - 1]];
+  while (stack.length) {
+    const [a, b] = stack.pop()!;
+    const [ax, ay] = pts[a]!;
+    const [bx, by] = pts[b]!;
+    const dx = bx! - ax!;
+    const dy = by! - ay!;
+    const len2 = dx * dx + dy * dy;
+    let maxD = 0;
+    let idx = -1;
+    for (let i = a + 1; i < b; i++) {
+      const [px, py] = pts[i]!;
+      let t = len2 ? ((px! - ax!) * dx + (py! - ay!) * dy) / len2 : 0;
+      t = Math.max(0, Math.min(1, t));
+      const d = Math.hypot(px! - (ax! + t * dx), py! - (ay! + t * dy));
+      if (d > maxD) {
+        maxD = d;
+        idx = i;
+      }
+    }
+    if (idx >= 0 && maxD > tolerance) {
+      keep[idx] = 1;
+      stack.push([a, idx], [idx, b]);
+    }
+  }
+  return pts.filter((_, i) => keep[i]);
+}
+
+function roundCoord(n: number): number {
+  const f = 10 ** COORD_DECIMALS;
+  return Math.round(n * f) / f;
+}
+
 /**
  * shapes.txt → MultiLineString GeoJSON ([lng, lat]), une ligne par shape_id,
  * points ordonnés par shape_pt_sequence, formes géométriquement identiques
- * dédoublonnées. Sans `shapeIds`, toutes les formes du fichier.
+ * dédoublonnées, coordonnées arrondies et tracé simplifié (sinon la requête
+ * dépasse max_allowed_packet de MySQL). Sans `shapeIds`, toutes les formes du fichier.
  */
 export function shapesToMultiLineString(
   shapesText: string | null,
@@ -169,7 +216,12 @@ export function shapesToMultiLineString(
   const lines: number[][][] = [];
   for (const pts of byShape.values()) {
     if (pts.length < 2) continue;
-    const line = pts.sort((a, b) => a.seq - b.seq).map((p) => p.pt);
+    const line = simplifyLine(
+      pts
+        .sort((a, b) => a.seq - b.seq)
+        .map((p) => [roundCoord(p.pt[0]!), roundCoord(p.pt[1]!)]),
+    );
+    if (line.length < 2) continue;
     const key = JSON.stringify(line);
     if (seen.has(key)) continue;
     seen.add(key);

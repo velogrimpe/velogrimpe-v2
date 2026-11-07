@@ -195,17 +195,18 @@ $highlight = $_GET['h'] ?? '';
   var selected = null;
   // « Voir la ligne » (Lot 7) : tracé de la ligne BTT d'un arrêt, déclenché par
   // le panneau d'info (InfoPanel.vue) ; effacé à chaque teardown.
-  let ligneGroup = null;
+  let ligneGroups = [];
   const clearLigne = () => {
-    ligneGroup?.remove();
-    ligneGroup = null;
+    ligneGroups.forEach((g) => g.remove());
+    ligneGroups = [];
   };
   window.addEventListener("velogrimpe:voir-ligne", async (e) => {
     clearLigne();
-    if (!e.detail?.ligne) return;
+    if (!e.detail?.lignes?.length) return;
     const { showLigne } = await import("/js/components/map/ligne-view.js");
-    // Ni recadrage ni cercles autour des arrêts desservis (terminus compris)
-    ligneGroup = showLigne(map, e.detail.ligne, { fit: false, arrets: [] });
+    clearLigne();
+    // Sans recadrage ; arrêts de la ligne marqués par une pastille
+    ligneGroups = e.detail.lignes.map((l) => showLigne(map, l, { fit: false }));
   });
   const teardown = () => {
     clearLigne();

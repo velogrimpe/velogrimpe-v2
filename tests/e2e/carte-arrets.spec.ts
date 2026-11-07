@@ -176,16 +176,11 @@ for (const [nom, carte] of Object.entries(cartes)) {
       expect(classe).not.toContain('train-icon')
     })
 
-    test('clic sur l\'arrêt : trait droit vers chaque falaise en accès piéton', async ({ page }) => {
+    test('clic sur l\'arrêt : aucun trait droit vers les falaises en accès piéton', async ({ page }) => {
       await zoomSur(page, carte, BUS_TOPO_PIETON, 11)
-      const attendu = await page.evaluate(
-        (id) => arrets.find((x: any) => x.arret_id === id).pieton.length,
-        BUS_TOPO_PIETON,
-      )
-      expect(attendu).toBeGreaterThan(0)
-
       await cliquerArret(page, BUS_TOPO_PIETON)
-      await expect.poll(() => nbTracesPieton(page), { timeout: 5000 }).toBe(attendu)
+      await page.waitForTimeout(1500) // les tracés sont posés après le déplacement de caméra
+      expect(await nbTracesPieton(page)).toBe(0)
 
       // Le panneau d'info parle d'un arrêt, pas d'une gare
       const panneau = page.locator('#vue-info-panel')
@@ -206,25 +201,15 @@ for (const [nom, carte] of Object.entries(cartes)) {
       expect(fond).not.toMatch(/rgba\(0, 0, 0, 0\)|transparent/)
     })
 
-    test('clic sur la falaise : trait droit vers l\'arrêt d\'accès piéton', async ({ page }) => {
+    test('clic sur la falaise : aucun trait droit vers l\'arrêt d\'accès piéton', async ({ page }) => {
       await page.evaluate((id) => {
         const f = falaises.find((x: any) => x.falaise_id === id)
         const m = f.marker
         if (m.getElement && !m.getLatLng) m.getElement().click()
         else m.fire('click')
       }, FALAISE_AVEC_PIETON)
-      await expect.poll(() => nbTracesPieton(page), { timeout: 5000 }).toBeGreaterThan(0)
-    })
-
-    test('teardown : les traits piétons disparaissent au clic dans le vide', async ({ page }) => {
-      await zoomSur(page, carte, BUS_TOPO_PIETON, 11)
-      await cliquerArret(page, BUS_TOPO_PIETON)
-      await expect.poll(() => nbTracesPieton(page), { timeout: 5000 }).toBeGreaterThan(0)
-      // Vrai clic souris dans un coin dégagé de la carte (hors marqueurs et contrôles)
-      await page.waitForTimeout(1200) // fin du déplacement de caméra
-      const box = (await page.locator('#map').boundingBox())!
-      await page.mouse.click(box.x + box.width * 0.25, box.y + box.height * 0.6)
-      await expect.poll(() => nbTracesPieton(page), { timeout: 5000 }).toBe(0)
+      await page.waitForTimeout(1500)
+      expect(await nbTracesPieton(page)).toBe(0)
     })
   })
 }

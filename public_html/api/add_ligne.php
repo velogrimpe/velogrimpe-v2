@@ -170,7 +170,12 @@ try {
   $mysqli->commit();
   echo json_encode(["success" => true, "ligne_id" => $ligne_id, "arrets_crees" => $arrets_crees]);
 } catch (Throwable $e) {
-  $mysqli->rollback();
+  error_log('[add_ligne] ' . $e->getMessage());
+  try {
+    $mysqli->rollback();
+  } catch (Throwable $e2) {
+    // connexion perdue (ex. max_allowed_packet dépassé) : MySQL a déjà annulé la transaction
+  }
   http_response_code(500);
   echo json_encode(["error" => "Erreur lors de l'enregistrement de la ligne"]);
 }

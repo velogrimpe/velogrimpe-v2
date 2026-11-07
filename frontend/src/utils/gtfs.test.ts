@@ -10,6 +10,7 @@ import {
   readGtfs,
   routeModalites,
   routeToLigneFields,
+  simplifyLine,
   shapesToMultiLineString,
 } from './gtfs'
 
@@ -34,7 +35,7 @@ R2,t6,
 const SHAPES = `shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence
 SH_A,45.2,5.2,2
 SH_A,45.0,5.0,0
-SH_A,45.1,5.1,1
+SH_A,45.2,5.0,1
 SH_B,46.0,6.0,0
 SH_B,46.1,6.1,1
 SH_DUP,46.0,6.0,0
@@ -121,7 +122,7 @@ describe('shapesToMultiLineString', () => {
       coordinates: [
         [
           [5.0, 45.0],
-          [5.1, 45.1],
+          [5.0, 45.2],
           [5.2, 45.2],
         ],
       ],
@@ -270,5 +271,20 @@ describe.skipIf(!existsSync(SAVOIE))('GTFS Savoie (données réelles)', () => {
       expect(st.lat).toBeLessThan(46)
     }
     expect(routeModalites(s01)).toEqual(['bus'])
+  })
+})
+
+describe('simplifyLine / shapesToMultiLineString (volume)', () => {
+  test('supprime les points colinéaires et conserve les extrémités', () => {
+    const line = Array.from({ length: 101 }, (_, i) => [5 + i * 0.0001, 45])
+    expect(simplifyLine(line)).toEqual([line[0], line[100]])
+  })
+  test('conserve un vrai virage', () => {
+    const line = [[5, 45], [5.01, 45], [5.01, 45.01]]
+    expect(simplifyLine(line)).toEqual(line)
+  })
+  test('arrondit à 5 décimales', () => {
+    const txt = 'shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence\na,45.123456789,5.987654321,0\na,45.2,6,1\n'
+    expect(shapesToMultiLineString(txt)!.coordinates[0]![0]).toEqual([5.98765, 45.12346])
   })
 })

@@ -117,7 +117,7 @@ Voici les steps de zoom et les options d'apparence:
   - Gares topo (reliées à un itinéraire vélo) : Rien -z=9-> icône train (PNG `icone_train_carte.png`, 24px, teinte rouge via la classe CSS `filterred` si TGV)
 - Bus/Tram/Téléphérique : Rien -z=9-> Point jaune (html: gold) -z=11-> icone sur fond jaune (gold), inspiré de l'icone bus actuel.
 
-On garde le même comportement hover/click des gares actuellement. La seule exception est le fait qu'il y aura des itinéraires piétons (liens arrêt -> falaise de la table acces_pieton_falaise) qu'il faut représenter par un trait droit arrêt -> falaise.
+On garde le même comportement hover/click des gares actuellement. La seule exception est le fait qu'il y aura des itinéraires piétons (liens arrêt -> falaise de la table acces_pieton_falaise) qui ne sont plus représentés par un trait droit arrêt -> falaise (supprimé : il laissait croire à un chemin) ; seule la liaison dans les panneaux d'info / listes les matérialise.
 
 ### Etape 6 Lignes BTT et représentation
 
@@ -175,7 +175,7 @@ Comme pour le cas de l'ajout bus, on liste les arrêts liés avec possibilité d
 
 #### Affichage des lignes sur la carte globale ou la carte d'une falaise
 
-Quand on clique sur un arrêt BTT relié à une ligne, en plus de montrer les itinéraires à partir de cette gare et les falaises reliées, on va faire apparaitre un bouton (dans le panel d'info) "voir la ligne de bus" qui va faire afficher la ligne de bus dans la couleur spécifiée en BDD + "halo" blanc et mettre en évidence les arrêts liés.
+Quand on clique sur un arrêt BTT relié à une ligne, en plus de montrer les itinéraires à partir de cette gare et les falaises reliées, toutes les lignes de l'arrêt s'affichent d'emblée (page carte et page falaise), sans bouton ni popup : tracé dans la couleur spécifiée en BDD avec un "halo" blanc, et pastille de la même couleur sur chaque arrêt lié.
 
 ### Etape 7 : Falaises accessibles en bus+marche
 

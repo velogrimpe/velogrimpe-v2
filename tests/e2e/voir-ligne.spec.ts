@@ -3,11 +3,11 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 /**
- * Lot 7 — bouton « voir la ligne » : panneau d'info des cartes globales
- * (Leaflet + MapLibre) et popup d'arrêt de la page falaise.
+ * Lot 7 — tracé de la ligne au clic sur un arrêt : cartes globales
+ * (Leaflet + MapLibre) et page falaise (plus de bouton ni de popup).
  *
  * Le rendu (couleur exacte, halo, lisibilité) reste vérifié à la main
- * (checklist du plan) ; ici : présence du bouton, couches créées / retirées.
+ * (checklist du plan) ; ici : tracé et arrêts liés créés / retirés.
  *
  * Données de la base locale : arrêt de bus 6214 « La Balme - Pont du Rhône »
  * (accès piéton vers la falaise 29, cf. carte-arrets.spec.ts).
@@ -27,6 +27,8 @@ const COULEUR = '#ff0000'
 const NUMERO = 'E2EV'
 
 let ligneId: number
+// Toutes les lignes de l'arrêt témoin s'affichent (la base locale peut en porter d'autres)
+let nbLignes: number
 let autreArretId: number
 
 test.beforeEach(async ({ request }) => {
@@ -43,6 +45,7 @@ test.beforeEach(async ({ request }) => {
     },
   })
   ligneId = (await res.json()).ligne_id
+  nbLignes = (await (await request.get(`/api/fetch_lignes.php?arret_id=${BUS}`)).json()).lignes.length
 })
 test.afterEach(async ({ request }) => {
   await request.post('/api/delete_ligne.php', { headers: { Authorization: `Bearer ${ADMIN_TOKEN}` }, data: { ligne_id: ligneId } })
@@ -51,7 +54,7 @@ test.afterEach(async ({ request }) => {
 type Carte = { url: string; ready: string; setZoom: string; traits: string; halos: string; anneaux: string }
 const cartes: Record<string, Carte> = {
   leaflet: {
-    url: '/carte.php',
+    url: '/carte_leaflet.php',
     ready: '#map.leaflet-container',
     setZoom: '(([lat, lng, z]) => map.setView([lat, lng], z, { animate: false }))',
     traits: `document.querySelectorAll('#map path.vg-ligne-voir')`,
@@ -91,29 +94,24 @@ async function selectionnerArret(page: Page, carte: Carte, arretId: number) {
 }
 
 for (const [nom, carte] of Object.entries(cartes)) {
-  test.describe(`Carte ${nom} — voir la ligne`, () => {
-    test('arrêt desservi : bouton « Voir la ligne », tracé coloré + halo + arrêts entourés', async ({ page }) => {
+  test.describe(`Carte ${nom} — ligne au clic sur un arrêt`, () => {
+    test('arrêt desservi : tracé coloré + halo + tous les arrêts liés, sans bouton', async ({ page }) => {
       await selectionnerArret(page, carte, BUS)
-      const bouton = page.getByRole('button', { name: `Voir la ligne ${NUMERO}` })
-      await expect(bouton).toBeVisible()
-      expect(await compter(page, carte.traits)).toBe(0)
+      await expect.poll(() => compter(page, carte.traits)).toBe(nbLignes)
+      expect(await compter(page, carte.halos)).toBe(nbLignes)
+      await expect(page.getByRole('button', { name: /la ligne/ })).toHaveCount(0)
+      // Les 2 arrêts liés (BUS + autre) sont marqués
+      await expect.poll(() => compter(page, carte.anneaux)).toBeGreaterThan(0)
 
-      await bouton.click()
-      await expect.poll(() => compter(page, carte.traits)).toBe(1)
-      expect(await compter(page, carte.halos)).toBe(1)
-      expect(await compter(page, carte.anneaux)).toBe(0) // pas de cercle autour des arrêts desservis / terminus
-      await expect(page.getByRole('button', { name: `Masquer la ligne ${NUMERO}` })).toHaveAttribute('aria-pressed', 'true')
-
-      // Couleur de la base
       const couleur = await page.evaluate((c) => {
-        if (c === 'leaflet') return getComputedStyle(document.querySelector('#map path.vg-ligne-voir')!).stroke
-        return map.getPaintProperty(map.getStyle().layers.find((l: any) => l.id.startsWith('ligne-voir-')).id, 'line-color')
+        if (c === 'leaflet') return [...document.querySelectorAll('#map path.vg-ligne-voir')].map((p) => getComputedStyle(p).stroke)
+        return map.getStyle().layers.filter((l: any) => l.id.startsWith('ligne-voir-')).map((l: any) => map.getPaintProperty(l.id, 'line-color'))
       }, nom)
-      expect(couleur.replace(/\s/g, '')).toMatch(/^(rgb\(255,0,0\)|#ff0000)$/i)
+      expect(couleur.map((c: string) => c.replace(/\s/g, ''))).toContainEqual(expect.stringMatching(/^(rgb\(255,0,0\)|#ff0000)$/i))
     })
 
-    test('ni le clic sur l\'arrêt ni « Voir la ligne » ne modifient le zoom', async ({ page }) => {
-      const vue = () => page.evaluate(() => (typeof (window as any).L !== 'undefined' ? { z: map.getZoom(), c: [map.getCenter().lat, map.getCenter().lng] } : { z: map.getZoom(), c: [map.getCenter().lat, map.getCenter().lng] }))
+    test('le clic sur l\'arrêt ne modifie pas le zoom', async ({ page }) => {
+      const vue = () => page.evaluate(() => ({ z: map.getZoom(), c: [map.getCenter().lat, map.getCenter().lng] }))
       await page.goto(carte.url)
       await page.waitForSelector(carte.ready, { timeout: 15000 })
       await page.waitForFunction(() => typeof arrets !== 'undefined' && arrets.some((a: any) => a.marker) && falaises.some((f: any) => f.marker), null, { timeout: 20000 })
@@ -129,55 +127,31 @@ for (const [nom, carte] of Object.entries(cartes)) {
         if (m.getElement && !m.getLatLng) m.getElement().click()
         else m.fire('click')
       }, BUS)
-      await page.waitForTimeout(1500)
-      expect(await vue()).toEqual(avant)
-      await page.getByRole('button', { name: `Voir la ligne ${NUMERO}` }).click()
-      await expect.poll(() => compter(page, carte.traits)).toBe(1)
+      await expect.poll(() => compter(page, carte.traits)).toBe(nbLignes)
       await page.waitForTimeout(1500)
       expect(await vue()).toEqual(avant)
     })
 
-    test('un second clic masque la ligne', async ({ page }) => {
+    test('changer de sélection efface la ligne de l\'arrêt précédent', async ({ page }) => {
       await selectionnerArret(page, carte, BUS)
-      await page.getByRole('button', { name: `Voir la ligne ${NUMERO}` }).click()
-      await expect.poll(() => compter(page, carte.traits)).toBe(1)
-      await page.getByRole('button', { name: `Masquer la ligne ${NUMERO}` }).click()
-      await expect.poll(() => compter(page, carte.traits)).toBe(0)
-      expect(await compter(page, carte.halos)).toBe(0)
-      expect(await compter(page, carte.anneaux)).toBe(0)
-    })
-
-    test('changer de sélection efface la ligne', async ({ page }) => {
-      await selectionnerArret(page, carte, BUS)
-      await page.getByRole('button', { name: `Voir la ligne ${NUMERO}` }).click()
-      await expect.poll(() => compter(page, carte.traits)).toBe(1)
-      // Re-sélection du même arrêt : teardown → la ligne disparaît, le bouton se réinitialise
+      await expect.poll(() => compter(page, carte.traits)).toBe(nbLignes)
+      const autre = await page.evaluate(
+        ([bus, desservi]) => arrets.find((a: any) => a.marker && a.access.length > 0 && a.arret_id !== bus && a.arret_id !== desservi).arret_id as number,
+        [BUS, autreArretId],
+      )
       await page.evaluate((id) => {
         const m = arrets.find((x: any) => x.arret_id === id).marker
         if (m.getElement && !m.getLatLng) m.getElement().click()
         else m.fire('click')
-      }, BUS)
+      }, autre)
       await expect.poll(() => compter(page, carte.traits)).toBe(0)
-      await expect(page.getByRole('button', { name: `Voir la ligne ${NUMERO}` })).toHaveAttribute('aria-pressed', 'false')
-    })
-
-    test('arrêt sans ligne : pas de bouton', async ({ page }) => {
-      await page.goto(carte.url)
-      await page.waitForSelector(carte.ready, { timeout: 15000 })
-      await page.waitForFunction(() => typeof arrets !== 'undefined' && arrets.some((a: any) => a.marker), null, { timeout: 20000 })
-      const sansLigne = await page.evaluate(
-        ([bus, autre]) => arrets.find((a: any) => a.access.length > 0 && a.arret_id !== bus && a.arret_id !== autre).arret_id as number,
-        [BUS, autreArretId],
-      )
-      await selectionnerArret(page, carte, sansLigne)
-      await expect(page.locator('#vue-info-panel')).toContainText('Falaises accessibles')
-      await expect(page.getByRole('button', { name: /la ligne/ })).toHaveCount(0)
+      expect(await compter(page, carte.anneaux)).toBe(0)
     })
   })
 }
 
 test.describe('Page falaise — voir la ligne', () => {
-  test('clic sur un arrêt desservi : popup avec bouton, puis tracé de la ligne', async ({ page }) => {
+  test('clic sur un arrêt desservi : tracé de la ligne et de ses arrêts, sans popup', async ({ page }) => {
     await page.goto(`/falaise.php?falaise_id=${FALAISE}`)
     await page.waitForFunction(() => !!(window as any).map)
     await page.waitForTimeout(1200) // fin de l'animation de cadrage initial
@@ -206,15 +180,14 @@ test.describe('Page falaise — voir la ligne', () => {
     const apresClicArret = await vue(page)
     expect(apresClicArret).toEqual(avant)
 
-    const bouton = page.getByRole('button', { name: `Voir la ligne ${NUMERO}` })
-    await expect(bouton).toBeVisible()
-    await bouton.click()
-    await expect(page.locator('path.vg-ligne-voir')).toHaveCount(1)
-    await expect(page.locator('path.vg-ligne-halo')).toHaveCount(1)
-    // Ni recadrage, ni cercles autour des terminus / arrêts desservis
+    // La ligne s'affiche d'emblée au clic sur l'arrêt
+    await expect(page.locator('path.vg-ligne-voir')).toHaveCount(nbLignes)
+    await expect(page.locator('path.vg-ligne-halo')).toHaveCount(nbLignes)
+    // Pas de popup « voir la ligne », pas de recadrage, arrêts liés marqués
+    await expect(page.getByRole('button', { name: /la ligne/ })).toHaveCount(0)
     await page.waitForTimeout(1200)
     expect(await vue(page)).toEqual(avant)
-    await expect(page.locator('path.vg-ligne-arret-ring')).toHaveCount(0)
+    expect(await page.locator('path.vg-ligne-arret-ring').count()).toBeGreaterThan(0)
 
     // Clic ailleurs sur la carte : la ligne disparaît
     await page.evaluate(() => (window as any).map.fire('click'))

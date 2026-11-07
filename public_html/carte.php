@@ -623,7 +623,7 @@ $highlight = $_GET['h'] ?? '';
   }
 
   // « Voir la ligne » (Lot 7) : tracé de la ligne BTT d'un arrêt (couleur + halo
-  // blanc, sans recadrage ni cercle sur les arrêts), déclenché par le panneau d'info
+  // blanc, sans recadrage, avec tous ses arrêts), déclenché par le panneau d'info
   // (InfoPanel.vue) ; effacé à chaque teardown. Équivalent MapLibre de
   // js/components/map/ligne-view.js.
   let ligneLayerIds = [];
@@ -650,10 +650,19 @@ $highlight = $_GET['h'] ?? '';
       add(`ligne-halo-${n}`, geom, "line", layout, { "line-color": "#ffffff", "line-width": 10, "line-opacity": 0.95 });
       add(`ligne-voir-${n}`, geom, "line", layout, { "line-color": color, "line-width": 5 });
     }
+    // Tous les arrêts liés à la ligne : pastilles de la couleur de la ligne
+    const stops = (ligne.arrets ?? []).map((a) => ({
+      type: "Feature", properties: { nom: a.nom }, geometry: { type: "Point", coordinates: [a.lng, a.lat] },
+    }));
+    if (stops.length) {
+      add(`ligne-rings-${n}`, { type: "FeatureCollection", features: stops }, "circle", {}, {
+        "circle-radius": 6, "circle-color": color, "circle-stroke-color": "#ffffff", "circle-stroke-width": 2,
+      });
+    }
   }
   window.addEventListener("velogrimpe:voir-ligne", (e) => {
     clearLigne();
-    if (e.detail?.ligne) showLigne(e.detail.ligne);
+    (e.detail?.lignes ?? []).forEach(showLigne);
   });
 
   function teardown() {
@@ -820,7 +829,6 @@ $highlight = $_GET['h'] ?? '';
               }
             });
             falaise.pieton.forEach(({ arret }) => {
-              renderPieton(arret, falaise);
               const station = arrets.find(a => a.arret_id === arret.arret_id);
               if (station && station.marker) {
                 attachTooltip(station.marker, escapeHtml(station.arret_nom), {
@@ -957,22 +965,6 @@ $highlight = $_GET['h'] ?? '';
     return el;
   }
 
-  // Trait droit arrêt → falaise (accès piéton : pas de trace GPS). Même
-  // mécanique de nettoyage que les GPX (teardown via itinerairesLines).
-  function renderPieton(arret, falaise) {
-    const id = `pieton-${arret.arret_id}-${falaise.falaise_id}-${Math.random().toString(36).slice(2, 7)}`;
-    map.addSource(id, {
-      type: "geojson",
-      data: { type: "Feature", geometry: { type: "LineString", coordinates: [lngLat(arret.arret_latlng), lngLat(falaise.falaise_latlng)] } },
-    });
-    map.addLayer({
-      id, type: "line", source: id,
-      layout: { "line-cap": "round", "line-join": "round" },
-      paint: { "line-color": "#334155", "line-width": 3, "line-dasharray": [0.5, 2.5] },
-    });
-    itinerairesLines.push({ id, marker: null });
-  }
-
   function setArretMarker(arret, mode) {
     if (arret.displayMode === mode) return;
     if (arret.marker) arret.marker.remove();
@@ -1008,11 +1000,6 @@ $highlight = $_GET['h'] ?? '';
               className: `vg-station-tooltip vg-color-${c}`,
             });
           }
-        });
-        // Accès piéton : trait droit arrêt → falaise
-        arret.pieton.forEach((f) => {
-          if (falaises.find(x => x.falaise_id === f.falaise_id)?.filteredOut) return;
-          renderPieton(arret, f);
         });
       }, 760);
       attachTooltip(marker, escapeHtml(arret.arret_nom), { direction: "top", permanent: true });

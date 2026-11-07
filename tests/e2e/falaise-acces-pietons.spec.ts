@@ -16,21 +16,39 @@ test.describe('Page falaise : accès à pied', () => {
 
     const section = page.locator('#acces-pietons')
     await expect(section).toBeVisible()
-    await expect(section.locator('article[data-arret-id="2273"]')).toContainText('Niolon')
+    await expect(section.locator('div[data-arret-id="2273"]')).toContainText('Niolon')
   })
 
   test('accès depuis plusieurs arrêts de bus : un bloc par arrêt', async ({ page }) => {
     await page.goto('/falaise.php?falaise_id=247')
 
     const section = page.locator('#acces-pietons')
-    await expect(section.locator('article[data-arret-id="6220"]')).toBeVisible()
-    await expect(section.locator('article[data-arret-id="6223"]')).toBeVisible()
+    await expect(section.locator('div[data-arret-id="6220"]')).toBeVisible()
+    await expect(section.locator('div[data-arret-id="6223"]')).toBeVisible()
   })
 
   test("arrêt avec itinéraire vélo ET accès piéton : l'accès piéton est listé quand même", async ({ page }) => {
     await page.goto('/falaise.php?falaise_id=25')
 
-    await expect(page.locator('#acces-pietons article[data-arret-id="12"]')).toContainText('Tenay')
+    await expect(page.locator('#acces-pietons div[data-arret-id="12"]')).toContainText('Tenay')
+  })
+
+  test("accès sans vélo : titre dédié, détails repliés, ligne manquante → lien d'ajout", async ({ page }) => {
+    await page.goto('/falaise.php?falaise_id=247')
+    const bloc = page.locator('#acces-pietons div[data-arret-id="6220"]')
+    await expect(bloc).toContainText("Accès sans vélo via l'arrêt")
+    // Replié par défaut, déplié au clic
+    const case_ = bloc.locator('input[type="checkbox"]')
+    await expect(case_).not.toBeChecked()
+    await case_.click()
+    await expect(case_).toBeChecked()
+    // Soit des infos de ligne (horaires), soit l'invitation à ajouter la ligne
+    const aucune = bloc.getByTestId('aucune-ligne')
+    if (await aucune.count()) {
+      await expect(aucune.getByRole('link', { name: 'Ajouter la ligne' })).toHaveAttribute('href', '/ajout/ajout_ligne.php')
+    } else {
+      await expect(bloc).toContainText('Horaires')
+    }
   })
 
   test("falaise sans accès piéton : pas de section", async ({ page }) => {
@@ -39,12 +57,12 @@ test.describe('Page falaise : accès à pied', () => {
     await expect(page.locator('#acces-pietons')).toHaveCount(0)
   })
 
-  test("la carte dessine l'arrêt (marqueur) et un trait vers la falaise", async ({ page }) => {
+  test("la carte dessine l'arrêt (marqueur), sans trait droit vers la falaise", async ({ page }) => {
     await page.goto('/falaise.php?falaise_id=260')
     await page.waitForSelector('#map.leaflet-container')
 
     await expect(page.locator('#map [data-arret-id="2273"]').first()).toBeVisible()
-    expect(await page.locator('#map path.vg-acces-pieton-line').count()).toBeGreaterThan(0)
+    await expect(page.locator('#map path.vg-acces-pieton-line')).toHaveCount(0)
   })
 
   test("un arrêt non-bus (gare) n'a pas l'icône de bus", async ({ page }) => {

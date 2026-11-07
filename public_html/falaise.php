@@ -125,10 +125,14 @@ $stmtAp->close();
 if ($accesPietons) {
   $apIds = implode(',', array_map(fn($a) => (int) $a['arret_id'], $accesPietons));
   $lignesParArret = [];
-  foreach ($mysqli->query("SELECT alt.arret_id, l.id, l.nom, l.couleur
+  foreach ($mysqli->query("SELECT alt.arret_id, l.id, l.nom, l.couleur, l.numero, l.operateur, l.operateur_url, l.horaire_url, l.date_modification
       FROM arrets_lignes_transport alt JOIN lignes_transport l ON l.id = alt.ligne_id
       WHERE alt.arret_id IN ($apIds) ORDER BY l.nom")->fetch_all(MYSQLI_ASSOC) as $l) {
-    $lignesParArret[(int) $l['arret_id']][] = ['id' => (int) $l['id'], 'nom' => $l['nom'], 'couleur' => $l['couleur']];
+    $lignesParArret[(int) $l['arret_id']][] = [
+      'id' => (int) $l['id'], 'nom' => $l['nom'], 'couleur' => $l['couleur'], 'numero' => $l['numero'],
+      'operateur' => $l['operateur'], 'operateur_url' => $l['operateur_url'], 'horaire_url' => $l['horaire_url'],
+      'date_modification' => $l['date_modification'],
+    ];
   }
   foreach ($accesPietons as &$ap) {
     $ap['lignes'] = $lignesParArret[$ap['arret_id']] ?? [];
@@ -961,30 +965,59 @@ $stmtC->close();
       <?php if ($accesPietons): ?>
         <!-- Accès à pied depuis un arrêt (acces_pieton_falaise) : un bloc par accès -->
         <section id="acces-pietons" class="flex flex-col gap-2 w-full">
-          <h3 class="text-lg font-bold my-0 flex items-center gap-2">
-            <img src="/images/icons/hiking_color.png" alt="" class="h-6 w-6" /> La falaise est accessible à pied + Transports en commun !
-          </h3>
-          <?php foreach ($accesPietons as $ap): ?>
-            <article data-arret-id="<?= $ap['arret_id'] ?>"
-              class="rounded-xl shadow bg-base-100 border border-base-300 px-3 py-2 flex flex-col gap-1">
-              <div class="flex flex-wrap items-center gap-2">
-                <span class="font-bold"><?= htmlspecialchars($ap['nom']) ?></span>
+          <?php
+          $typeLabels = ['ter' => 'TER', 'tgv' => 'TGV', 'bus' => 'Bus', 'tram' => 'Tram', 'telepherique' => 'Téléphérique'];
+          $safeUrl = fn($u) => preg_match('#^https?://#i', (string) $u) ? $u : null;
+          foreach ($accesPietons as $ap): ?>
+            <div data-arret-id="<?= $ap['arret_id'] ?>"
+              class="collapse collapse-arrow rounded-xl shadow-lg overflow-hidden w-full bg-base-100">
+              <input type="checkbox" aria-label="Détails de l'accès via l'arrêt <?= htmlspecialchars($ap['nom']) ?>" />
+              <div class="collapse-title bg-base-200 text-base-content cursor-pointer min-h-0 flex flex-wrap gap-2 items-center">
+                <div class="text-lg">Accès <span class="text-accent">sans vélo</span> via l'arrêt <span class="font-bold"><?= htmlspecialchars($ap['nom']) ?></span></div>
                 <?php if (!empty($ap['commune']) && mb_stripos($ap['nom'], $ap['commune']) === false): ?>
                   <span class="text-slate-400">(<?= htmlspecialchars($ap['commune']) ?>)</span>
                 <?php endif; ?>
                 <?php foreach ($ap['types'] as $t): ?>
-                  <span class="badge badge-sm badge-outline"><?= htmlspecialchars(
-                    ['ter' => 'TER', 'tgv' => 'TGV', 'bus' => 'Bus', 'tram' => 'Tram', 'telepherique' => 'Téléphérique'][$t] ?? $t
-                  ) ?></span>
+                  <span class="badge badge-sm badge-outline"><?= htmlspecialchars($typeLabels[$t] ?? $t) ?></span>
                 <?php endforeach; ?>
               </div>
-              <?php if (!empty($ap['description'])): ?>
-                <div class="vg-a-primary"><?= nl2br(htmlspecialchars($ap['description'])) ?></div>
-              <?php endif; ?>
-              <?php if ($ap['lignes']): ?>
-                <div class="text-sm text-slate-500">Lignes : <?= htmlspecialchars(implode(', ', array_column($ap['lignes'], 'nom'))) ?></div>
-              <?php endif; ?>
-            </article>
+              <div class="collapse-content">
+               <div class="flex flex-col gap-3 pt-3">
+                <?php if (!empty($ap['description'])): ?>
+                  <div class="vg-a-primary"><?= nl2br(htmlspecialchars($ap['description'])) ?></div>
+                <?php endif; ?>
+                <?php foreach ($ap['lignes'] as $l): ?>
+                  <div class="flex flex-col gap-1" data-ligne-id="<?= $l['id'] ?>">
+                    <div class="font-bold">
+                      <?php if ($l['numero']): ?><span class="badge badge-sm mr-1" style="<?= preg_match('/^#[0-9a-f]{3,8}$/i', (string) $l['couleur']) ? 'background:' . $l['couleur'] . ';color:#fff;border:0' : '' ?>"><?= htmlspecialchars($l['numero']) ?></span><?php endif; ?>
+                      <?= htmlspecialchars($l['nom']) ?>
+                    </div>
+                    <?php if ($l['operateur']): ?>
+                      <div class="text-sm">Opérateur :
+                        <?php if ($safeUrl($l['operateur_url'])): ?>
+                          <a class="link" href="<?= htmlspecialchars($l['operateur_url']) ?>" target="_blank" rel="noopener"><?= htmlspecialchars($l['operateur']) ?></a>
+                        <?php else: ?><?= htmlspecialchars($l['operateur']) ?><?php endif; ?>
+                      </div>
+                    <?php endif; ?>
+                    <div class="text-sm">Horaires :
+                      <?php if ($safeUrl($l['horaire_url'])): ?>
+                        <a class="link" href="<?= htmlspecialchars($l['horaire_url']) ?>" target="_blank" rel="noopener">consulter les horaires de la ligne</a>
+                      <?php else: ?><span class="text-slate-500">non renseignés</span><?php endif; ?>
+                    </div>
+                    <?php if ($l['date_modification']): ?>
+                      <div class="text-xs text-slate-400">Données mises à jour le <?= date('d/m/Y', strtotime($l['date_modification'])) ?></div>
+                    <?php endif; ?>
+                  </div>
+                <?php endforeach; ?>
+                <?php if (!$ap['lignes']): ?>
+                  <div class="text-sm" data-testid="aucune-ligne">
+                    <span class="text-slate-500">Aucune ligne renseignée pour cet arrêt.</span>
+                    <a class="link link-primary" href="/ajout/ajout_ligne.php">Ajouter la ligne</a>
+                  </div>
+                <?php endif; ?>
+               </div>
+              </div>
+            </div>
           <?php endforeach; ?>
         </section>
       <?php endif; ?>
@@ -1489,38 +1522,19 @@ $stmtC->close();
       busLabel(origin, arret.nom);
     };
 
-    // « Voir la ligne » (Lot 7) : popup de l'arrêt cliqué avec un bouton par ligne
-    // BTT (table lignes_transport) qui la trace (couleur + halo, arrêts desservis
-    // entourés). Effacé au clic ailleurs sur la carte.
-    let ligneGroup = null;
-    const clearLigne = () => { ligneGroup?.remove(); ligneGroup = null; };
-    const showLignesPopup = async (arret) => {
+    // Lignes BTT (table lignes_transport) de l'arrêt cliqué : tracé (couleur + halo)
+    // et tous les arrêts liés à la ligne. Effacé au clic ailleurs sur la carte.
+    let ligneGroups = [];
+    const clearLigne = () => { ligneGroups.forEach((g) => g.remove()); ligneGroups = []; };
+    const showLignes = async (arret) => {
       clearLigne();
       let lignes = [];
       try {
         const res = await fetch(`/api/fetch_lignes.php?arret_id=${arret.id}`);
         if (res.ok) lignes = (await res.json()).lignes || [];
       } catch (e) { return; }
-      if (!lignes.length) return;
-      const div = document.createElement("div");
-      div.className = "flex flex-col gap-1 text-base-content";
-      lignes.forEach((l) => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "btn btn-xs btn-outline btn-primary";
-        btn.textContent = `Voir la ligne ${l.numero || l.nom}`;
-        btn.addEventListener("click", () => {
-          clearLigne();
-          // Sans recadrage ni cercles autour des arrêts desservis (terminus compris)
-          ligneGroup = showLigne(map, l, { fit: false, arrets: [] });
-          map.closePopup();
-        });
-        div.appendChild(btn);
-      });
-      L.popup({ offset: [0, -BusStop.iconSize / 2], closeButton: false })
-        .setLatLng([arret.lat, arret.lng])
-        .setContent(div)
-        .openOn(map);
+      clearLigne(); // un clic plus récent a pu répondre entre-temps
+      ligneGroups = lignes.map((l) => showLigne(map, l, { fit: false }));
     };
 
     // Clic ailleurs sur la carte : on efface les arcs et la ligne affichée.
@@ -1543,10 +1557,6 @@ $stmtC->close();
             geometry: { type: "Point", coordinates: [arret.lng, arret.lat] },
             properties: { type: "bus_stop", name: arret.nom, description: descHtml, types: arret.types, arret_id: arret.id },
           };
-          L.polyline(
-            [[arret.lat, arret.lng], falaise.falaise_latlng.split(",").map(parseFloat)],
-            { className: "vg-pieton-line vg-acces-pieton-line", color: "#334155", weight: 3, dashArray: "2 8", lineCap: "round" }
-          ).addTo(map);
           const obj = new BusStop(map, feature);
           obj._element_id = `bus_db_${arret.id}`;
           featureMap[obj._element_id] = obj;
@@ -1555,7 +1565,7 @@ $stmtC->close();
           obj.layer.on("click", (ev) => {
             L.DomEvent.stopPropagation(ev);
             showBusArcs(arret);
-            showLignesPopup(arret);
+            showLignes(arret);
           });
           added = true;
         });

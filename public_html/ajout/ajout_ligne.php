@@ -187,7 +187,7 @@ $adminQuery = $admin ? "admin=" . urlencode($config["admin_token"]) : "";
           <button type="button" id="gtfs-show-stops" class="btn btn-sm btn-outline btn-primary" disabled>Montrer les arrêts</button>
           <button type="button" id="gtfs-import-stops" class="btn btn-sm btn-outline btn-primary" disabled>Importer les arrêts</button>
         </div>
-        <div id="ligne-map" class="w-full h-[36rem] rounded-lg relative"></div>
+        <div id="ligne-map" class="w-full h-[36rem] rounded-lg relative not-prose"></div>
         <i class="text-slate-400 text-sm">Les tracés posés à la main s'ajoutent à la géométrie ; ils s'accrochent aux
           arrêts existants, et passer par un arrêt le lie à la ligne. « Modifier le tracé » permet de déplacer
           (ou supprimer par clic droit) les sommets. « Importer shapes.txt » remplace la géométrie.

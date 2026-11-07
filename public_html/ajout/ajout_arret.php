@@ -2,6 +2,7 @@
 require_once $_SERVER["DOCUMENT_ROOT"] . "/database/velogrimpe.php";
 require_once $_SERVER["DOCUMENT_ROOT"] . "/lib/vite.php";
 require_once $_SERVER["DOCUMENT_ROOT"] . "/lib/map-bundle.php";
+require_once $_SERVER["DOCUMENT_ROOT"] . "/lib/arrets_lib.php";
 $config = require $_SERVER["DOCUMENT_ROOT"] . "/../config.php";
 
 $admin = ($_GET["admin"] ?? false) == $config["admin_token"];
@@ -45,6 +46,23 @@ $tousArrets = [];
 $res = $mysqli->query("SELECT id, nom FROM arrets ORDER BY nom");
 while ($row = $res->fetch_assoc()) {
   $tousArrets[] = ["id" => (int) $row["id"], "nom" => $row["nom"]];
+}
+
+// Arrêts existants à afficher sur la carte (repères, pour éviter les doublons) ;
+// l'arrêt en cours d'édition est exclu : il est représenté par le marqueur déplaçable.
+$arretsCarte = [];
+$res = $mysqli->query(
+  "SELECT id, nom, ter, tgv, bus, tram, teleph, ST_Y(loc) AS lat, ST_X(loc) AS lng FROM arrets ORDER BY nom",
+);
+while ($row = $res->fetch_assoc()) {
+  if ((int) $row["id"] === (int) $arret_id) continue;
+  $arretsCarte[] = [
+    "id" => (int) $row["id"],
+    "nom" => $row["nom"],
+    "types" => arret_types($row),
+    "lat" => (float) $row["lat"],
+    "lng" => (float) $row["lng"],
+  ];
 }
 
 // Lignes de bus existantes (pour l'autocomplete des lignes)
@@ -199,7 +217,7 @@ while ($row = $res->fetch_assoc()) {
             <input class="input input-primary input-sm" type="text" id="arret_loc" name="arret_loc"
               placeholder="ex: 43.8270,5.3830" required autocomplete="off">
           </label>
-          <div id="map" class="w-full h-[36rem] rounded-lg relative">
+          <div id="map" class="w-full h-[36rem] rounded-lg relative not-prose">
             <div id="mapinstructions" class="pointer-events-none absolute top-2 left-1/2 -translate-x-1/2 z-[10000]">
               <span
                 class="bg-base-100/90 border border-base-300 shadow rounded-full px-3 py-1 text-sm font-medium">Cliquez
@@ -307,9 +325,10 @@ while ($row = $res->fetch_assoc()) {
     import { fetchArretStops } from '/js/components/utils/fetch-bus-stops.js';
     import { overpassErrorMessage } from '/js/components/utils/overpass.js';
     import { showToast } from '/js/components/utils/toast.js';
-    import { arretDivIcon } from '/js/components/map/arret-icon.js';
+    import { arretDivIcon, arretDotIcon } from '/js/components/map/arret-icon.js';
 
     const falaises = <?= json_encode($falaises) ?>;
+    const arretsExistants = <?= json_encode($arretsCarte) ?>;
     const presetFalaiseIds = <?= json_encode($preset_falaise_ids) ?>;
     const OVERPASS_MIN_ZOOM = 11;
     // Modalités recherchables via Overpass (pas de gares ter/tgv, cf.
@@ -360,6 +379,25 @@ while ($row = $res->fetch_assoc()) {
         updateCommune(ll.lat, ll.lng);
       });
     }
+
+    // --- Arrêts existants (repères) : point jusqu'au zoom 12, icône au-delà ---
+    const EXISTANT_DOT_MAX_ZOOM = 12;
+    const existantsDot = () => map.getZoom() <= EXISTANT_DOT_MAX_ZOOM;
+    const existantIcon = (a) => existantsDot()
+      ? arretDotIcon(a.types, 12, { extraClassName: 'vg-arret-existant' })
+      : arretDivIcon(a.types, 20, { extraClassName: 'vg-arret-existant' });
+    const existantMarkers = arretsExistants.map((a) => {
+      const marker = L.marker([a.lat, a.lng], { icon: existantIcon(a), zIndexOffset: -500, keyboard: false })
+        .bindTooltip(escapeHtml(a.nom)).addTo(map);
+      return { marker, arret: a };
+    });
+    let existantsWasDot = existantsDot();
+    map.on('zoomend', () => {
+      const dot = existantsDot();
+      if (dot === existantsWasDot) return;
+      existantsWasDot = dot;
+      existantMarkers.forEach(({ marker, arret }) => marker.setIcon(existantIcon(arret)));
+    });
 
     // --- Géocodage inverse (commune/code_insee/cp), silencieux + retour visuel ---
     function updateCommune(lat, lng) {

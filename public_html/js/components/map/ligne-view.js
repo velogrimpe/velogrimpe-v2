@@ -1,11 +1,11 @@
 /**
  * « Voir la ligne » (Lot 7) : trace une ligne BTT (table `lignes_transport`)
- * dans sa couleur avec un halo blanc, et entoure les arrêts qu'elle dessert.
+ * dans sa couleur avec un halo blanc, et marque les arrêts qu'elle dessert.
  * Version Leaflet (carte globale, page falaise) ; la carte MapLibre a sa
  * propre implémentation (carte.php).
  *
  * Le panneau d'info de la carte globale (InfoPanel.vue) déclenche
- * `velogrimpe:voir-ligne` (detail = { ligne } ou null) ; les cartes l'écoutent
+ * `velogrimpe:voir-ligne` (detail = { lignes } ou null) ; les cartes l'écoutent
  * et délèguent ici.
  *
  * @module ligne-view
@@ -56,15 +56,15 @@ export function showLigne(map, ligne, options = {}) {
     }).addTo(group);
   }
   (options.arrets ?? ligne.arrets ?? []).forEach((a) => {
-    L.circleMarker([a.lat, a.lng], {
-      radius: 14,
-      color,
-      weight: 4,
-      fillColor: "#fff",
-      fillOpacity: 0.35,
-      interactive: false,
+    const dot = L.circleMarker([a.lat, a.lng], {
+      radius: 6,
+      color: "#fff",
+      weight: 2,
+      fillColor: color,
+      fillOpacity: 1,
       className: "vg-ligne-arret-ring",
     }).addTo(group);
+    if (a.nom) dot.bindTooltip(String(a.nom), { direction: "top" });
   });
   group.addTo(map);
   if (options.fit !== false) {

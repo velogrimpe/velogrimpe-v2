@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, watch } from "vue";
 import {
   useCarteStore,
   type CarteFalaise,
@@ -28,26 +28,12 @@ const isGare = (arret: CarteArret) =>
 const libelleArret = (arret: CarteArret) =>
   isGare(arret) ? "Gare" : arret.types.includes("tram") ? "Arrêt de tram" : arret.types.includes("telepherique") ? "Téléphérique" : "Arrêt de bus";
 
-// Lignes BTT desservant l'arrêt sélectionné (bouton « voir la ligne »).
-// Le tracé lui-même est dessiné par les cartes, qui écoutent
-// `velogrimpe:voir-ligne` (detail = { ligne } ou null pour effacer).
-interface LigneBtt {
-  id: number;
-  nom: string;
-  numero: string | null;
-  operateur: string | null;
-  couleur: string | null;
-}
-const lignes = ref<LigneBtt[]>([]);
-const ligneActiveId = ref<number | null>(null);
-let lignesComplete: Array<LigneBtt & Record<string, unknown>> = [];
-
+// Lignes BTT desservant l'arrêt sélectionné : leur tracé et leurs arrêts sont
+// affichés d'emblée par les cartes, qui écoutent `velogrimpe:voir-ligne`
+// (detail = { lignes } ou null pour effacer ; les cartes effacent à chaque teardown).
 watch(
   selectedArret,
   async (arret) => {
-    lignes.value = [];
-    lignesComplete = [];
-    ligneActiveId.value = null;
     if (!arret) return;
     const id = arret.arret_id;
     try {
@@ -56,34 +42,14 @@ watch(
       const data = await res.json();
       // L'arrêt sélectionné a pu changer pendant la requête.
       if (selectedArret.value?.arret_id !== id) return;
-      lignesComplete = data.lignes ?? [];
-      lignes.value = lignesComplete;
+      const lignes = data.lignes ?? [];
+      if (lignes.length)
+        window.dispatchEvent(new CustomEvent("velogrimpe:voir-ligne", { detail: { lignes } }));
     } catch {
-      /* pas de ligne affichable : le bouton n'apparaît simplement pas */
+      /* pas de ligne affichable */
     }
   },
   { immediate: true },
-);
-
-function toggleLigne(l: LigneBtt) {
-  const activer = ligneActiveId.value !== l.id;
-  ligneActiveId.value = activer ? l.id : null;
-  const ligne = lignesComplete.find((x) => x.id === l.id);
-  window.dispatchEvent(
-    new CustomEvent("velogrimpe:voir-ligne", {
-      detail: activer && ligne ? { ligne } : null,
-    }),
-  );
-}
-
-// Les cartes effacent la ligne à chaque changement de sélection (teardown) :
-// on s'aligne sur leur état.
-function onVoirLigne(e: Event) {
-  if (!(e as CustomEvent).detail) ligneActiveId.value = null;
-}
-onMounted(() => window.addEventListener("velogrimpe:voir-ligne", onVoirLigne));
-onBeforeUnmount(() =>
-  window.removeEventListener("velogrimpe:voir-ligne", onVoirLigne),
 );
 
 function getColorClass(index: number): string {
@@ -183,22 +149,6 @@ function formatDescription(text: string | null): string {
       <h3 class="text-xl font-bold">
         {{ libelleArret(selectedArret) }} : {{ selectedArret.arret_nom }}
       </h3>
-
-      <div v-if="lignes.length" class="flex flex-wrap gap-1">
-        <button
-          v-for="l in lignes"
-          :key="l.id"
-          type="button"
-          class="btn btn-xs btn-outline btn-primary"
-          :class="{ 'btn-active': ligneActiveId === l.id }"
-          :aria-pressed="ligneActiveId === l.id"
-          :title="l.operateur ?? undefined"
-          @click="toggleLigne(l)"
-        >
-          {{ ligneActiveId === l.id ? "Masquer la ligne" : "Voir la ligne" }}
-          {{ l.numero ?? l.nom }}
-        </button>
-      </div>
 
       <details>
         <summary><i>Falaises accessibles depuis cet arrêt</i></summary>
