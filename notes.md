@@ -1,5 +1,5 @@
-- [ ] faire une passe sur les méthodes d'auth, plus de ?admin=
-- [ ] demander la liste des fonctionalités des cartes pour passer définitivement à la version maplibre.
+- [x] faire une passe sur les méthodes d'auth, plus de ?admin=
+- [x] demander la liste des fonctionalités des cartes pour passer définitivement à la version maplibre.
 - [ ] migrer les baseMaps vers le fichier dédié préparé.
 - [ ] Il faudrait pouvoir proposer en optionel un gpx pour les acces piétons, il faudrait une durée obligatoire ou calculée via un calc. d'itinéraire piéton, et D+/D- en optionnel
 
