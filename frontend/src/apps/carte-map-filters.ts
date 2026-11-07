@@ -13,12 +13,12 @@ function initApp() {
 
   // Parse data from PHP (passed via data attributes)
   let falaises: Array<{ falaise_id: number; falaise_nom: string }> = [];
-  let gares: Array<{ gare_id: number; gare_nom: string }> = [];
+  let arrets: Array<{ arret_id: number; arret_nom: string; types: string[] }> = [];
   let villes: Ville[] = [];
 
   try {
     falaises = JSON.parse(mountEl.dataset.falaises || "[]");
-    gares = JSON.parse(mountEl.dataset.gares || "[]");
+    arrets = JSON.parse(mountEl.dataset.arrets || "[]");
     villes = JSON.parse(mountEl.dataset.villes || "[]");
   } catch (e) {
     console.error("[velogrimpe] Failed to parse data from PHP:", e);
@@ -27,7 +27,7 @@ function initApp() {
   // Create Vue app with Pinia
   const app = createApp(CarteMapFilters, {
     falaises,
-    gares,
+    arrets,
     villes,
   });
 

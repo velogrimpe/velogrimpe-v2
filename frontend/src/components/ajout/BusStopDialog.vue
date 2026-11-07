@@ -34,7 +34,16 @@ interface OpenDetail {
   falaise_nom?: string
   contrib_nom?: string
   contrib_email?: string
+  types?: string[]
 }
+
+const ARRET_TYPES: { value: string; label: string }[] = [
+  { value: 'ter', label: 'TER' },
+  { value: 'tgv', label: 'TGV' },
+  { value: 'bus', label: 'Bus' },
+  { value: 'tram', label: 'Tram' },
+  { value: 'telepherique', label: 'Téléphérique' },
+]
 
 const dlg = ref<HTMLDialogElement | null>(null)
 const ajoutRef = ref<{
@@ -55,9 +64,27 @@ const osmId = ref<string | null>(null)
 const osmData = ref<string | null>(null)
 const falaiseId = ref<number | null>(null)
 const falaiseNom = ref('')
+const types = ref<string[]>([])
 const contribNom = ref('')
 const contribEmail = ref('')
 const message = ref('')
+const commune = ref<string | null>(null)
+const codeInsee = ref<string | null>(null)
+const cp = ref<string | null>(null)
+
+async function updateCommune(locValue: string) {
+  const [lat, lng] = locValue.split(',').map(Number)
+  if (Number.isNaN(lat) || Number.isNaN(lng)) return
+  try {
+    const res = await fetch(`/api/reverse_geocode.php?lat=${lat}&lng=${lng}`)
+    const data = res.ok ? await res.json() : null
+    commune.value = data?.commune ?? null
+    codeInsee.value = data?.code_insee ?? null
+    cp.value = data?.cp ?? null
+  } catch {
+    // silencieux, cf. lib/geoplateforme_lib.php
+  }
+}
 
 function getContribStorage() {
   return (window as unknown as Record<string, { getContribInfo?: () => { nom: string; email: string }; saveContribInfo?: (n: string, e: string) => void }>).contribStorage
@@ -73,12 +100,17 @@ function onOpen(e: Event) {
   osmData.value = detail.osm_data || null
   falaiseId.value = detail.falaise_id ?? null
   falaiseNom.value = detail.falaise_nom || ''
+  types.value = detail.types || []
 
   // Contributeur : détail de l'éditeur, sinon localStorage
   const stored = getContribStorage()?.getContribInfo?.() || { nom: '', email: '' }
   contribNom.value = detail.contrib_nom || stored.nom || ''
   contribEmail.value = detail.contrib_email || stored.email || ''
   message.value = ''
+  commune.value = null
+  codeInsee.value = null
+  cp.value = null
+  if (loc.value) updateCommune(loc.value)
 
   // Remonte les sous-composants avec les nouvelles valeurs initiales.
   instanceKey.value++
@@ -98,6 +130,10 @@ async function submit() {
     alert("La position de l'arrêt est manquante.")
     return
   }
+  if (!types.value.length) {
+    alert('Merci de sélectionner au moins une modalité desservie (ter/tgv/bus/tram/téléphérique).')
+    return
+  }
   if (!contribNom.value.trim() || !contribEmail.value.trim()) {
     alert('Merci de renseigner votre nom et votre email.')
     return
@@ -109,6 +145,10 @@ async function submit() {
     arret_id: null,
     nom: nom.value.trim(),
     loc: loc.value,
+    types: types.value,
+    commune: commune.value,
+    code_insee: codeInsee.value,
+    cp: cp.value,
     description: description.value,
     osm_id: osmId.value,
     osm_data: osmData.value,
@@ -163,6 +203,21 @@ onBeforeUnmount(() => window.removeEventListener('velogrimpe:bus-dialog:open', o
             placeholder="ex: Buoux - Mairie"
           />
         </label>
+
+        <div class="form-control">
+          <span class="text-sm font-bold">Modalités desservies <span class="text-error">(au moins une)</span></span>
+          <div class="flex flex-wrap gap-4 mt-1">
+            <label v-for="t in ARRET_TYPES" :key="t.value" class="label cursor-pointer gap-2">
+              <input
+                type="checkbox"
+                class="checkbox checkbox-sm checkbox-primary"
+                :value="t.value"
+                v-model="types"
+              />
+              <span class="label-text">{{ t.label }}</span>
+            </label>
+          </div>
+        </div>
 
         <div class="form-control">
           <span class="text-sm font-bold">Commentaire sur l'arrêt <i class="opacity-50 font-normal">(optionnel)</i></span>

@@ -1,9 +1,9 @@
 /**
- * Helper de soumission d'un arrêt de bus, partagé entre la page `ajout_bus.php`
+ * Helper de soumission d'un arrêt de bus, partagé entre la page `ajout_arret.php`
  * (apps/ajout-bus.ts) et le dialog intégré à l'éditeur de falaise
  * (components/ajout/BusStopDialog.vue).
  *
- * Construit le même payload et appelle `POST /api/add_bus.php`.
+ * Construit le même payload et appelle `POST /api/add_arret.php`.
  */
 
 export interface BusStopPayload {
@@ -11,6 +11,11 @@ export interface BusStopPayload {
   arret_id: string | number | null
   nom: string
   loc: string
+  /** Sous-ensemble de ter/tgv/bus/tram/telepherique, cf. lib/arrets_lib.php */
+  types: string[]
+  commune?: string | null
+  code_insee?: string | null
+  cp?: string | null
   description: string
   osm_id: string | null
   osm_data: string | null
@@ -37,7 +42,7 @@ export interface BusStopResult {
  */
 export async function postBusStop(payload: BusStopPayload): Promise<BusStopResult> {
   try {
-    const res = await fetch('/api/add_bus.php', {
+    const res = await fetch('/api/add_arret.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),

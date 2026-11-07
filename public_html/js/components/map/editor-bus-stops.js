@@ -1,16 +1,20 @@
 /**
- * Calque des arrêts de bus issus de la DB pour l'éditeur de détails falaise.
+ * Calque de tous les arrêts multimodaux (gares TER/TGV, bus, tram, téléphérique)
+ * issus de la DB pour l'éditeur de détails falaise.
  *
- * - Affiche les arrêts existants : liés à la falaise (pleins) vs non liés (estompés).
+ * - Affiche les arrêts existants : liés à la falaise (icône colorée par type) vs
+ *   non liés (icône grisée, même symbole).
  * - Clic sur un arrêt non lié : « Cet arrêt est pertinent pour cette falaise » → Lier.
  * - Clic sur un arrêt lié : Délier.
  * - Recharge sur déplacement de carte (debouncé) ; les arrêts liés sont toujours inclus.
  *
  * @module editor-bus-stops
  */
-import BusStop from "/js/components/map/bus-stop.js";
+import { arretDivIcon } from "/js/components/map/arret-icon.js";
 
 const MIN_ZOOM = 11;
+const ICON_SIZE = 26;
+const UNLINKED_COLOR = "#9ca3af"; // gris
 
 const escapeHtml = (str) =>
   String(str ?? "")
@@ -18,29 +22,6 @@ const escapeHtml = (str) =>
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
-
-// Style « non lié » injecté une seule fois.
-let styleInjected = false;
-function injectStyle() {
-  if (styleInjected) return;
-  styleInjected = true;
-  const style = document.createElement("style");
-  style.textContent = `.vg-bus-unlinked { filter: grayscale(1); opacity: .55; }`;
-  document.head.appendChild(style);
-}
-
-function unlinkedIcon() {
-  const size = BusStop.iconSize;
-  return L.icon({
-    iconUrl: "/images/map/bus.png",
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-    tooltipAnchor: [0, -size / 2],
-    popupAnchor: [0, -size / 2],
-    className:
-      "vg-bus-stop-icon vg-bus-unlinked border border-white border-2 rounded-lg",
-  });
-}
 
 /**
  * @param {L.Map} map
@@ -51,7 +32,6 @@ function unlinkedIcon() {
  * @returns {{ refresh: function, destroy: function }}
  */
 export function initEditorBusStops(map, { falaiseId, ensureContrib }) {
-  injectStyle();
   const layer = L.layerGroup().addTo(map);
 
   const buildPopup = (arret) => {
@@ -63,6 +43,8 @@ export function initEditorBusStops(map, { falaiseId, ensureContrib }) {
     const desc = arret.description
       ? `<div class="text-sm">${arret.description}</div>`
       : "";
+    const veloLink = `<a class="btn btn-xs btn-primary" target="_blank" rel="noopener"
+            href="/ajout/ajout_velo.php?arret_id=${arret.id}&falaise_id=${falaiseId}">Ajouter un accès depuis cet arrêt</a>`;
 
     if (arret.linked) {
       return `
@@ -71,6 +53,7 @@ export function initEditorBusStops(map, { falaiseId, ensureContrib }) {
           ${lignes}
           ${desc}
           <button class="btn btn-xs btn-error unlink-bus-btn" type="button">Délier de cette falaise</button>
+          ${veloLink}
         </div>`;
     }
     return `
@@ -81,6 +64,7 @@ export function initEditorBusStops(map, { falaiseId, ensureContrib }) {
         <div class="text-sm font-semibold mt-1">Cet arrêt est pertinent pour cette falaise ?</div>
         <div class="text-xs opacity-70">Pertinent = accessible à pied ou à vélo depuis la falaise, et le vélo est transportable dans le bus qui dessert cet arrêt.</div>
         <button class="btn btn-xs btn-primary link-bus-btn" type="button">Lier cet arrêt à la falaise</button>
+        ${veloLink}
       </div>`;
   };
 
@@ -88,7 +72,7 @@ export function initEditorBusStops(map, { falaiseId, ensureContrib }) {
     const contrib = await ensureContrib();
     if (!contrib) return;
     try {
-      const res = await fetch("/api/link_bus_falaise.php", {
+      const res = await fetch("/api/link_arret_falaise.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -112,12 +96,16 @@ export function initEditorBusStops(map, { falaiseId, ensureContrib }) {
   };
 
   const addMarker = (arret) => {
-    const marker = L.marker([arret.lat, arret.lng], {
-      icon: arret.linked ? BusStop.busStopIcon(BusStop.iconSize) : unlinkedIcon(),
-    });
+    const icon = arret.linked
+      ? arretDivIcon(arret.types, ICON_SIZE)
+      : arretDivIcon(arret.types, ICON_SIZE, {
+          color: UNLINKED_COLOR,
+          extraClassName: "vg-arret-unlinked",
+        });
+    const marker = L.marker([arret.lat, arret.lng], { icon });
     marker.bindTooltip(escapeHtml(arret.nom), {
       direction: "right",
-      offset: [BusStop.iconSize / 2, 0],
+      offset: [ICON_SIZE / 2, 0],
     });
     marker.bindPopup(buildPopup(arret), { minWidth: 260, maxWidth: 300 });
     marker.on("popupopen", (e) => {
@@ -131,7 +119,7 @@ export function initEditorBusStops(map, { falaiseId, ensureContrib }) {
   };
 
   async function refresh() {
-    let url = `/api/fetch_bus_arrets.php?falaise_id=${falaiseId}`;
+    let url = `/api/fetch_arrets.php?falaise_id=${falaiseId}`;
     if (map.getZoom() >= MIN_ZOOM) {
       const b = map.getBounds();
       url += `&bbox=${b.getSouth()},${b.getWest()},${b.getNorth()},${b.getEast()}`;

@@ -161,3 +161,26 @@ function velo_lien_edition_admin(array $config, array $velo): string
     'velo_id' => $velo['velo_id'],
   ]);
 }
+
+
+/** Arrêt de départ d'un accès (toutes modalités confondues), ou null s'il n'existe pas / est supprimé. */
+function velo_trouver_arret(mysqli $mysqli, int $arret_id): ?array
+{
+  $stmt = $mysqli->prepare("SELECT id, nom, slug FROM arrets WHERE id = ? AND deleted = 0");
+  $stmt->bind_param("i", $arret_id);
+  $stmt->execute();
+  $row = $stmt->get_result()->fetch_assoc();
+  $stmt->close();
+  return $row ?: null;
+}
+
+/** Falaise d'arrivée d'un accès, ou null si elle n'existe pas. */
+function velo_trouver_falaise(mysqli $mysqli, int $falaise_id): ?array
+{
+  $stmt = $mysqli->prepare("SELECT falaise_id, falaise_nom FROM falaises WHERE falaise_id = ?");
+  $stmt->bind_param("i", $falaise_id);
+  $stmt->execute();
+  $row = $stmt->get_result()->fetch_assoc();
+  $stmt->close();
+  return $row ?: null;
+}

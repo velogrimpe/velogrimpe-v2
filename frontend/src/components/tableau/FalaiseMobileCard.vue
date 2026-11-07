@@ -3,6 +3,7 @@ import { computed } from "vue";
 import type { TableauFalaise, TableauItinerary } from "@/types/tableau";
 import { formatTime, calculateVeloTime } from "@/utils";
 import RoseDesVents from "@/components/shared/RoseDesVents.vue";
+import { accesPietonLabel } from "./utils";
 
 const props = defineProps<{
   falaise: TableauFalaise;
@@ -25,6 +26,7 @@ function formatCorrespondances(it: TableauItinerary): string {
   <a
     :href="`/falaise.php?falaise_id=${common.falaise_id}&ville_id=${villeId}`"
     class="card-link text-base-content hover:no-underline font-normal"
+    :data-testid="`falaise-card-${common.falaise_id}`"
   >
     <div class="flex flex-col rounded-lg shadow-xl bg-base-100 p-2 text-sm">
       <div class="flex flex-row justify-start gap-1">
@@ -35,7 +37,7 @@ function formatCorrespondances(it: TableauItinerary): string {
           >
         </h3>
         <div class="font-bold text-xl">
-          {{ formatTime(common.temps_total) }}
+          {{ common.temps_total === null ? "" : formatTime(common.temps_total) }}
         </div>
       </div>
       <div class="w-full flex flex-row items-center justify-start gap-2">
@@ -98,7 +100,7 @@ function formatCorrespondances(it: TableauItinerary): string {
         </div>
         <ul class="list-disc list-inside">
           <li v-for="(row, idx) in falaise" :key="idx">
-            <template v-if="row.train_temps > 0">
+            <template v-if="row.acces_pieton !== 1 && row.train_temps > 0">
               <span
                 v-if="row.train_tgv"
                 class="badge badge-accent badge-sm"
@@ -113,10 +115,17 @@ function formatCorrespondances(it: TableauItinerary): string {
               }}</span
               >) +
             </template>
-            {{ formatTime(calculateVeloTime(row)) }}
-            {{ row.velo_apieduniquement === 1 ? "A pied" : "a velo" }}
-            <template v-if="row.variante_a_pied === 1">
-              <br /><span class="text-primary">Aussi accessible a pied</span>
+            <template v-if="row.acces_pieton === 1">
+              <span
+                :data-testid="`acces-pieton-${common.falaise_id}`"
+>{{ accesPietonLabel(row) }}</span
+              >
+            </template>
+            <template v-else>
+              {{ formatTime(calculateVeloTime(row)) }} a velo
+              <template v-if="row.variante_a_pied === 1">
+                <br /><span class="text-primary">Aussi accessible a pied</span>
+              </template>
             </template>
           </li>
         </ul>

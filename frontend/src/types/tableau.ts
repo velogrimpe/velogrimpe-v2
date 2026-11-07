@@ -22,6 +22,8 @@ export interface TableauItinerary {
   falaise_zonename: string | null;
   falaise_deptname: string | null;
   falaise_deptcode: string | null;
+  /** Nom de l'arrêt (gare) d'où part l'accès. */
+  gare_nom: string;
   train_temps: number;
   train_arrivee: string;
   train_correspmin: number;
@@ -30,9 +32,17 @@ export interface TableauItinerary {
   velo_km: number;
   velo_dplus: number;
   velo_dmoins: number;
-  velo_apieduniquement: number;
   velo_apiedpossible: number;
-  temps_total: number;
+  /** 1 : ligne issue d'un accès à pied depuis l'arrêt (acces_pieton_falaise), sans itinéraire vélo. */
+  acces_pieton: number;
+  /** 1 : la falaise a au moins un accès à pied depuis un arrêt (critère du filtre « Accessible à pied »). */
+  falaise_acces_pieton: number;
+  /** null pour un accès à pied (temps de marche arrêt → falaise inconnu). */
+  temps_total: number | null;
+  /** Modalités de l'arrêt d'un accès à pied (ter, tgv, bus, tram, telepherique) ; [] pour un itinéraire vélo. */
+  acces_pieton_types: string[];
+  /** Noms des lignes qui desservent l'arrêt d'un accès à pied. */
+  acces_pieton_lignes: string[];
   variante: number;
   variante_a_pied: number;
   ville_nom: string;

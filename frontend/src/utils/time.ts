@@ -16,27 +16,19 @@ export function formatTime(minutes: number | null | undefined): string {
 }
 
 /**
- * Calculate bike/walk travel time in minutes
- * Formula: km/20 + D+/500 for bike, km/4 + D+/500 for walking
+ * Calculate bike travel time in minutes
+ * Formula: km/20 + D+/500
  */
 export function calculateVeloTime(itinerary: {
   velo_km: number | string
   velo_dplus: number | string
-  velo_apieduniquement?: number | string | null
 }): number {
-  const { velo_km, velo_dplus, velo_apieduniquement } = itinerary
+  const { velo_km, velo_dplus } = itinerary
   const km = typeof velo_km === 'string' ? parseFloat(velo_km) : velo_km
   const dplus = typeof velo_dplus === 'string' ? parseInt(velo_dplus, 10) : velo_dplus
-  const isWalking = velo_apieduniquement === 1 || velo_apieduniquement === '1'
 
-  let timeInHours: number
-  if (isWalking) {
-    // Walking: 4 km/h + 500m D+/h
-    timeInHours = km / 4 + dplus / 500
-  } else {
-    // Biking: 20 km/h + 500m D+/h
-    timeInHours = km / 20 + dplus / 500
-  }
+  // Biking: 20 km/h + 500m D+/h
+  const timeInHours = km / 20 + dplus / 500
 
   return Math.round(timeInHours * 60)
 }

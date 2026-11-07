@@ -1,0 +1,268 @@
+import { strFromU8, unzipSync } from "fflate";
+
+/** Taille maximale du zip GTFS importé (l'analyse se fait dans le navigateur). */
+export const MAX_GTFS_ZIP_BYTES = 200 * 1024 * 1024;
+
+export type MultiLineString = {
+  type: "MultiLineString";
+  coordinates: number[][][];
+};
+
+export interface GtfsFeed {
+  agencies: Record<string, string>[];
+  routes: Record<string, string>[];
+  trips: Record<string, string>[];
+  stops: Record<string, string>[];
+  /** Contenu brut de stop_times.txt (très volumineux sur les grands réseaux : analysé à la demande), null si absent. */
+  stopTimesText: string | null;
+  /** Contenu brut de shapes.txt (volumineux : analysé à la demande), null si absent. */
+  shapesText: string | null;
+}
+
+export interface GtfsStop {
+  id: string;
+  nom: string;
+  lat: number;
+  lng: number;
+}
+
+export type Modalite = "ter" | "tgv" | "bus" | "tram" | "telepherique";
+
+export interface GtfsRoute {
+  id: string;
+  agencyId: string;
+  numero: string | null;
+  nom: string;
+  couleur: string | null;
+  routeType: string;
+  shapeIds: string[];
+  tripCount: number;
+}
+
+/** Champs du formulaire ligne alimentés par une route GTFS. */
+export interface LigneFields {
+  nom: string;
+  numero: string | null;
+  operateur: string | null;
+  operateur_url: string | null;
+  horaire_url: string | null;
+  ref: string;
+  couleur: string | null;
+}
+
+/** CSV GTFS → lignes indexées par en-tête (BOM, guillemets, CRLF, lignes vides gérés). */
+export function parseCsv(text: string): Record<string, string>[] {
+  if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = "";
+  let inQuotes = false;
+  const endRow = () => {
+    row.push(field);
+    field = "";
+    // ligne totalement vide (un seul champ vide) : ignorée
+    if (!(row.length === 1 && row[0] === "")) rows.push(row);
+    row = [];
+  };
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else inQuotes = false;
+      } else field += c;
+    } else if (c === '"') inQuotes = true;
+    else if (c === ",") {
+      row.push(field);
+      field = "";
+    } else if (c === "\n") endRow();
+    else if (c !== "\r") field += c;
+  }
+  if (field !== "" || row.length > 0) endRow();
+
+  const header = rows.shift();
+  if (!header) return [];
+  return rows.map((r) =>
+    Object.fromEntries(header.map((h, i) => [h, r[i] ?? ""])),
+  );
+}
+
+const WANTED = [
+  "agency.txt",
+  "routes.txt",
+  "trips.txt",
+  "shapes.txt",
+  "stops.txt",
+  "stop_times.txt",
+];
+
+/** Dézippe un GTFS et lit les fichiers utiles à l'import d'une ligne. */
+export function readGtfs(zip: Uint8Array): GtfsFeed {
+  const files = unzipSync(zip, {
+    filter: (f) => WANTED.includes(f.name.split("/").pop() ?? ""),
+  });
+  const text: Record<string, string> = {};
+  for (const [name, data] of Object.entries(files))
+    text[name.split("/").pop()!] = strFromU8(data);
+
+  if (!text["routes.txt"])
+    throw new Error("GTFS invalide : routes.txt introuvable dans le zip");
+  return {
+    agencies: parseCsv(text["agency.txt"] ?? ""),
+    routes: parseCsv(text["routes.txt"]),
+    trips: parseCsv(text["trips.txt"] ?? ""),
+    stops: parseCsv(text["stops.txt"] ?? ""),
+    stopTimesText: text["stop_times.txt"] ?? null,
+    shapesText: text["shapes.txt"] ?? null,
+  };
+}
+
+/** Lignes de routes.txt, avec leurs shape_id déduits de trips.txt. */
+export function listRoutes(feed: GtfsFeed): GtfsRoute[] {
+  const shapesByRoute = new Map<string, Set<string>>();
+  const tripCount = new Map<string, number>();
+  for (const t of feed.trips) {
+    tripCount.set(t.route_id!, (tripCount.get(t.route_id!) ?? 0) + 1);
+    if (!t.shape_id) continue;
+    if (!shapesByRoute.has(t.route_id!))
+      shapesByRoute.set(t.route_id!, new Set());
+    shapesByRoute.get(t.route_id!)!.add(t.shape_id);
+  }
+  return feed.routes.map((r) => ({
+    id: r.route_id!,
+    agencyId: r.agency_id ?? "",
+    numero: r.route_short_name || null,
+    nom: r.route_long_name || r.route_short_name || r.route_id!,
+    couleur: r.route_color ? "#" + r.route_color.replace(/^#/, "") : null,
+    routeType: r.route_type ?? "",
+    shapeIds: [...(shapesByRoute.get(r.route_id!) ?? [])],
+    tripCount: tripCount.get(r.route_id!) ?? 0,
+  }));
+}
+
+/**
+ * shapes.txt → MultiLineString GeoJSON ([lng, lat]), une ligne par shape_id,
+ * points ordonnés par shape_pt_sequence, formes géométriquement identiques
+ * dédoublonnées. Sans `shapeIds`, toutes les formes du fichier.
+ */
+export function shapesToMultiLineString(
+  shapesText: string | null,
+  shapeIds?: string[],
+): MultiLineString | null {
+  if (!shapesText) return null;
+  const wanted = shapeIds ? new Set(shapeIds) : null;
+  const byShape = new Map<string, { seq: number; pt: number[] }[]>();
+  for (const r of parseCsv(shapesText)) {
+    const id = r.shape_id!;
+    if (wanted && !wanted.has(id)) continue;
+    if (!byShape.has(id)) byShape.set(id, []);
+    byShape
+      .get(id)!
+      .push({
+        seq: Number(r.shape_pt_sequence),
+        pt: [Number(r.shape_pt_lon), Number(r.shape_pt_lat)],
+      });
+  }
+  const seen = new Set<string>();
+  const lines: number[][][] = [];
+  for (const pts of byShape.values()) {
+    if (pts.length < 2) continue;
+    const line = pts.sort((a, b) => a.seq - b.seq).map((p) => p.pt);
+    const key = JSON.stringify(line);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    lines.push(line);
+  }
+  return lines.length ? { type: "MultiLineString", coordinates: lines } : null;
+}
+
+export function agencyForRoute(
+  feed: GtfsFeed,
+  route: GtfsRoute,
+): { operateur: string; operateur_url: string | null } | null {
+  const agency =
+    feed.agencies.find(
+      (a) => route.agencyId && a.agency_id === route.agencyId,
+    ) ?? (feed.agencies.length === 1 ? feed.agencies[0] : undefined);
+  if (!agency) return null;
+  return {
+    operateur: agency.agency_name ?? "",
+    operateur_url: agency.agency_url || null,
+  };
+}
+
+export function routeToLigneFields(
+  feed: GtfsFeed,
+  route: GtfsRoute,
+): LigneFields {
+  const agency = agencyForRoute(feed, route);
+  const raw = feed.routes.find((r) => r.route_id === route.id);
+  return {
+    nom: route.nom,
+    numero: route.numero,
+    operateur: agency?.operateur || null,
+    operateur_url: agency?.operateur_url ?? null,
+    horaire_url: raw?.route_url || null,
+    ref: route.id,
+    couleur: route.couleur,
+  };
+}
+
+/**
+ * Arrêts desservis par une ligne (trips.txt → stop_times.txt → stops.txt) :
+ * un arrêt par lieu (les quais sont regroupés sous leur `parent_station`),
+ * dans l'ordre de première desserte le long des trajets.
+ */
+export function listRouteStops(feed: GtfsFeed, route: GtfsRoute): GtfsStop[] {
+  if (!feed.stopTimesText || !feed.stops.length) return [];
+  const tripIds = new Set(
+    feed.trips.filter((t) => t.route_id === route.id).map((t) => t.trip_id),
+  );
+  if (!tripIds.size) return [];
+  const byTrip = new Map<string, { seq: number; stop: string }[]>();
+  for (const r of parseCsv(feed.stopTimesText)) {
+    if (!tripIds.has(r.trip_id!)) continue;
+    if (!byTrip.has(r.trip_id!)) byTrip.set(r.trip_id!, []);
+    byTrip
+      .get(r.trip_id!)!
+      .push({ seq: Number(r.stop_sequence), stop: r.stop_id! });
+  }
+  const stopsById = new Map(feed.stops.map((s) => [s.stop_id!, s]));
+  const seen = new Set<string>();
+  const result: GtfsStop[] = [];
+  for (const rows of byTrip.values()) {
+    for (const { stop } of rows.sort((a, b) => a.seq - b.seq)) {
+      const raw = stopsById.get(stop);
+      if (!raw) continue;
+      const place =
+        (raw.parent_station && stopsById.get(raw.parent_station)) || raw;
+      if (seen.has(place.stop_id!)) continue;
+      const lat = Number(place.stop_lat);
+      const lng = Number(place.stop_lon);
+      if (!place.stop_lat || !place.stop_lon || isNaN(lat) || isNaN(lng))
+        continue;
+      seen.add(place.stop_id!);
+      result.push({ id: place.stop_id!, nom: place.stop_name ?? "", lat, lng });
+    }
+  }
+  return result;
+}
+
+/** Modalité(s) de la ligne d'après `route_type` (GTFS de base et étendu) ; bus par défaut. */
+export function routeModalites(route: GtfsRoute): Modalite[] {
+  const t = Number(route.routeType);
+  if (route.routeType === "" || isNaN(t)) return ["bus"];
+  if (
+    t === 0 ||
+    t === 1 ||
+    t === 5 ||
+    (t >= 900 && t < 1000) ||
+    (t >= 400 && t < 500)
+  )
+    return ["tram"];
+  if (t === 6 || t === 7 || (t >= 1300 && t < 1400)) return ["telepherique"];
+  if (t === 2 || (t >= 100 && t < 200)) return ["ter"];
+  return ["bus"];
+}

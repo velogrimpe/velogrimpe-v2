@@ -164,3 +164,22 @@ GET http://localhost:4000/bdd/gpx/
 
 ### Redirection des anciennes URL vers la forme canonique => 301 puis 200
 GET http://localhost:4000/bdd/images_falaises/140_saint-leger-du-ventoux_img1.webp
+
+### ---------------------------------------------------------------------------
+### Accès à pied depuis des arrêts (Lot 8) : `arrets_pietons` = liste JSON d'ids
+### d'arrêts, création uniquement. Écrit acces_pieton_falaise avec la falaise.
+### ---------------------------------------------------------------------------
+
+### Création avec deux arrêts liés (adapter les ids) => 200 JSON {"redirect": ...}
+POST http://localhost:4000/api/add_falaise.php
+X-Requested-With: XMLHttpRequest
+Content-Type: application/x-www-form-urlencoded
+
+admin=0&falaise_public=2&falaise_nom=Test+pieton&falaise_nomformate=test-pieton&falaise_latlng=45.1234,6.2355&falaise_exposhort1=S&falaise_cotmin=5-&falaise_cotmax=6-&falaise_maa=10&falaise_mar=5&falaise_topo=Topo+test&falaise_expotxt=Sud&falaise_matxt=10min&falaise_voletcarto=Resume+test&falaise_voies=Quelques+voies&nom_prenom=Testeur&email=test@example.com&arrets_pietons=[12,345]
+
+### Arrêt inconnu => 400 JSON {"error": "Arrêt introuvable pour l'accès à pied : ..."}, aucune falaise créée
+POST http://localhost:4000/api/add_falaise.php
+X-Requested-With: XMLHttpRequest
+Content-Type: application/x-www-form-urlencoded
+
+admin=0&falaise_public=2&falaise_nom=Test+pieton&falaise_nomformate=test-pieton-ko&falaise_latlng=45.1234,6.2355&falaise_exposhort1=S&falaise_cotmin=5-&falaise_cotmax=6-&falaise_maa=10&falaise_mar=5&falaise_topo=Topo+test&falaise_expotxt=Sud&falaise_matxt=10min&falaise_voletcarto=Resume+test&falaise_voies=Quelques+voies&nom_prenom=Testeur&email=test@example.com&arrets_pietons=[99999999]

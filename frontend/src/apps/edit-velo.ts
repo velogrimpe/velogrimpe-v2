@@ -111,16 +111,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const seen = new Set<number>()
         const out: GareItem[] = []
         for (const v of velos.value) {
-          if (!seen.has(v.gare.id)) {
-            seen.add(v.gare.id)
-            out.push(v.gare)
+          if (!seen.has(v.arret.id)) {
+            seen.add(v.arret.id)
+            out.push(v.arret)
           }
         }
         return out
       })
 
       const variantes = computed<VeloItem[]>(() =>
-        gare.value ? velos.value.filter((v) => v.gare_id === gare.value!.id) : [],
+        gare.value ? velos.value.filter((v) => v.arret_id === gare.value!.id) : [],
       )
 
       const gareDisabled = computed(() => !falaise.value || loading.value || gares.value.length === 0)
@@ -203,7 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let nextGare = byId(gares.value, preferGareId)
         if (!nextGare && preferVeloId != null) {
           const v = velos.value.find((x) => x.velo_id === preferVeloId)
-          if (v) nextGare = v.gare
+          if (v) nextGare = v.arret
         }
         if (!nextGare && gares.value.length === 1) nextGare = gares.value[0]
         if (nextGare) applyGare(nextGare, preferVeloId)

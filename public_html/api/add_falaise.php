@@ -172,6 +172,37 @@ try {
 }
 
 
+// Accès piétons arrêt → falaise (création uniquement : en édition ils se gèrent
+// depuis l'éditeur de détails). Validés ici, avant l'INSERT de la falaise, pour
+// ne jamais créer une falaise sans les accès demandés.
+$arrets_pietons = [];
+$arrets_pietons_noms = [];
+if (!$isEdition && trim($_POST['arrets_pietons'] ?? '') !== '') {
+  $decoded = json_decode($_POST['arrets_pietons'], true);
+  if (!is_array($decoded) || !array_is_list($decoded)) {
+    respondError("arrets_pietons invalide : liste JSON d'ids d'arrêts attendue.");
+  }
+  foreach ($decoded as $id) {
+    if (!is_int($id) && !(is_string($id) && ctype_digit($id))) {
+      respondError("arrets_pietons invalide : liste JSON d'ids d'arrêts attendue.");
+    }
+    $arrets_pietons[(int) $id] = true;
+  }
+  $arrets_pietons = array_keys($arrets_pietons);
+  $stmtArret = $mysqli->prepare("SELECT nom FROM arrets WHERE id = ? AND deleted = 0");
+  foreach ($arrets_pietons as $arretId) {
+    $stmtArret->bind_param("i", $arretId);
+    $stmtArret->execute();
+    $rowArret = $stmtArret->get_result()->fetch_assoc();
+    if (!$rowArret) {
+      respondError("Arrêt introuvable pour l'accès à pied : $arretId. Rien n'a été enregistré.");
+    }
+    $arrets_pietons_noms[$arretId] = $rowArret['nom'];
+  }
+  $stmtArret->close();
+}
+
+
 // get old record
 $stmt = $mysqli->prepare("SELECT * FROM falaises WHERE falaise_id = ?");
 $stmt->bind_param("i", $falaise_id);
@@ -385,6 +416,17 @@ $res = $stmt->execute();
 // get falaise_id from last insert
 $falaise_id = $mysqli->insert_id;
 $stmt->close();
+
+if ($res && $arrets_pietons) {
+  $stmtAcces = $mysqli->prepare(
+    "INSERT IGNORE INTO acces_pieton_falaise (arret_id, falaise_id, contrib, contrib_mail) VALUES (?, ?, ?, ?)"
+  );
+  foreach ($arrets_pietons as $arretId) {
+    $stmtAcces->bind_param("iiss", $arretId, $falaise_id, $nom_prenom, $email);
+    $stmtAcces->execute();
+  }
+  $stmtAcces->close();
+}
 $mysqli->close();
 
 
@@ -513,6 +555,13 @@ $changes_json = logChanges(
   $newFalaise,
   $oldFalaise
 );
+foreach ($arrets_pietons_noms as $arretId => $arretNom) {
+  logChanges($nom_prenom, $email, 'insert', 'acces_pieton_falaise', $arretId, $falaise_id, [
+    'Arrêt' => $arretNom,
+    'Falaise' => $falaise_nom,
+    'Lien' => 'lié',
+  ]);
+}
 ////// FIN GESTION DES CHANGEMENTS
 
 // Envoi du mail de confirmation seulement

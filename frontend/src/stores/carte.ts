@@ -12,16 +12,22 @@ export interface CarteFalaise {
   falaise_bloc: string | null
   type: 'falaise' | 'falaise_hors_topo'
   access: CarteItineraire[]
+  /** Arrêts reliés à pied (acces_pieton_falaise) */
+  pieton?: Array<{ arret: CarteArret }>
   filteredOut?: boolean
 }
 
-export interface CarteGare {
-  gare_id: string
-  gare_nom: string
-  gare_latlng: string
-  gare_tgv: string
-  type: 'gare' | 'gare_hors_topo'
+export type ArretType = 'ter' | 'tgv' | 'bus' | 'tram' | 'telepherique'
+
+export interface CarteArret {
+  arret_id: number
+  arret_nom: string
+  arret_latlng: string
+  types: ArretType[]
+  type: 'arret' | 'arret_hors_topo'
   access: CarteItineraire[]
+  /** Falaises reliées à pied (acces_pieton_falaise) */
+  pieton: CarteFalaise[]
 }
 
 export interface CarteItineraire {
@@ -29,12 +35,11 @@ export interface CarteItineraire {
   velo_km: string
   velo_dplus: string
   velo_dmoins: string
-  velo_apieduniquement: string
-  gare?: CarteGare
+  arret?: CarteArret
   falaise?: CarteFalaise
 }
 
-export type SelectedItem = (CarteFalaise | CarteGare) | null
+export type SelectedItem = (CarteFalaise | CarteArret) | null
 
 export const useCarteStore = defineStore('carte', () => {
   // State
@@ -56,8 +61,8 @@ export const useCarteStore = defineStore('carte', () => {
     selectedType.value === 'falaise' || selectedType.value === 'falaise_hors_topo'
   )
 
-  const isGareSelected = computed(() =>
-    selectedType.value === 'gare' || selectedType.value === 'gare_hors_topo'
+  const isArretSelected = computed(() =>
+    selectedType.value === 'arret' || selectedType.value === 'arret_hors_topo'
   )
 
   const hasFiltersApplied = computed(() =>
@@ -88,7 +93,7 @@ export const useCarteStore = defineStore('carte', () => {
       new CustomEvent('velogrimpe:selection', {
         detail: newSelected ? {
           type: newSelected.type,
-          id: 'falaise_id' in newSelected ? newSelected.falaise_id : newSelected.gare_id
+          id: 'falaise_id' in newSelected ? newSelected.falaise_id : newSelected.arret_id
         } : null
       })
     )
@@ -103,7 +108,7 @@ export const useCarteStore = defineStore('carte', () => {
     // Computed
     selectedType,
     isFalaiseSelected,
-    isGareSelected,
+    isArretSelected,
     hasFiltersApplied,
     // Actions
     setSelected,

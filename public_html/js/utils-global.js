@@ -20,17 +20,10 @@
   function calculate_time(velo) {
     var velo_km = velo.velo_km;
     var velo_dplus = velo.velo_dplus;
-    var velo_apieduniquement = velo.velo_apieduniquement;
     var km = parseFloat(velo_km);
     var dplus = parseInt(velo_dplus, 10);
-    var isWalking = velo_apieduniquement === "1" || velo_apieduniquement === 1;
 
-    var time_in_hours;
-    if (isWalking) {
-      time_in_hours = km / 4 + dplus / 500;
-    } else {
-      time_in_hours = km / 20 + dplus / 500;
-    }
+    var time_in_hours = km / 20 + dplus / 500;
     return Math.round(time_in_hours * 60);
   }
 

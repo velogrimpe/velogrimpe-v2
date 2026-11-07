@@ -36,9 +36,10 @@ export const useTableauStore = defineStore('tableau', () => {
 
   // Compute metrics for sorting
   function metricsForFalaise(f: TableauFalaise) {
-    const minTotal = Math.min(...f.map(it => it.temps_total || 0))
+    // Les accès à pied n'ont ni temps total ni temps vélo : ignorés des tris (falaise sans autre accès : en dernier)
+    const minTotal = Math.min(...f.filter(it => it.temps_total !== null).map(it => it.temps_total as number))
     const minTrain = Math.min(...f.map(it => it.train_temps || 0))
-    const minVelo = Math.min(...f.map(it => calculateVeloTime(it)))
+    const minVelo = Math.min(...f.filter(it => it.acces_pieton !== 1).map(it => calculateVeloTime(it)))
     const nbVoies = f[0].falaise_nbvoies || 0
     const approche = f[0].falaise_maa || 0
     const altitude = Number(f[0].falaise_altitude) || 0
@@ -70,7 +71,7 @@ export const useTableauStore = defineStore('tableau', () => {
     const { couenne, grandeVoie: avecgv, bloc, psychobloc } = f.typeVoies
     const typeVoiesFiltered = couenne || avecgv || bloc || psychobloc
 
-    const { tempsMax: tempsMaxVelo, distMax: distMaxVelo, denivMax: denivMaxVelo, apiedPossible: apieduniquement } = f.velo
+    const { tempsMax: tempsMaxVelo, distMax: distMaxVelo, denivMax: denivMaxVelo, apiedPossible } = f.velo
     const { tempsMax: tempsMaxTrain, correspMax, terOnly } = f.train
     const nbCorrespMax = correspMax !== null ? correspMax : 10
     const { tempsMax: tempsMaxMA } = f.approche
@@ -108,8 +109,9 @@ export const useTableauStore = defineStore('tableau', () => {
         isTerOk &&
         (tempsMaxTrain === null || it.train_temps <= tempsMaxTrain) &&
         (nbCorrespMax === 10 || it.train_correspmax <= nbCorrespMax) &&
-        (tempsMaxTV === null || it.train_temps + duration <= tempsMaxTV) &&
-        (tempsMaxTVA === null || it.temps_total <= tempsMaxTVA)
+        // Accès à pied : ni temps vélo ni temps total, donc exclu dès qu'un filtre de temps total est posé
+        (tempsMaxTV === null || (it.acces_pieton !== 1 && it.train_temps + duration <= tempsMaxTV)) &&
+        (tempsMaxTVA === null || (it.temps_total !== null && it.temps_total <= tempsMaxTVA))
       )
     })
 
@@ -124,11 +126,13 @@ export const useTableauStore = defineStore('tableau', () => {
     // Velo/access check
     const veloMatch = falaiseItineraries.some(it => {
       const duration = calculateVeloTime(it)
+      // Accès à pied : pas de trajet vélo à comparer, donc exclu dès qu'un filtre vélo est posé
+      const pieton = it.acces_pieton === 1
       return (
-        (tempsMaxVelo === null || duration <= tempsMaxVelo) &&
-        (denivMaxVelo === null || it.velo_dplus <= denivMaxVelo) &&
-        (distMaxVelo === null || it.velo_km <= distMaxVelo) &&
-        (!apieduniquement || it.velo_apieduniquement === 1 || it.velo_apiedpossible === 1)
+        (tempsMaxVelo === null || (!pieton && duration <= tempsMaxVelo)) &&
+        (denivMaxVelo === null || (!pieton && it.velo_dplus <= denivMaxVelo)) &&
+        (distMaxVelo === null || (!pieton && it.velo_km <= distMaxVelo)) &&
+        (!apiedPossible || falaise.falaise_acces_pieton === 1 || it.velo_apiedpossible === 1)
       )
     })
 

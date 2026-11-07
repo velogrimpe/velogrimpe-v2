@@ -25,6 +25,7 @@
     "@turf/boolean-clockwise": "^7.3.2",
     "@turf/center-of-mass": "^7.3.2",
     "@turf/helpers": "^7.3.2",
+    "fflate": "^0.8.3",
     "leaflet": "^1.9.4",
     "leaflet-fullscreen": "^1.0.2",
     "leaflet-gpx": "^2.2.0",

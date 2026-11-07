@@ -43,6 +43,7 @@ rassemblement) ; la liste est en tête du fichier.
 tests/e2e/
 ├── navigation.spec.ts    # Tests de navigation entre pages
 ├── carte.spec.ts         # Tests de la carte Leaflet
+├── carte-arrets.spec.ts  # Arrêts multimodaux + traits piétons (Leaflet et MapLibre)
 ├── falaise.spec.ts       # Tests des pages falaise
 ├── tableau.spec.ts       # Tableau des falaises par ville (données + rendu Vue)
 ├── sortie.spec.ts        # Page sortie (ni jetons ni email de l'organisateur)
@@ -50,6 +51,9 @@ tests/e2e/
 ├── admin-token.spec.ts   # Le jeton admin ne s'affiche qu'à qui le fournit
 ├── ajout-falaise.spec.ts # Tests du formulaire d'ajout
 ├── ajout-bus-falaises.spec.ts # Falaises liées d'un arrêt de bus (liste + carte)
+├── ajout-velo.spec.ts    # Formulaire d'ajout d'accès (arrêt de départ, modes vélo/pied)
+├── ajout-ligne.spec.ts   # Formulaire admin de ligne BTT (import GTFS, tracé à la main, CRUD)
+├── voir-ligne.spec.ts    # Bouton « voir la ligne » (cartes globales + page falaise) ; série, ligne partagée
 └── autocomplete.spec.ts  # Tests des champs autocomplete
 ```
 

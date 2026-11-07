@@ -7,54 +7,54 @@ const searchIconSlot = () => ({
   icon: () => h('svg', { class: 'w-4 h-4 fill-none stroke-current shrink-0' }, [h('use', { href: '#search' })]),
 })
 
-interface GareItem extends FormAutocompleteItem {
-  codeuic?: string
+interface ArretItem extends FormAutocompleteItem {
+  types?: string[]
 }
 
 // Wait for DOM to be ready
 document.addEventListener('DOMContentLoaded', () => {
-  // Mount gare autocomplete (for form submission)
-  mountGareAutocomplete()
+  // Mount arrêt autocomplete (for form submission)
+  mountArretAutocomplete()
 
   // Mount Transitous station search fields (for route lookup)
   mountStationSearch()
 })
 
-function mountGareAutocomplete() {
+function mountArretAutocomplete() {
   const mountEl = document.getElementById('vue-ajout-train')
   if (!mountEl) {
     console.warn('[velogrimpe] #vue-ajout-train mount point not found')
     return
   }
 
-  let gares: GareItem[] = []
-  let presetGareNom: string | null = null
+  let arrets: ArretItem[] = []
+  let presetArretId: number | null = null
 
   try {
-    gares = JSON.parse(mountEl.dataset.gares || '[]')
-    presetGareNom = mountEl.dataset.presetGareNom || null
+    arrets = JSON.parse(mountEl.dataset.arrets || '[]')
+    presetArretId = mountEl.dataset.presetArretId ? Number(mountEl.dataset.presetArretId) : null
   } catch (e) {
     console.error('[velogrimpe] Failed to parse ajout-train data:', e)
   }
 
   // Helper to verify if itinerary exists
   const verifierExistenceItineraire = () => {
-    const gareIdEl = document.getElementById('gare_id') as HTMLInputElement
+    const arretIdEl = document.getElementById('arret_id') as HTMLInputElement
     const villeIdEl = document.getElementById('ville_id') as HTMLSelectElement
     const tgvEl = document.getElementById('train_tgv') as HTMLInputElement
     const submitBtn = document.getElementById('submitBtn') as HTMLButtonElement
 
-    const gareId = gareIdEl?.value || ''
+    const arretId = arretIdEl?.value || ''
     const villeId = villeIdEl?.value || ''
     const isTgv = tgvEl?.checked ?? false
 
-    if (!gareId || !villeId) {
+    if (!arretId || !villeId) {
       const alert = document.getElementById('itineraireExistsAlert')
       if (alert) alert.classList.add('hidden')
       return
     }
 
-    fetch(`/api/verify_train_dup.php?gare_id=${gareId}&ville_id=${villeId}&train_tgv=${isTgv ? 1 : 0}`)
+    fetch(`/api/verify_train_dup.php?arret_id=${arretId}&ville_id=${villeId}&train_tgv=${isTgv ? 1 : 0}`)
       .then((response) => response.json())
       .then((exists) => {
         const alert = document.getElementById('itineraireExistsAlert')
@@ -73,27 +73,25 @@ function mountGareAutocomplete() {
 
   const app = createApp({
     setup() {
-      const gareValue = ref(presetGareNom || '')
+      const presetArret = presetArretId !== null ? (arrets.find((a) => Number(a.id) === presetArretId) ?? null) : null
+      const arretValue = ref(presetArret?.nom || '')
 
-      const onGareSelect = (item: FormAutocompleteItem | null) => {
-        const gareIdEl = document.getElementById('gare_id') as HTMLInputElement
+      const onArretSelect = (item: FormAutocompleteItem | null) => {
+        const arretIdEl = document.getElementById('arret_id') as HTMLInputElement
         const trainArriveeEl = document.getElementById('train_arrivee') as HTMLInputElement
 
         if (item) {
-          if (gareIdEl) gareIdEl.value = String(item.id)
+          if (arretIdEl) arretIdEl.value = String(item.id)
           if (trainArriveeEl) trainArriveeEl.value = item.nom
           verifierExistenceItineraire()
         } else {
-          if (gareIdEl) gareIdEl.value = ''
+          if (arretIdEl) arretIdEl.value = ''
           if (trainArriveeEl) trainArriveeEl.value = ''
         }
       }
 
-      // Re-initialize preset gare fields (inline DOMContentLoaded clears .input-disabled before Vue mounts)
-      if (presetGareNom) {
-        const presetGare = gares.find((g) => g.nom === presetGareNom) ?? null
-        onGareSelect(presetGare)
-      }
+      // Re-initialize preset arrêt fields (inline DOMContentLoaded clears .input-disabled before Vue mounts)
+      if (presetArret) onArretSelect(presetArret)
 
       // Set up listeners for ville and TGV changes
       setTimeout(() => {
@@ -107,12 +105,12 @@ function mountGareAutocomplete() {
         h(
           FormAutocomplete,
           {
-            modelValue: gareValue.value,
+            modelValue: arretValue.value,
             'onUpdate:modelValue': (v: string) => {
-              gareValue.value = v
+              arretValue.value = v
             },
-            items: gares,
-            onSelect: onGareSelect,
+            items: arrets,
+            onSelect: onArretSelect,
           },
           searchIconSlot()
         )
@@ -120,7 +118,7 @@ function mountGareAutocomplete() {
   })
 
   app.mount(mountEl)
-  console.log('[velogrimpe] Vue ajout-train gare autocomplete mounted')
+  console.log('[velogrimpe] Vue ajout-train arrêt autocomplete mounted')
 }
 
 // Store selected stations for route lookup

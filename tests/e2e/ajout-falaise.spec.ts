@@ -39,8 +39,8 @@ test.describe('Ajout Falaise form', () => {
     // Map should be visible
     await expect(page.locator('#map.leaflet-container')).toBeVisible()
 
-    // Zoom controls should work
-    const zoomIn = page.locator('.leaflet-control-zoom-in')
+    // Zoom controls should work (carte de placement #map ; la seconde carte #map-arrets a les siens)
+    const zoomIn = page.locator('#map .leaflet-control-zoom-in')
     await expect(zoomIn).toBeVisible()
   })
 

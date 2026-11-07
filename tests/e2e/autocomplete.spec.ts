@@ -179,7 +179,7 @@ test.describe('Autocomplete - Ajout Falaise', () => {
 })
 
 // =============================================================================
-// TESTS AJOUT VELO - Autocomplete gare + falaise
+// TESTS AJOUT VELO - Autocomplete arrêt + falaise
 // =============================================================================
 
 test.describe('Autocomplete - Ajout Vélo', () => {
@@ -215,7 +215,7 @@ test.describe('Autocomplete - Ajout Vélo', () => {
     await option.click()
 
     // Vérifier le champ caché
-    const hiddenGareId = page.locator('#gare_id')
+    const hiddenGareId = page.locator('#arret_id')
     const gareIdValue = await hiddenGareId.inputValue()
     expect(gareIdValue).not.toBe('')
   })
@@ -266,7 +266,7 @@ test.describe('Autocomplete - Ajout Vélo', () => {
     await falaiseContainer.locator('.autocomplete-list li').filter({ hasText: /Pont/ }).first().click()
 
     // Vérifier les deux champs cachés
-    const gareId = await page.locator('#gare_id').inputValue()
+    const gareId = await page.locator('#arret_id').inputValue()
     const falaiseId = await page.locator('#falaise_id').inputValue()
 
     expect(gareId).not.toBe('')
@@ -332,10 +332,10 @@ test.describe('Autocomplete - Ajout Train', () => {
     // Vérifier que l'input a la valeur
     await expect(input).toHaveValue(/Dijon/)
 
-    // Vérifier le champ caché gare_id
-    const hiddenGareId = page.locator('#gare_id')
-    const gareIdValue = await hiddenGareId.inputValue()
-    expect(gareIdValue).not.toBe('')
+    // Vérifier le champ caché arret_id
+    const hiddenArretId = page.locator('#arret_id')
+    const arretIdValue = await hiddenArretId.inputValue()
+    expect(arretIdValue).not.toBe('')
   })
 
   test('autocomplete gare remplit aussi train_arrivee', async ({ page }) => {
@@ -356,7 +356,7 @@ test.describe('Autocomplete - Ajout Train', () => {
 })
 
 // =============================================================================
-// TESTS CARTE - Autocomplete recherche (falaises + gares)
+// TESTS CARTE - Autocomplete recherche (falaises + arrêts)
 // =============================================================================
 
 test.describe('Autocomplete - Carte recherche', () => {
@@ -367,7 +367,7 @@ test.describe('Autocomplete - Carte recherche', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/carte.php')
     await page.waitForSelector('#vue-map-filters')
-    await page.locator('#vue-map-filters button[title="Rechercher une falaise ou une gare"]').click()
+    await page.locator('#vue-map-filters button[title="Rechercher une falaise ou un arrêt"]').click()
     await page.waitForSelector(RECHERCHE)
   })
 
@@ -445,7 +445,7 @@ test.describe('Autocomplete - Carte recherche', () => {
 
     // Vérifier l'événement
     const eventDetail = await eventPromise
-    expect(eventDetail.type).toBe('gare')
+    expect(eventDetail.type).toBe('arret')
     expect(eventDetail.name).toContain('Lyon')
   })
 

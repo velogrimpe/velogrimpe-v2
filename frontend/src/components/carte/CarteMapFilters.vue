@@ -8,7 +8,7 @@ import type { SearchItem } from "./SearchAutocomplete.vue";
 
 const props = defineProps<{
   falaises: Array<{ falaise_id: number; falaise_nom: string }>;
-  gares: Array<{ gare_id: number; gare_nom: string }>;
+  arrets: Array<{ arret_id: number; arret_nom: string; types: string[] }>;
   villes: Ville[];
 }>();
 
@@ -799,7 +799,7 @@ function parseNumberInput(value: string): number | null {
         v-if="!isSearchExpanded"
         type="button"
         class="btn btn-sm md:btn-md max-md:btn-square bg-base-100 shadow-md border-0"
-        title="Rechercher une falaise ou une gare"
+        title="Rechercher une falaise ou un arrêt"
         @click="expandSearch"
       >
         <span class="hidden md:inline">Rechercher</span
@@ -813,7 +813,7 @@ function parseNumberInput(value: string): number | null {
             <SearchAutocomplete
               ref="searchRef"
               :falaises="props.falaises"
-              :gares="props.gares"
+              :arrets="props.arrets"
               @select="onSearchSelect"
             />
           </div>

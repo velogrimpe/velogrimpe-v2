@@ -27,7 +27,6 @@ export interface Velo {
   velo_km: string
   velo_dplus: string
   velo_temps: string
-  velo_apieduniquement: string
   velo_apiedpossible: string
   velo_variante: string
   velo_public: string

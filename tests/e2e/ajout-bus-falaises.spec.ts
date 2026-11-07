@@ -1,7 +1,7 @@
 import { test, expect, Page } from '@playwright/test'
 
 /**
- * Liste des falaises liées du formulaire d'arrêt de bus (ajout_bus.php).
+ * Liste des falaises liées du formulaire d'arrêt de bus (ajout_arret.php).
  *
  * L'état des liaisons vit dans le script carte de la page (Set + hidden
  * #arret_falaise_ids) et la liste Vue s'y branche par l'événement
@@ -32,13 +32,13 @@ async function premieresFalaises(page: Page, n: number) {
 
 test.describe('Falaises liées à un arrêt de bus', () => {
   test('part d\'une liste vide', async ({ page }) => {
-    await page.goto('/ajout/ajout_bus.php')
+    await page.goto('/ajout/ajout_arret.php')
     await expect(page.locator(SECTION)).toContainText('Aucune falaise liée')
     await expect(hidden(page)).toHaveValue('')
   })
 
   test('une liaison faite sur la carte apparaît dans la liste', async ({ page }) => {
-    await page.goto('/ajout/ajout_bus.php')
+    await page.goto('/ajout/ajout_arret.php')
     await page.waitForFunction(() => !!(window as any).busSetFalaiseLinked)
     const [falaise] = await premieresFalaises(page, 1)
 
@@ -53,7 +53,7 @@ test.describe('Falaises liées à un arrêt de bus', () => {
   })
 
   test('l\'autocomplete ajoute une falaise, le × la retire', async ({ page }) => {
-    await page.goto('/ajout/ajout_bus.php')
+    await page.goto('/ajout/ajout_arret.php')
     await page.waitForFunction(() => !!(window as any).busFalaises)
     const falaises = await premieresFalaises(page, 1)
     const cible = falaises[0]
@@ -72,12 +72,12 @@ test.describe('Falaises liées à un arrêt de bus', () => {
   })
 
   test('les falaises pré-liées par l\'URL sont listées', async ({ page }) => {
-    await page.goto('/ajout/ajout_bus.php')
+    await page.goto('/ajout/ajout_arret.php')
     await page.waitForFunction(() => !!(window as any).busFalaises)
     const falaises = await premieresFalaises(page, 2)
     const ids = falaises.map((f) => f.id)
 
-    await page.goto(`/ajout/ajout_bus.php?falaise_ids=${ids.join(',')}`)
+    await page.goto(`/ajout/ajout_arret.php?falaise_ids=${ids.join(',')}`)
 
     await expect(page.locator(`${SECTION} li`)).toHaveCount(2)
     expect(await nomsAffiches(page)).toEqual(falaises.map((f) => f.nom))
@@ -85,7 +85,7 @@ test.describe('Falaises liées à un arrêt de bus', () => {
   })
 
   test('un ajout par l\'autocomplete cadre sur l\'arrêt et les falaises liées', async ({ page }) => {
-    await page.goto('/ajout/ajout_bus.php')
+    await page.goto('/ajout/ajout_arret.php')
     await page.waitForFunction(() => !!(window as any).busFalaises)
 
     // Deux falaises volontairement éloignées (extrêmes en latitude) : un simple
@@ -128,7 +128,7 @@ test.describe('Falaises liées à un arrêt de bus', () => {
 
   test('ce qui est affiché est ce qui est posté', async ({ page }) => {
     let payload: { falaise_ids?: number[] } | null = null
-    await page.route('**/api/add_bus.php', async (route) => {
+    await page.route('**/api/add_arret.php', async (route) => {
       payload = JSON.parse(route.request().postData() || '{}')
       await route.fulfill({
         status: 200,
@@ -137,7 +137,7 @@ test.describe('Falaises liées à un arrêt de bus', () => {
       })
     })
 
-    await page.goto('/ajout/ajout_bus.php')
+    await page.goto('/ajout/ajout_arret.php')
     await page.waitForFunction(() => !!(window as any).busSetFalaiseLinked)
     const falaises = await premieresFalaises(page, 3)
 

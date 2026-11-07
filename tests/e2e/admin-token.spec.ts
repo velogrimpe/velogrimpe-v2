@@ -20,18 +20,18 @@ const VALEURS_PIEGES = ['1', 'true', 'on', 'yes', '0', '', 'admin[]=1']
 /** Pages qui lisent ?admin (relevé : grep "_GET['admin']" dans public_html). */
 async function pagesAdmin(request: import('@playwright/test').APIRequestContext) {
   const { velos } = await (await request.get(`/api/fetch_velos.php?falaise_id=${falaiseId}`)).json()
-  const { velo_id, gare_id } = velos[0]
+  const { velo_id, arret_id: gare_id } = velos[0]
   return [
     `/ajout/confirmation_falaise.php?falaise_id=${falaiseId}&type=insert&step=1`,
     `/ajout/confirmation_falaise.php?falaise_id=${falaiseId}&type=insert&step=2`,
     `/ajout/edit_details_falaise.php?falaise_id=${falaiseId}`,
-    `/ajout/confirmation_bus.php?arret_id=1&type=insert`,
+    `/ajout/confirmation_arret.php?arret_id=1&type=insert`,
     `/ajout/confirmation_velo.php?falaise_id=${falaiseId}&gare_id=${gare_id}`,
     `/ajout/confirmation_train.php?ville_id=6&gare_id=${gare_id}`,
     `/ajout/ajout_falaise.php?falaise_id=${falaiseId}`,
     `/ajout/ajout_velo.php?falaise_id=${falaiseId}`,
     `/ajout/ajout_train.php`,
-    `/ajout/ajout_bus.php`,
+    `/ajout/ajout_arret.php`,
     `/ajout/ajout_ville.php`,
     `/ajout/edit_velo.php?falaise_id=${falaiseId}&gare_id=${gare_id}&velo_id=${velo_id}`,
   ]

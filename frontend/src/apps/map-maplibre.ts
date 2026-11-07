@@ -1,5 +1,5 @@
 /**
- * MapLibre GL JS libraries bundle for inline-script pages (carte_maplibre.php).
+ * MapLibre GL JS libraries bundle for inline-script pages (carte.php).
  * Mirrors `map.ts` but for MapLibre instead of Leaflet:
  *  - bundles maplibre-gl + CSS
  *  - registers the pmtiles protocol

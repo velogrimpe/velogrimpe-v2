@@ -15,7 +15,7 @@ $exports = [
   'falaises' => 'falaises.geojson',
   'falaises-details' => 'falaises-details.geojson',
   'itineraires-velo' => 'itineraires-velo.geojson',
-  'gares' => 'gares.geojson',
+  'arrets' => 'arrets.geojson',
   'complet' => 'complet.geojson',
 ];
 

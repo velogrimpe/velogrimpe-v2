@@ -11,6 +11,11 @@ export interface GareItem extends FormAutocompleteItem {
   latlng: string | null
 }
 
+/** Arrêt de départ possible (ajout d'accès) : toutes modalités confondues. */
+export interface ArretItem extends GareItem {
+  types: string[]
+}
+
 export interface FalaiseItem extends FormAutocompleteItem {
   id: number
   nomformate: string
@@ -22,7 +27,7 @@ export interface FalaiseItem extends FormAutocompleteItem {
 /** Ligne renvoyée par /api/fetch_velos.php */
 export interface VeloItem {
   velo_id: number
-  gare_id: number
+  arret_id: number
   falaise_id: number
   velo_depart: string
   velo_arrivee: string
@@ -33,10 +38,9 @@ export interface VeloItem {
   velo_dmoins: number | null
   velo_descr: string
   velo_openrunner: string
-  velo_apieduniquement: number
   velo_apiedpossible: number
   velo_public: number
-  gare: GareItem
+  arret: GareItem
   gpx_url: string | null
 }
 

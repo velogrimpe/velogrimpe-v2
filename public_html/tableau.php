@@ -21,15 +21,11 @@ function format_time($minutes)
   }
 }
 
-//Calculatrice de temps de trajet vélo (km/20+dplus/500 à vélo, km/4+dplus/500 à pied)
+//Calculatrice de temps de trajet vélo (km/20+dplus/500)
 
-function calculate_time($distance_km, $elevation_m, $velo_apieduniquement)
+function calculate_time($distance_km, $elevation_m)
 {
-  if ($velo_apieduniquement == 1) {
-    $time_in_hours = $distance_km / 4 + $elevation_m / 500;
-  } else {
-    $time_in_hours = $distance_km / 20 + $elevation_m / 500;
-  }
+  $time_in_hours = $distance_km / 20 + $elevation_m / 500;
   $time_in_minutes = round($time_in_hours * 60);
   return $time_in_minutes;
 }
@@ -44,18 +40,22 @@ $ville = $mysqli->query("SELECT ville_nom FROM villes WHERE ville_id = $ville_id
 // Lignes envoyées telles quelles à l'app Vue (window.__TABLEAU_DATA__) : n'y
 // mettre que les champs de TableauItinerary (frontend/src/types/tableau.ts).
 // Pas de f.* : la ligne contient l'email du contributeur (falaise_contrib).
+// Valable aussi pour la requête des accès piétons plus bas.
 $stmt = $mysqli->prepare("
   SELECT
     f.falaise_id, f.falaise_nom, f.falaise_cotmin, f.falaise_cotmax, f.falaise_nbvoies, f.falaise_maa,
     f.falaise_exposhort1, f.falaise_exposhort2, f.falaise_altitude, f.falaise_bloc, f.falaise_gvnb,
     f.falaise_fermee, f.falaise_zonename, f.falaise_deptname, f.falaise_deptcode,
+    a.nom AS gare_nom,
     t.train_arrivee, t.train_temps, t.train_correspmin, t.train_correspmax, COALESCE(t.train_tgv, 0) AS train_tgv,
-      v.velo_km, v.velo_dplus, v.velo_dmoins, v.velo_apieduniquement, velo_apiedpossible,
+      v.velo_km, v.velo_dplus, v.velo_dmoins, velo_apiedpossible,
+      0 AS acces_pieton,
+      EXISTS(SELECT 1 FROM acces_pieton_falaise p WHERE p.falaise_id = f.falaise_id) AS falaise_acces_pieton,
       villes.ville_nom
   FROM `falaises` f
   left join velo v on v.falaise_id = f.falaise_id
-  left join gares g on g.gare_id = v.gare_id AND g.deleted = 0
-  left join train t on t.gare_id = g.gare_id
+  left join arrets a on a.id = v.arret_id AND a.deleted = 0
+  left join train t on t.arret_id = a.id
   left join villes on villes.ville_id = t.ville_id
   where
     f.falaise_fermee = ''
@@ -70,11 +70,66 @@ $stmt = $mysqli->prepare("
 $stmt->bind_param("i", $ville_id);
 
 $stmt->execute();
-$result = $stmt->get_result();
+$rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
+
+// Accès à pied depuis un arrêt relié à la ville par un train : une ligne par
+// accès, en plus des itinéraires vélo (même depuis le même arrêt). Sans
+// itinéraire vélo (velo_km/dplus/dmoins à 0) ni temps total : le temps de marche
+// arrêt → falaise n'est pas connu. Modes et lignes de l'arrêt en `acces_pieton_*`.
+$stmtPieton = $mysqli->prepare("
+  SELECT
+    f.falaise_id, f.falaise_nom, f.falaise_cotmin, f.falaise_cotmax, f.falaise_nbvoies, f.falaise_maa,
+    f.falaise_exposhort1, f.falaise_exposhort2, f.falaise_altitude, f.falaise_bloc, f.falaise_gvnb,
+    f.falaise_fermee, f.falaise_zonename, f.falaise_deptname, f.falaise_deptcode,
+    a.nom AS gare_nom,
+    a.ter, a.tgv, a.bus, a.tram, a.teleph, a.id AS acces_pieton_arret_id,
+    t.train_arrivee, t.train_temps, t.train_correspmin, t.train_correspmax, COALESCE(t.train_tgv, 0) AS train_tgv,
+    0 AS velo_km, 0 AS velo_dplus, 0 AS velo_dmoins,
+    1 AS velo_apiedpossible, 1 AS acces_pieton, 1 AS falaise_acces_pieton,
+    villes.ville_nom
+  FROM acces_pieton_falaise p
+  JOIN falaises f ON f.falaise_id = p.falaise_id
+  JOIN arrets a ON a.id = p.arret_id AND a.deleted = 0
+  JOIN train t ON t.arret_id = a.id
+  JOIN villes ON villes.ville_id = t.ville_id
+  WHERE
+    f.falaise_fermee = ''
+    AND villes.ville_id = ?
+    AND f.falaise_public >= 0
+    AND t.train_public >= 0
+  ORDER BY f.falaise_id");
+$stmtPieton->bind_param("i", $ville_id);
+$stmtPieton->execute();
+$rowsPieton = $stmtPieton->get_result()->fetch_all(MYSQLI_ASSOC);
+$stmtPieton->close();
+require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/arrets_lib.php';
+$lignesParArret = [];
+if ($rowsPieton) {
+  $ids = implode(',', array_unique(array_map(fn($r) => (int) $r['acces_pieton_arret_id'], $rowsPieton)));
+  foreach ($mysqli->query("SELECT alt.arret_id, l.nom
+      FROM arrets_lignes_transport alt JOIN lignes_transport l ON l.id = alt.ligne_id
+      WHERE alt.arret_id IN ($ids) ORDER BY l.nom")->fetch_all(MYSQLI_ASSOC) as $l) {
+    $lignesParArret[(int) $l['arret_id']][] = $l['nom'];
+  }
+}
+$rowsPieton = array_map(function ($r) use ($lignesParArret) {
+  $r['acces_pieton_types'] = arret_types($r);
+  $r['acces_pieton_lignes'] = $lignesParArret[(int) $r['acces_pieton_arret_id']] ?? [];
+  unset($r['ter'], $r['tgv'], $r['bus'], $r['tram'], $r['teleph'], $r['acces_pieton_arret_id']);
+  $r['temps_total'] = null;
+  $r['variante'] = 0;
+  $r['variante_a_pied'] = 1;
+  return $r;
+}, $rowsPieton);
+
+$falaises = [];
 // Store the results in a record where the key is the falaise_id and the value is the list of row where falaise_id is the same
-if ($result->num_rows > 0) {
-  while ($row = $result->fetch_assoc()) {
-    $row['temps_total'] = calculate_time($row['velo_km'], $row['velo_dplus'], $row['velo_apieduniquement']) + $row["train_temps"] + $row["falaise_maa"];
+if (count($rows) > 0 || count($rowsPieton) > 0) {
+  foreach ($rows as $row) {
+    $row['acces_pieton_types'] = [];
+    $row['acces_pieton_lignes'] = [];
+    $row['temps_total'] = calculate_time($row['velo_km'], $row['velo_dplus']) + $row["train_temps"] + $row["falaise_maa"];
     // If there is already a record for this falaise with the same train_arrivee, keep the one with the shortest total time and increment an attribute 'variante'
     // 1. find the existing row with the same train_arrivee
     // 2. if there is one, compare the total times and keep the shortest
@@ -114,14 +169,17 @@ if ($result->num_rows > 0) {
     });
 
   }
-  // sort the falaises by the minimum total time ascending
+  // Les accès à pied s'ajoutent après les itinéraires vélo de leur falaise (sans variantes ni tri par temps).
+  foreach ($rowsPieton as $row) {
+    $falaises[$row['falaise_id']][] = $row;
+  }
+  // sort the falaises by the minimum total time ascending ; sans temps total (accès piéton seuls) : en dernier
   usort($falaises, function ($a, $b) {
-    return $a[0]['temps_total'] <=> $b[0]['temps_total'];
+    return ($a[0]['temps_total'] ?? PHP_INT_MAX) <=> ($b[0]['temps_total'] ?? PHP_INT_MAX);
   });
 } else {
   echo "0 results";
 }
-$stmt->close();
 
 ?>
 <!DOCTYPE html>

@@ -2,7 +2,7 @@
 import { computed } from "vue";
 import type { TableauFalaise, TableauItinerary } from "@/types/tableau";
 import { formatTime, calculateVeloTime } from "@/utils";
-import { getNbVoiesLabel } from "./utils";
+import { getNbVoiesLabel, accesPietonLabel } from "./utils";
 import RoseDesVents from "@/components/shared/RoseDesVents.vue";
 
 const props = defineProps<{
@@ -26,20 +26,15 @@ function getVeloTimeDisplay(it: TableauItinerary): string {
 }
 
 function getVeloReturnTime(it: TableauItinerary): string {
-  const { velo_km, velo_dmoins, velo_apieduniquement } = it;
-  let timeInHours: number;
-  if (velo_apieduniquement === 1) {
-    timeInHours = velo_km / 4 + velo_dmoins / 500;
-  } else {
-    timeInHours = velo_km / 20 + velo_dmoins / 500;
-  }
+  const { velo_km, velo_dmoins } = it;
+  const timeInHours = velo_km / 20 + velo_dmoins / 500;
   return formatTime(Math.round(timeInHours * 60));
 }
 </script>
 
 <template>
   <!-- Wrapper with display:contents to preserve grid layout with Vue fragments -->
-  <div class="contents">
+  <div class="contents" :data-testid="`falaise-row-${common.falaise_id}`">
     <!-- Falaise name column -->
     <div
       class="bg-base-100 px-2 py-1 self-stretch font-bold flex flex-col items-center justify-center text-base"
@@ -99,68 +94,66 @@ function getVeloReturnTime(it: TableauItinerary): string {
         :key="idx"
         class="self-stretch flex flex-col justify-center py-2 px-2"
       >
-        {{
-          formatTime(
-            calculateVeloTime(row) + row.train_temps + common.falaise_maa,
-          )
-        }}
+        <span :data-testid="`temps-total-${common.falaise_id}`">{{
+          row.temps_total === null ? "" : formatTime(row.temps_total)
+        }}</span>
       </div>
     </div>
 
-    <!-- Train column -->
+    <!-- Train + Velo columns : sous-grille des deux colonnes de la grille du tableau (alignement
+         identique pour toutes les falaises) ; un accès à pied fusionne les deux cellules (col-span-2) -->
     <div
-      class="bg-base-100 py-1 self-stretch grid divide-y divide-slate-200 items-center"
+      class="col-span-2 bg-base-300 self-stretch grid grid-cols-subgrid gap-y-px items-stretch"
       :style="{ gridTemplateRows: `repeat(${falaise.length}, 1fr)` }"
     >
-      <div
-        v-for="(row, idx) in falaise"
-        :key="idx"
-        class="self-stretch flex flex-col justify-center py-2 px-2"
-      >
-        <template v-if="row.train_temps > 0">
-          <div class="text-base font-bold">
-            <span
-              v-if="row.train_tgv"
-              class="badge badge-accent badge-sm"
-              title="Trajet empruntant un segment TGV"
-              >TGV</span
-            >
-            {{ formatTime(row.train_temps) }}
-            <span title="D=Direct / C=Correspondances"
-              >({{ formatCorrespondances(row) }})</span
-            >
+      <template v-for="(row, idx) in falaise" :key="idx">
+        <div
+          v-if="row.acces_pieton === 1"
+          :data-testid="`acces-pieton-${common.falaise_id}`"
+          class="col-span-2 bg-base-100 flex flex-col justify-center py-2 px-2"
+        >
+          {{ accesPietonLabel(row) }}
+        </div>
+        <template v-else>
+          <div
+            data-testid="cellule-train"
+            class="bg-base-100 flex flex-col justify-center py-2 px-2"
+          >
+            <template v-if="row.train_temps > 0">
+              <div class="text-base font-bold">
+                <span
+                  v-if="row.train_tgv"
+                  class="badge badge-accent badge-sm"
+                  title="Trajet empruntant un segment TGV"
+                  >TGV</span
+                >
+                {{ formatTime(row.train_temps) }}
+                <span title="D=Direct / C=Correspondances"
+                  >({{ formatCorrespondances(row) }})</span
+                >
+              </div>
+              <div class="text-nowrap">{{ row.train_arrivee }}</div>
+            </template>
+            <template v-else> Pas de train a prendre </template>
           </div>
-          <div class="text-nowrap">{{ row.train_arrivee }}</div>
+          <div
+            data-testid="cellule-velo"
+            class="bg-base-100 flex flex-col justify-center py-2 px-2"
+          >
+            <div class="text-base font-bold">
+              Aller : {{ getVeloTimeDisplay(row) }} - Retour :
+              {{ getVeloReturnTime(row) }}
+            </div>
+            <div>
+              {{ row.velo_km }} km, {{ row.velo_dplus }} D+,
+              {{ row.velo_dmoins }} D-
+            </div>
+            <div v-if="row.variante_a_pied === 1" class="text-primary">
+              Aussi accessible a pied
+            </div>
+          </div>
         </template>
-        <template v-else> Pas de train a prendre </template>
-      </div>
-    </div>
-
-    <!-- Velo column -->
-    <div
-      class="bg-base-100 py-1 self-stretch grid divide-y divide-slate-200 items-center"
-      :style="{ gridTemplateRows: `repeat(${falaise.length}, 1fr)` }"
-    >
-      <div
-        v-for="(row, idx) in falaise"
-        :key="idx"
-        class="self-stretch flex flex-col justify-center py-2 px-2"
-      >
-        <div class="text-base font-bold">
-          Aller : {{ getVeloTimeDisplay(row) }} - Retour :
-          {{ getVeloReturnTime(row) }}
-        </div>
-        <div>
-          {{ row.velo_km }} km, {{ row.velo_dplus }} D+,
-          {{ row.velo_dmoins }} D-
-        </div>
-        <div v-if="row.velo_apieduniquement === 1" class="text-primary">
-          A pied uniquement
-        </div>
-        <div v-if="row.variante_a_pied === 1" class="text-primary">
-          Aussi accessible a pied
-        </div>
-      </div>
+      </template>
     </div>
 
     <!-- Falaise info column -->

@@ -26,7 +26,7 @@ export interface Sortie {
 
 export interface VeloRoute {
   velo_id: number
-  gare_id: number
+  arret_id: number
   velo_depart: string
   velo_arrivee: string
   velo_km: number
@@ -35,11 +35,9 @@ export interface VeloRoute {
   velo_descr: string
   velo_openrunner: string | null
   velo_variante: string
-  velo_apieduniquement: number
   velo_apiedpossible: number
-  gare_nom: string
-  gare_nomformate: string
-  gare_tgv: number
+  arret_nom: string
+  arret_nomformate: string
 }
 
 export interface Ville {

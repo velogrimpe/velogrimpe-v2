@@ -2,13 +2,15 @@
 header('Content-Type: application/json');
 require_once $_SERVER['DOCUMENT_ROOT'] . '/database/velogrimpe.php';
 
-if (!isset($_GET['falaise_id']) || !isset($_GET['gare_id'])) {
+// `gare_id` reste accepté (anciens appelants).
+$arret_id = $_GET['arret_id'] ?? $_GET['gare_id'] ?? null;
+if (!isset($_GET['falaise_id']) || $arret_id === null) {
   echo json_encode(["error" => "ID manquant"]);
   exit;
 }
 
-$stmt = $mysqli->prepare("SELECT velo_id FROM velo WHERE falaise_id = ? AND gare_id = ?");
-$stmt->execute([$_GET['falaise_id'], $_GET['gare_id']]);
+$stmt = $mysqli->prepare("SELECT velo_id FROM velo WHERE falaise_id = ? AND arret_id = ?");
+$stmt->execute([$_GET['falaise_id'], $arret_id]);
 $velo = $stmt->fetch();
 
 if ($velo) {

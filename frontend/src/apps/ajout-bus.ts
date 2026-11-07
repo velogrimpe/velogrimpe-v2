@@ -10,7 +10,7 @@ interface FalaiseItem {
   [key: string]: unknown
 }
 
-// Pont posé par le script carte inline de ajout_bus.php : il détient l'état des
+// Pont posé par le script carte inline de ajout_arret.php : il détient l'état des
 // liaisons (Set + hidden #arret_falaise_ids) et notifie par événement.
 declare global {
   interface Window {
@@ -119,12 +119,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Prefill en mode édition ---
   if (presetArretId) {
-    fetch(`/api/fetch_bus.php?arret_id=${presetArretId}`)
+    fetch(`/api/fetch_arret.php?arret_id=${presetArretId}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error('fetch_bus failed'))))
       .then((data) => {
         const arret = data.arret || {}
         const nomEl = document.getElementById('arret_nom') as HTMLInputElement | null
         if (nomEl) nomEl.value = arret.nom || ''
+        // Modalités desservies : coche les cases correspondantes et notifie
+        // le script carte (icône du marqueur, cf. arret-icon.js) via 'change'.
+        const typeCheckboxes = document.querySelectorAll<HTMLInputElement>('.arret-type-checkbox')
+        typeCheckboxes.forEach((cb) => {
+          cb.checked = Array.isArray(arret.types) && arret.types.includes(cb.value)
+        })
+        typeCheckboxes[0]?.dispatchEvent(new Event('change', { bubbles: true }))
         const locEl = document.getElementById('arret_loc') as HTMLInputElement | null
         if (locEl && arret.loc) {
           locEl.value = arret.loc
@@ -185,11 +192,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const osmDataRaw = val('arret_osm_data')
 
+    const types = Array.from(
+      document.querySelectorAll<HTMLInputElement>('.arret-type-checkbox:checked'),
+    ).map((cb) => cb.value)
+
     const payload = {
       admin: val('admin'),
       arret_id: isEdition ? arretIdRaw : null,
       nom: val('arret_nom'),
       loc: val('arret_loc'),
+      types,
+      commune: val('arret_commune') || null,
+      code_insee: val('arret_code_insee') || null,
+      cp: val('arret_cp') || null,
       description: descInput?.value ?? '',
       osm_id: val('arret_osm_id') || null,
       osm_data: osmDataRaw || null,
@@ -215,14 +230,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const contribStorage = (window as unknown as Record<string, { saveContribInfo?: (n: string, e: string) => void }>).contribStorage
     contribStorage?.saveContribInfo?.(val('nom_prenom'), val('email'))
 
-    // admin : le jeton lui-même (vérifié par confirmation_bus.php), jamais un
+    // admin : le jeton lui-même (vérifié par confirmation_arret.php), jamais un
     // booléen. Nom / email restent dans le localStorage, pas dans l'URL.
     const params = new URLSearchParams({
       arret_id: String(result.arret_id),
       type: isEdition ? 'update' : 'insert',
     })
     if (payload.admin && payload.admin !== '0') params.set('admin', payload.admin)
-    window.location.href = '/ajout/confirmation_bus.php?' + params.toString()
+    window.location.href = '/ajout/confirmation_arret.php?' + params.toString()
   })
 
   console.log('[velogrimpe] Vue ajout-bus mounted')

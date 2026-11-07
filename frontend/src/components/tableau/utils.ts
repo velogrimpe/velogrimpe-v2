@@ -15,3 +15,27 @@ export const nbVoiesCorresp: Record<number, string> = {
 export function getNbVoiesLabel(nbVoies: number): string {
   return nbVoiesCorresp[nbVoies] || 'Voies'
 }
+
+const modeLabels: Record<string, string> = {
+  ter: 'TER',
+  tgv: 'TGV',
+  bus: 'Bus',
+  tram: 'Tram',
+  telepherique: 'Téléphérique',
+}
+
+/**
+ * « Accès piéton possible via TER en gare de Tenay - Hauteville » : modes de
+ * l'arrêt, ses lignes le cas échéant (« via Bus (L21, L22) »), puis son nom —
+ * « en gare de » pour un arrêt TER/TGV, « à l'arrêt » sinon.
+ */
+export function accesPietonLabel(it: {
+  gare_nom: string
+  acces_pieton_types: string[]
+  acces_pieton_lignes: string[]
+}): string {
+  const modes = it.acces_pieton_types.map((t) => modeLabels[t] ?? t).join(', ')
+  const lignes = it.acces_pieton_lignes.length ? ` (${it.acces_pieton_lignes.join(', ')})` : ''
+  const estGare = it.acces_pieton_types.some((t) => t === 'ter' || t === 'tgv')
+  return `Accès piéton possible via ${modes}${lignes} ${estGare ? 'en gare de' : "à l'arrêt"} ${it.gare_nom}`
+}

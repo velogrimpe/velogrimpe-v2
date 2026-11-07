@@ -1,0 +1,15 @@
+### backfill_gares_geocode.php — renseigne gare_com_insee/gare_com_nom/gare_com_cp
+### via l'API batch data.gouv.fr (reverse/csv). Réservé admin (token).
+### Renvoie {success, traites, renseignes, echecs}.
+
+### Sans token => 403 Forbidden
+GET http://localhost:4000/api/private/backfill_gares_geocode.php
+
+### Dry-run limité (5 gares) — local
+GET http://localhost:4000/api/private/backfill_gares_geocode.php?admin=ADMIN_TOKEN&limit=5
+
+### Backfill complet — local
+GET http://localhost:4000/api/private/backfill_gares_geocode.php?admin=ADMIN_TOKEN
+
+### Backfill complet — prod
+GET https://velogrimpe.fr/api/private/backfill_gares_geocode.php?admin=ADMIN_TOKEN

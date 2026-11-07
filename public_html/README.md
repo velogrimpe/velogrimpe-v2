@@ -111,6 +111,8 @@ curl -s -o /dev/null -w "%{http_code}\n" http://localhost:4000/carte.php   # 200
 
 L'export ne contient que les données SQL. Les fichiers associés (images de falaises, GPX, GeoJSON des barres, tuiles de lignes de train) se récupèrent séparément et se déposent dans `public/`.
 
+7. Tests : E2E Playwright dans `tests/e2e/` (cf. `tests/e2e/README.md`), tests d'intégration API PHPUnit dans `tests/api/` (cf. `tests/api/README.md`, `composer install` puis `composer test`).
+
 ## Chemins de données
 
 Les contenus téléversés (images de falaises, images de newsletters et de pages,
@@ -220,7 +222,7 @@ Les contenus publiés sur velogrimpe.fr sont diffusés sous les licences suivant
 Cinq exports GeoJSON sont disponibles, regénérés quotidiennement au cours de la nuit et exploitables par exemple directement dans [UMAP](https://umap.openstreetmap.fr/) :
 
 - [falaises.geojson](https://velogrimpe.fr/open-data/falaises.geojson) : les falaises (points) et, embarqués dans leurs propriétés, leurs itinéraires vélo, liens externes et arrêts de bus.
-- [itineraires-velo.geojson](https://velogrimpe.fr/open-data/itineraires-velo.geojson) : les tracés complets des itinéraires vélo (LineString) reconstruits à partir des fichiers GPX, avec distance, dénivelés et gare de départ.
+- [itineraires-velo.geojson](https://velogrimpe.fr/open-data/itineraires-velo.geojson) : les tracés complets des itinéraires vélo (LineString) reconstruits à partir des fichiers GPX, avec distance, dénivelés et gare de départ. Le champ `a_pied_uniquement` n'existe plus (Lot 8) : ces accès à pied sont des liens arrêt → falaise (`acces_pieton_falaise`), pas des itinéraires.
 - [gares.geojson](https://velogrimpe.fr/open-data/gares.geojson) : les gares (points, hors gares supprimées), avec commune, département, codes UIC/OSM et flag TGV.
 - [falaises-details.geojson](https://velogrimpe.fr/open-data/falaises-details.geojson) : les détails géométriques agrégés de toutes les falaises (secteurs, parkings, approches…).
 - [complet.geojson](https://velogrimpe.fr/open-data/complet.geojson) : les collections ci-dessus réunies en un seul fichier. Chaque entité porte une propriété `vg_type` (`falaise`, `itineraire_velo`, `gare` ou `detail`) pour pouvoir les re-filtrer.

@@ -50,9 +50,9 @@ if ($resF) {
 // 2) Itinéraires vélo récemment ajoutés (lien vers la page falaise d'arrivée).
 $resV = $mysqli->query(
     "SELECT v.velo_id, v.falaise_id, v.velo_km, v.velo_dplus, v.date_creation,
-            g.gare_nom, f.falaise_nom
+            a.nom AS gare_nom, f.falaise_nom
      FROM velo v
-     LEFT JOIN gares g ON v.gare_id = g.gare_id AND g.deleted = 0
+     LEFT JOIN arrets a ON v.arret_id = a.id AND a.deleted = 0
      LEFT JOIN falaises f ON v.falaise_id = f.falaise_id
      WHERE v.velo_public = 1 AND v.date_creation IS NOT NULL
      ORDER BY v.date_creation DESC

@@ -5,7 +5,7 @@ import type { formatTime, calculateVeloTime } from '@/utils'
 export interface VelogrimpeGlobal {
   // From utils-global.js (synchronous script)
   format_time?: (minutes: number) => string
-  calculate_time?: (velo: { velo_km: string; velo_dplus: string; velo_apieduniquement: string }) => number
+  calculate_time?: (velo: { velo_km: string; velo_dplus: string }) => number
 
   // From utils.ts (ES module)
   formatTime?: typeof formatTime

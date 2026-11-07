@@ -1,0 +1,58 @@
+### add_velo.php?mode=pied — accès à pied uniquement (Lot 5) : écrit dans
+### `acces_pieton_falaise`, jamais dans `velo`, aucun GPX requis.
+### ATTENTION : un envoi valide insère réellement une ligne. À n'exécuter que sur un environnement de test.
+### Remplacer arret_id / falaise_id par des ids existants (ex. arrêt 6461, falaise 39).
+
+### Accès à pied valide => 302 vers /ajout/confirmation_velo.php?...&mode=pied
+POST http://localhost:4000/api/add_velo.php
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="mode"
+
+pied
+------vg
+Content-Disposition: form-data; name="admin"
+
+0
+------vg
+Content-Disposition: form-data; name="arret_id"
+
+6461
+------vg
+Content-Disposition: form-data; name="falaise_id"
+
+39
+------vg
+Content-Disposition: form-data; name="description"
+
+Sentier balisé depuis l'arrêt, environ 15 min.
+------vg
+Content-Disposition: form-data; name="nom_prenom"
+
+Test
+------vg
+Content-Disposition: form-data; name="email"
+
+test@example.org
+------vg--
+
+### Même requête rejouée => "Un accès à pied existe déjà ..." (pas de doublon)
+
+### Arrêt inexistant => "Arrêt de départ introuvable ..."
+POST http://localhost:4000/api/add_velo.php
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="mode"
+
+pied
+------vg
+Content-Disposition: form-data; name="arret_id"
+
+999999999
+------vg
+Content-Disposition: form-data; name="falaise_id"
+
+39
+------vg--

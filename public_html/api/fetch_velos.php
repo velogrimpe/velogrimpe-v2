@@ -24,14 +24,14 @@ if ($falaise_id <= 0) {
 }
 
 $stmt = $mysqli->prepare("
-  SELECT v.velo_id, v.gare_id, v.falaise_id, v.velo_depart, v.velo_arrivee,
+  SELECT v.velo_id, v.arret_id, v.falaise_id, v.velo_depart, v.velo_arrivee,
          v.velo_variante, v.velo_varianteformate, v.velo_km, v.velo_dplus, v.velo_dmoins,
-         v.velo_descr, v.velo_openrunner, v.velo_apieduniquement, v.velo_apiedpossible, v.velo_public,
-         g.gare_nom, g.gare_nomformate, g.gare_latlng
+         v.velo_descr, v.velo_openrunner, v.velo_apiedpossible, v.velo_public,
+         a.nom AS arret_nom, a.slug AS arret_nomformate, CONCAT(ST_Y(a.loc), ',', ST_X(a.loc)) AS arret_latlng
   FROM velo v
-  INNER JOIN gares g ON g.gare_id = v.gare_id AND g.deleted = 0
-  WHERE v.falaise_id = ?
-  ORDER BY g.gare_nom, v.velo_variante, v.velo_id");
+  INNER JOIN arrets a ON a.id = v.arret_id AND a.deleted = 0
+  WHERE v.falaise_id = ? AND v.velo_public >= 0
+  ORDER BY a.nom, v.velo_variante, v.velo_id");
 $stmt->bind_param("i", $falaise_id);
 $stmt->execute();
 $res = $stmt->get_result();
@@ -42,7 +42,7 @@ while ($row = $res->fetch_assoc()) {
   $gpx_exists = file_exists(velo_gpx_chemin($velo_id, $row['velo_depart'], $row['velo_arrivee'], (string) $row['velo_varianteformate']));
   $velos[] = [
     'velo_id' => $velo_id,
-    'gare_id' => (int) $row['gare_id'],
+    'arret_id' => (int) $row['arret_id'],
     'falaise_id' => (int) $row['falaise_id'],
     'velo_depart' => $row['velo_depart'],
     'velo_arrivee' => $row['velo_arrivee'],
@@ -53,14 +53,13 @@ while ($row = $res->fetch_assoc()) {
     'velo_dmoins' => $row['velo_dmoins'] !== null ? (int) $row['velo_dmoins'] : null,
     'velo_descr' => (string) $row['velo_descr'],
     'velo_openrunner' => (string) ($row['velo_openrunner'] ?? ''),
-    'velo_apieduniquement' => (int) $row['velo_apieduniquement'],
     'velo_apiedpossible' => (int) ($row['velo_apiedpossible'] ?? 0),
     'velo_public' => (int) $row['velo_public'],
-    'gare' => [
-      'id' => (int) $row['gare_id'],
-      'nom' => $row['gare_nom'],
-      'nomformate' => $row['gare_nomformate'],
-      'latlng' => $row['gare_latlng'],
+    'arret' => [
+      'id' => (int) $row['arret_id'],
+      'nom' => $row['arret_nom'],
+      'nomformate' => $row['arret_nomformate'],
+      'latlng' => $row['arret_latlng'],
     ],
     'gpx_url' => $gpx_exists
       ? velo_gpx_url($velo_id, $row['velo_depart'], $row['velo_arrivee'], (string) $row['velo_varianteformate'])

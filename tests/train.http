@@ -1,0 +1,26 @@
+@admin_token = <copier admin_token depuis config.php>
+
+### Itinéraire train : une ville est reliée à un ARRÊT de tout type (Lot 8bis)
+### `arret_id` (ou `gare_id`, ancien nom, toujours accepté). Adapter les ids.
+
+### Ajout public depuis un arrêt (formulaire) => 302 vers /ajout/confirmation_train.php?...&arret_id=
+POST http://localhost:4000/api/add_train.php
+Content-Type: application/x-www-form-urlencoded
+
+admin=0&ville_id=6&arret_id=6215&train_temps=45&train_correspmin=0&train_correspmax=1&train_public=2&train_descr=Car+direct&horaires_depart=Lyon&train_arrivee=Belley&nom_prenom=Testeur&email=test@example.com
+
+### Arrêt inconnu => 400 « Arrêt introuvable », rien n'est écrit
+POST http://localhost:4000/api/add_train.php
+Content-Type: application/x-www-form-urlencoded
+
+admin=0&ville_id=6&arret_id=99999999&train_temps=45&train_correspmin=0&train_correspmax=1&train_public=2&train_descr=x&train_arrivee=x&nom_prenom=Testeur&email=test@example.com
+
+### Import admin (Bearer) => {"success": true} ; arret_id inconnu => 400 {"success": false, ...}
+POST http://localhost:4000/api/private/add_train.php
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{"user": "Testeur", "ville_id": 6, "arret_id": 6215, "train_temps": 50, "train_correspmin": 0, "train_correspmax": 0, "train_descr": "Import", "train_depart": "Lyon", "train_arrivee": "Belley"}
+
+### Doublon ville/arrêt/type => true / false (gare_id accepté à la place d'arret_id)
+GET http://localhost:4000/api/verify_train_dup.php?ville_id=6&arret_id=6215&train_tgv=0

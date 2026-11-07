@@ -3,31 +3,14 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/database/velogrimpe.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/vite.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/map-bundle.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/schema.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/carte_data.php';
 
 $falaises = $mysqli->query("SELECT falaise_altitude, falaise_voletcarto, falaise_bloc, falaise_cotmax, falaise_cotmin, falaise_exposhort1, falaise_exposhort2, falaise_fermee, falaise_gvnb, falaise_id, falaise_latlng, falaise_maa, falaise_nbvoies, falaise_nom FROM falaises WHERE falaise_public >= 1")->fetch_all(MYSQLI_ASSOC);
 $villes = $mysqli->query("SELECT ville_id, ville_nom FROM villes ORDER BY ville_nom")->fetch_all(MYSQLI_ASSOC);
-$gares = $mysqli->query("SELECT
-  g.gare_id, g.gare_latlng, g.gare_nom, g.gare_tgv,
-  GROUP_CONCAT(CONCAT(t.ville_id, '|', t.train_depart, '|', t.train_temps, '|', t.train_correspmin, '|', COALESCE(t.train_tgv, 0)) SEPARATOR '=|=') AS villes
-  FROM gares g
-  LEFT JOIN train t ON t.gare_id = g.gare_id
-  WHERE g.deleted = 0 and g.gare_id in (SELECT DISTINCT gare_id FROM velo WHERE velo_public >= 1)
-  GROUP BY g.gare_id;"
-)->fetch_all(MYSQLI_ASSOC);
-// Envoyé tel quel au JS : falaise_id / gare_id relient itinéraires, falaises
-// et gares (objets access). Pas de SELECT * : velo_contrib porte un email.
-$itineraires = $mysqli->query("SELECT
-  falaise_id,
-  gare_id,
-  velo_apiedpossible,
-  velo_apieduniquement,
-  velo_arrivee,
-  velo_depart,
-  velo_dplus,
-  velo_id,
-  velo_km,
-  velo_varianteformate
-  FROM velo WHERE velo_public >= 1")->fetch_all(MYSQLI_ASSOC);
+// Gares hors topo : rendues depuis le PMTiles (cf. carte.php, addOverlays)
+$arrets = carte_charger_arrets($mysqli, false);
+$itineraires = carte_charger_itineraires($mysqli);
+$accesPieton = carte_charger_acces_pieton($mysqli);
 
 $highlight = $_GET['h'] ?? '';
 
@@ -92,6 +75,16 @@ $highlight = $_GET['h'] ?? '';
     .vg-marker img {
       display: block;
       pointer-events: none;
+    }
+
+    /* Ordre d'empilement : arrêts < marqueurs de falaises < labels < marqueur survolé */
+    .vg-arret-icon,
+    .vg-arret-dot {
+      z-index: 1;
+    }
+
+    .vg-falaise-el {
+      z-index: 2;
     }
 
     .vg-label {
@@ -177,10 +170,6 @@ $highlight = $_GET['h'] ?? '';
       left: 50%;
       top: 50%;
       transform: translate(-50%, -50%);
-    }
-
-    .train-icon.filterred {
-      filter: hue-rotate(140deg) saturate(2);
     }
 
     /* Tooltips d'itinéraires vélo : .vg-velo-tooltip (global.css) ne définit que
@@ -296,12 +285,12 @@ $highlight = $_GET['h'] ?? '';
     [
       '@type' => 'WebPage',
       'name' => 'Carte des falaises accessibles en vélo et train',
-      'url' => VG_BASE . '/carte_maplibre.php',
+      'url' => VG_BASE . '/carte.php',
       'isPartOf' => ['@id' => VG_BASE . '/#website'],
     ],
     vg_breadcrumb([
       ['name' => 'Accueil', 'url' => '/'],
-      ['name' => 'Carte', 'url' => '/carte_maplibre.php'],
+      ['name' => 'Carte', 'url' => '/carte.php'],
     ])
   );
   ?>
@@ -368,6 +357,7 @@ $highlight = $_GET['h'] ?? '';
     IGNv2: { url: "https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&STYLE=normal&FORMAT=image/png&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}", maxzoom: 19, attribution: "IGN-F/Geoportail" },
     Satellite: { url: "https://data.geopf.fr/wmts?&REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&STYLE=normal&TILEMATRIXSET=PM&FORMAT=image/jpeg&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}", maxzoom: 18, attribution: "IGN-F/Geoportail" },
     Outdoors: { url: "https://a.tile.thunderforest.com/outdoors/{z}/{x}/{y}.png?apikey=e6b144cfc47a48fd928dad578eb026a6", maxzoom: 19, attribution: '<a href="http://www.thunderforest.com/outdoors/" target="_blank">Thunderforest</a>, <a href="http://osm.org/copyright" target="_blank">OSM contributors</a>' },
+    Tranports: { url: "https://a.tile.thunderforest.com/tranport/{z}/{x}/{y}.png?apikey=e6b144cfc47a48fd928dad578eb026a6", maxzoom: 19, attribution: '<a href="http://www.thunderforest.com/tranport/" target="_blank">Thunderforest</a>, <a href="http://osm.org/copyright" target="_blank">OSM contributors</a>' },
   };
   let currentBasemap = "Landscape";
 
@@ -460,8 +450,9 @@ $highlight = $_GET['h'] ?? '';
   // ============================================================
   const falaisesBase = <?php echo json_encode($falaises); ?>;
   const highlightedFalaiseIds = <?= json_encode(explode(',', $highlight)) ?>;
+  const accesPieton = <?php echo json_encode($accesPieton); ?>;
   const itineraires = <?php echo json_encode($itineraires); ?>.map(it => ({ ...it, tempsVelo: calculate_time(it) }));
-  const garesBase = <?php echo json_encode($gares); ?>.map(g => {
+  const arretsBase = <?php echo json_encode($arrets); ?>.map(g => {
     g.villes = (g.villes || "")
       .split("=|=")
       .map(v => {
@@ -472,25 +463,39 @@ $highlight = $_GET['h'] ?? '';
   });
   const falaises = falaisesBase.map(f => {
     const access = itineraires.filter(i => i.falaise_id === f.falaise_id).map(it => {
-      const gare = garesBase.find(g => g.gare_id === it.gare_id);
-      const villes = gare?.villes.map(v => {
+      const arret = arretsBase.find(g => g.arret_id === it.arret_id);
+      const villes = arret?.villes.map(v => {
         const tempsTrainVelo = v.temps + it.tempsVelo;
         const tempsTotal = tempsTrainVelo + (f.maa || 0);
         return { ...v, tempsTrainVelo, tempsTotal };
       }) || [];
-      return { ...it, gare, villes };
+      return { ...it, arret, villes };
     }).sort((a, b) => a.tempsVelo - b.tempsVelo);
     if (highlightedFalaiseIds.includes(f.falaise_id)) f.highlighted = true;
     // `type` calculé en amont (au lieu d'attendre renderFalaises) : sinon
     // info_update() compte 0 si le Vue info-ready arrive avant map.on('load').
-    return { ...f, access, type: access.length > 0 ? "falaise" : "falaise_hors_topo" };
+    const pieton = accesPieton.filter(p => p.falaise_id === f.falaise_id).map(p => ({ arret: arretsBase.find(a => a.arret_id === p.arret_id) })).filter(p => p.arret);
+    // Accès pris en compte par les filtres : itinéraires vélo + accès à pied depuis un
+    // arrêt (sans temps vélo) quand cet arrêt n'a pas déjà un itinéraire vers la falaise.
+    const accessFiltre = [
+      ...access,
+      ...pieton
+        .filter(p => !access.some(it => it.arret_id === p.arret.arret_id))
+        .map(p => ({
+          arret: p.arret, arret_id: p.arret.arret_id, pieton: true,
+          tempsVelo: 0, velo_km: 0, velo_dplus: 0, velo_dmoins: 0,
+          villes: (p.arret.villes || []).map(v => ({ ...v, tempsTrainVelo: v.temps, tempsTotal: v.temps + (f.maa || 0) })),
+        })),
+    ];
+    return { ...f, access, pieton, accessFiltre, type: access.length > 0 ? "falaise" : "falaise_hors_topo" };
   });
-  const gares = garesBase.map(g => {
-    const access = itineraires.filter(i => i.gare_id === g.gare_id).map(it => {
+  const arrets = arretsBase.map(g => {
+    const access = itineraires.filter(i => i.arret_id === g.arret_id).map(it => {
       const falaise = falaisesBase.find(f => f.falaise_id === it.falaise_id);
       return { ...it, falaise };
     }).sort((a, b) => a.tempsVelo - b.tempsVelo);
-    return { ...g, access, type: access.length > 0 ? "gare" : "gare_hors_topo" };
+    const pieton = accesPieton.filter(p => p.arret_id === g.arret_id).map(p => falaisesBase.find(f => f.falaise_id === p.falaise_id)).filter(Boolean);
+    return { ...g, access, pieton, type: access.length > 0 || pieton.length > 0 ? "arret" : "arret_hors_topo" };
   });
 
   // ============================================================
@@ -569,7 +574,7 @@ $highlight = $_GET['h'] ?? '';
       div.id = "vue-map-filters";
       div.dataset.villes = <?= json_encode(json_encode($villes), JSON_HEX_APOS) ?>;
       div.dataset.falaises = <?= json_encode(json_encode(array_map(fn($f) => ["falaise_id" => $f["falaise_id"], "falaise_nom" => $f["falaise_nom"]], $falaises)), JSON_HEX_APOS) ?>;
-      div.dataset.gares = <?= json_encode(json_encode(array_map(fn($g) => ["gare_id" => $g["gare_id"], "gare_nom" => $g["gare_nom"]], $gares)), JSON_HEX_APOS) ?>;
+      div.dataset.arrets = <?= json_encode(json_encode(array_map(fn($g) => ["arret_id" => $g["arret_id"], "arret_nom" => $g["arret_nom"], "types" => $g["types"]], $arrets)), JSON_HEX_APOS) ?>;
       stopAllPropagation(div);
       return div;
     },
@@ -617,7 +622,43 @@ $highlight = $_GET['h'] ?? '';
     popup.once("close", () => { if (openedPopup === popup) openedPopup = null; });
   }
 
+  // « Voir la ligne » (Lot 7) : tracé de la ligne BTT d'un arrêt (couleur + halo
+  // blanc, sans recadrage ni cercle sur les arrêts), déclenché par le panneau d'info
+  // (InfoPanel.vue) ; effacé à chaque teardown. Équivalent MapLibre de
+  // js/components/map/ligne-view.js.
+  let ligneLayerIds = [];
+  function clearLigne() {
+    ligneLayerIds.forEach((id) => {
+      if (map.getLayer(id)) map.removeLayer(id);
+      if (map.getSource(id)) map.removeSource(id);
+    });
+    ligneLayerIds = [];
+  }
+  function showLigne(ligne) {
+    const c = (ligne.couleur || "").trim();
+    const color = c && CSS.supports("color", c) ? c : "#2563eb";
+    const n = Math.random().toString(36).slice(2, 7);
+    const lines = ligne.geometry?.coordinates ?? [];
+    const add = (id, data, type, layout, paint) => {
+      map.addSource(id, { type: "geojson", data });
+      map.addLayer({ id, type, source: id, layout, paint });
+      ligneLayerIds.push(id);
+    };
+    if (lines.length) {
+      const geom = { type: "Feature", geometry: { type: "MultiLineString", coordinates: lines } };
+      const layout = { "line-cap": "round", "line-join": "round" };
+      add(`ligne-halo-${n}`, geom, "line", layout, { "line-color": "#ffffff", "line-width": 10, "line-opacity": 0.95 });
+      add(`ligne-voir-${n}`, geom, "line", layout, { "line-color": color, "line-width": 5 });
+    }
+  }
+  window.addEventListener("velogrimpe:voir-ligne", (e) => {
+    clearLigne();
+    if (e.detail?.ligne) showLigne(e.detail.ligne);
+  });
+
   function teardown() {
+    clearLigne();
+    window.dispatchEvent(new CustomEvent("velogrimpe:voir-ligne", { detail: null }));
     closePopup();
     if (selected !== null && selected.type === "falaise" && selected.filteredOut) {
       // hide previously-shown filtered-out selected falaise
@@ -632,9 +673,9 @@ $highlight = $_GET['h'] ?? '';
       marker?.remove();
     });
     itinerairesLines.length = 0;
-    gares.forEach((gare) => {
-      if (gare.type === "gare" && gare.marker) {
-        attachTooltip(gare.marker, escapeHtml(gare.gare_nom), { direction: "right" });
+    arrets.forEach((arret) => {
+      if (arret.type === "arret" && arret.marker) {
+        attachTooltip(arret.marker, escapeHtml(arret.arret_nom), { direction: "right" });
       }
     });
     falaises.forEach((falaise) => {
@@ -690,10 +731,7 @@ $highlight = $_GET['h'] ?? '';
     const tipEl = document.createElement("div");
     tipEl.className = `vg-velo-tooltip vg-color-${color}`;
     tipEl.style.pointerEvents = "none";
-    tipEl.innerHTML = format_time(calculate_time(it))
-      + (it.velo_apieduniquement === "1"
-        ? '<svg class="w-4 h-4 fill-none stroke-current inline"><use href="#footprint"></use></svg>'
-        : "");
+    tipEl.innerHTML = format_time(calculate_time(it));
     entry.marker = new maplibregl.Marker({ element: tipEl }).setLngLat(mid).addTo(map);
     return entry;
   }
@@ -703,7 +741,7 @@ $highlight = $_GET['h'] ?? '';
   // ============================================================
   function buildFalaiseEl(falaise, size) {
     const el = document.createElement("div");
-    el.className = "vg-marker";
+    el.className = "vg-marker vg-falaise-el";
     el.style.width = size + "px";
     el.style.height = size + "px";
     const img = document.createElement("img");
@@ -759,11 +797,11 @@ $highlight = $_GET['h'] ?? '';
           teardown();
           selected = falaise;
           info_update();
-          const pts = [lngLat(falaise.falaise_latlng), ...falaise.access.map(it => lngLat(it.gare.gare_latlng))];
+          const pts = [lngLat(falaise.falaise_latlng), ...falaise.access.map(it => lngLat(it.arret.arret_latlng)), ...falaise.pieton.map(p => lngLat(p.arret.arret_latlng))];
           map.fitBounds(bboxOf(pts), { padding: { top: 50, right: 100, bottom: 200, left: 40 }, duration: 500, maxZoom: 14 });
 
           setTimeout(() => {
-            // Une gare peut être l'origine de plusieurs itinéraires vers cette
+            // Une arret peut être l'origine de plusieurs itinéraires vers cette
             // falaise (variantes vélo). On ne tagge le tooltip qu'au 1er passage
             // (= itinéraire le plus court car access est trié par tempsVelo),
             // sinon la couleur du dernier itinéraire écrase les précédentes.
@@ -771,13 +809,22 @@ $highlight = $_GET['h'] ?? '';
             falaise.access.forEach((it, i) => {
               const c = itinerairesColors[i % itinerairesColors.length];
               renderGpx(it, c);
-              if (tagged.has(it.gare.gare_id)) return;
-              tagged.add(it.gare.gare_id);
-              const station = gares.find(g => g.gare_id === it.gare.gare_id);
+              if (tagged.has(it.arret.arret_id)) return;
+              tagged.add(it.arret.arret_id);
+              const station = arrets.find(g => g.arret_id === it.arret.arret_id);
               if (station && station.marker) {
-                attachTooltip(station.marker, escapeHtml(station.gare_nom), {
+                attachTooltip(station.marker, escapeHtml(station.arret_nom), {
                   direction: "right", permanent: true,
                   className: `vg-station-tooltip vg-color-${c}`,
+                });
+              }
+            });
+            falaise.pieton.forEach(({ arret }) => {
+              renderPieton(arret, falaise);
+              const station = arrets.find(a => a.arret_id === arret.arret_id);
+              if (station && station.marker) {
+                attachTooltip(station.marker, escapeHtml(station.arret_nom), {
+                  direction: "right", permanent: true, className: "vg-station-tooltip vg-color-pieton",
                 });
               }
             });
@@ -884,47 +931,71 @@ $highlight = $_GET['h'] ?? '';
   }
 
   // ============================================================
-  // Marqueurs gares
+  // Marqueurs arrets
   // ============================================================
-  function buildGareEl(tgv, size) {
+  // Module d'icône des arrêts (ES module partagé avec Leaflet) : chargé en
+  // asynchrone, le premier rendu attend sa disponibilité (cf. map.on("load")).
+  let arretIconMod = null;
+  function buildArretEl(types, size) {
     const el = document.createElement("div");
-    el.className = "vg-marker train-icon bgwhite" + (tgv ? " filterred" : "");
-    // Pas de padding/boxSizing : .train-icon (border-radius 50%) + .bgwhite suffisent.
-    // L'img remplit exactement le div pour rester aligné avec l'ancre center.
+    const { html, size: effectiveSize } = arretIconMod.arretIconHtml(types, size);
+    el.className = "vg-marker vg-arret-icon";
+    el.style.width = effectiveSize + "px";
+    el.style.height = effectiveSize + "px";
+    el.innerHTML = html;
+    return el;
+  }
+  // Point coloré des arrêts en zoom intermédiaire
+  function buildArretDotEl(types, size = 8) {
+    const el = document.createElement("div");
+    el.className = "vg-marker vg-arret-dot";
     el.style.width = size + "px";
     el.style.height = size + "px";
-    const img = document.createElement("img");
-    img.src = "/images/map/icone_train_carte.png";
-    img.width = size; img.height = size;
-    img.alt = "";
-    el.appendChild(img);
+    el.style.background = arretIconMod.arretIconColor(arretIconMod.arretTypeDominant(types));
+    el.style.borderRadius = "50%";
+    el.style.border = "2px solid #fff";
     return el;
   }
 
-  function setGareMarker(gare, mode) {
-    if (gare.displayMode === mode) return;
-    if (gare.marker) gare.marker.remove();
-    const el = buildGareEl(gare.gare_tgv === "1", 24);
+  // Trait droit arrêt → falaise (accès piéton : pas de trace GPS). Même
+  // mécanique de nettoyage que les GPX (teardown via itinerairesLines).
+  function renderPieton(arret, falaise) {
+    const id = `pieton-${arret.arret_id}-${falaise.falaise_id}-${Math.random().toString(36).slice(2, 7)}`;
+    map.addSource(id, {
+      type: "geojson",
+      data: { type: "Feature", geometry: { type: "LineString", coordinates: [lngLat(arret.arret_latlng), lngLat(falaise.falaise_latlng)] } },
+    });
+    map.addLayer({
+      id, type: "line", source: id,
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: { "line-color": "#334155", "line-width": 3, "line-dasharray": [0.5, 2.5] },
+    });
+    itinerairesLines.push({ id, marker: null });
+  }
+
+  function setArretMarker(arret, mode) {
+    if (arret.displayMode === mode) return;
+    if (arret.marker) arret.marker.remove();
+    const el = mode === "point" ? buildArretDotEl(arret.types, 12) : buildArretEl(arret.types, 24);
     const marker = new maplibregl.Marker({ element: el, anchor: "center" })
-      .setLngLat(lngLat(gare.gare_latlng))
+      .setLngLat(lngLat(arret.arret_latlng))
       .addTo(map);
-    gare.marker = marker;
-    gare.displayMode = mode;
-    attachTooltip(marker, escapeHtml(gare.gare_nom), { direction: "right" });
+    arret.marker = marker;
+    arret.displayMode = mode;
+    attachTooltip(marker, escapeHtml(arret.arret_nom), { direction: "right" });
 
     el.addEventListener("click", (ev) => {
       ev.stopPropagation();
       teardown();
-      selected = gare;
+      selected = arret;
       info_update();
-      const pts = [lngLat(gare.gare_latlng), ...gare.access.map(it => lngLat(it.falaise.falaise_latlng))];
-      map.fitBounds(bboxOf(pts), { padding: { top: 50, right: 100, bottom: 200, left: 40 }, duration: 500, maxZoom: 12 });
+      // Pas de recadrage au clic sur un arrêt : le zoom et le centre restent ceux de l'utilisateur
 
       setTimeout(() => {
-        // Idem côté gare : plusieurs itinéraires peuvent desservir la même
+        // Idem côté arret : plusieurs itinéraires peuvent desservir la même
         // falaise — on ne tagge le tooltip falaise qu'au 1er passage.
         const tagged = new Set();
-        gare.access.forEach((it, i) => {
+        arret.access.forEach((it, i) => {
           const c = itinerairesColors[i % itinerairesColors.length];
           if (falaises.find(f => f.falaise_id === it.falaise.falaise_id)?.filteredOut) return;
           renderGpx(it, c);
@@ -938,12 +1009,17 @@ $highlight = $_GET['h'] ?? '';
             });
           }
         });
+        // Accès piéton : trait droit arrêt → falaise
+        arret.pieton.forEach((f) => {
+          if (falaises.find(x => x.falaise_id === f.falaise_id)?.filteredOut) return;
+          renderPieton(arret, f);
+        });
       }, 760);
-      attachTooltip(marker, escapeHtml(gare.gare_nom), { direction: "top", permanent: true });
+      attachTooltip(marker, escapeHtml(arret.arret_nom), { direction: "top", permanent: true });
     });
 
     if (mode === "hidden") {
-      gare.marker.remove();
+      arret.marker.remove();
     }
   }
 
@@ -982,22 +1058,26 @@ $highlight = $_GET['h'] ?? '';
       }
     });
   }
-  function renderGares() {
+  function renderArrets() {
+    if (!arretIconMod) return;
     const zoom = map.getZoom();
-    gares.forEach((gare) => {
-      if (!gare.gare_latlng) return;
-      if (gare.access.length === 0) {
-        gare.type = "gare_hors_topo";
-        // géré par le layer PMTiles "gares-pm-circle/-label" (zoom 10+/11+)
+    arrets.forEach((arret) => {
+      if (!arret.arret_latlng) return;
+      if (arret.access.length === 0 && arret.pieton.length === 0) {
+        arret.type = "arret_hors_topo";
+        // Gares : layer PMTiles "gares-pm-circle/-label" (zoom 10+/11+).
+        // Autres modalités : point DOM, même seuil que le cercle PMTiles.
+        // Bus/tram/téléphérique hors topo : jamais affichés.
         return;
       }
-      gare.type = "gare";
-      // Carte.php utilise `zoom < 9` mais à visuel équivalent MapLibre est
-      // ~1 niveau en dessous — on aligne en pratique en baissant à 8.
-      if (zoom < 8) setGareMarker(gare, "hidden");
-      else {
-        if (!gare.marker || gare.displayMode === "hidden") setGareMarker(gare, "normal");
-      }
+      arret.type = "arret";
+      // Mêmes paliers que carte.php, décalés d'un niveau (à visuel équivalent
+      // MapLibre est ~1 niveau en dessous) : gares rien → point (z=7) → icône
+      // (z=8) ; bus/tram/téléphérique rien → point doré (z=8) → icône (z=10).
+      const mode = arretIconMod.arretEstGare(arret.types)
+        ? (zoom < 7 ? "hidden" : zoom < 8 ? "point" : "normal")
+        : (zoom < 8 ? "hidden" : zoom < 10 ? "point" : "normal");
+      setArretMarker(arret, mode);
     });
   }
 
@@ -1011,8 +1091,8 @@ $highlight = $_GET['h'] ?? '';
     }
   });
 
-  map.on("zoomend", () => { renderFalaises(); renderGares(); });
-  map.on("moveend", () => { renderGares(); });
+  map.on("zoomend", () => { renderFalaises(); renderArrets(); });
+  map.on("moveend", () => { renderArrets(); });
 
   // ============================================================
   // Panneau info Vue
@@ -1177,19 +1257,19 @@ $highlight = $_GET['h'] ?? '';
     });
 
     // --- Gares hors topo depuis PMTiles (même source que falaise.php).
-    // Filtre : on exclut les noms des gares "topo" (déjà rendues comme DOM
+    // Filtre : on exclut les noms des arrets "topo" (déjà rendues comme DOM
     // markers cliquables avec icône train). Ne reste que le complément.
-    const topoGareNames = gares
-      .filter(g => g.access && g.access.length > 0 && g.gare_nom)
-      .map(g => g.gare_nom);
+    const topoGareNames = arrets
+      .filter(g => g.type === "arret" && g.arret_nom)
+      .map(g => g.arret_nom);
     const horsTopoFilter = ["!", ["in", ["get", "name"], ["literal", topoGareNames]]];
 
-    map.addSource("gares-pm", { type: "vector", url: "pmtiles:///public/trains/gares.pmtiles" });
+    map.addSource("arrets-pm", { type: "vector", url: "pmtiles:///public/trains/arrets.pmtiles" });
     // Cercle dès zoom 10 (Leaflet montre la même chose à zoom 11, mais à
     // visuel égal MapLibre est ~1 niveau plus bas — voir comparaison
     // d'icônes falaises entre les deux captures). Label à zoom 11.
     map.addLayer({
-      id: "gares-pm-circle", type: "circle", source: "gares-pm", "source-layer": "gares", minzoom: 10,
+      id: "arrets-pm-circle", type: "circle", source: "arrets-pm", "source-layer": "arrets", minzoom: 10,
       filter: horsTopoFilter,
       paint: {
         "circle-radius": 4,
@@ -1199,7 +1279,7 @@ $highlight = $_GET['h'] ?? '';
       },
     });
     map.addLayer({
-      id: "gares-pm-label", type: "symbol", source: "gares-pm", "source-layer": "gares", minzoom: 11,
+      id: "arrets-pm-label", type: "symbol", source: "arrets-pm", "source-layer": "arrets", minzoom: 11,
       filter: horsTopoFilter,
       layout: {
         "text-field": ["get", "name"],
@@ -1210,7 +1290,7 @@ $highlight = $_GET['h'] ?? '';
       },
       paint: { "text-color": "#000", "text-halo-color": "#fff", "text-halo-width": 2 },
     });
-    map.on("click", "gares-pm-circle", (e) => {
+    map.on("click", "arrets-pm-circle", (e) => {
       const f = e.features[0];
       openPopup(
         new maplibregl.Popup({ maxWidth: "300px" }).setHTML(escapeHtml(f.properties.name || "")),
@@ -1218,8 +1298,8 @@ $highlight = $_GET['h'] ?? '';
       );
       e.preventDefault?.();
     });
-    map.on("mouseenter", "gares-pm-circle", () => { map.getCanvas().style.cursor = "pointer"; });
-    map.on("mouseleave", "gares-pm-circle", () => { map.getCanvas().style.cursor = ""; });
+    map.on("mouseenter", "arrets-pm-circle", () => { map.getCanvas().style.cursor = "pointer"; });
+    map.on("mouseleave", "arrets-pm-circle", () => { map.getCanvas().style.cursor = ""; });
   }
 
   map.on("load", async () => {
@@ -1228,7 +1308,8 @@ $highlight = $_GET['h'] ?? '';
     addOverlays();
     // Premier rendu des marqueurs DOM
     renderFalaises();
-    renderGares();
+    arretIconMod = await import("/js/components/map/arret-icon.js");
+    renderArrets();
   });
 </script>
 
@@ -1241,7 +1322,7 @@ $highlight = $_GET['h'] ?? '';
     document.getElementById("map").scrollIntoView({ behavior: "smooth", block: "nearest" });
     let item = null;
     if (type === "falaise") item = falaises.find(f => f.falaise_id === id);
-    else if (type === "gare") item = gares.find(g => g.gare_id === id);
+    else if (type === "arret") item = arrets.find(g => g.arret_id === id);
     if (!item) return;
 
     if (item.type === "falaise_hors_topo") {
@@ -1250,12 +1331,12 @@ $highlight = $_GET['h'] ?? '';
       setTimeout(() => item._popup && openPopup(item._popup, lngLat(item.falaise_latlng)), 600);
       return;
     }
-    if (item.type === "gare_hors_topo") {
-      map.flyTo({ center: lngLat(item.gare_latlng), zoom: 11, duration: 500 });
+    if (item.type === "arret_hors_topo") {
+      map.flyTo({ center: lngLat(item.arret_latlng), zoom: 11, duration: 500 });
       setTimeout(() => {
         openPopup(
-          new maplibregl.Popup({ maxWidth: "300px" }).setHTML(escapeHtml(item.gare_nom)),
-          lngLat(item.gare_latlng)
+          new maplibregl.Popup({ maxWidth: "300px" }).setHTML(escapeHtml(item.arret_nom)),
+          lngLat(item.arret_latlng)
         );
       }, 600);
       return;
@@ -1268,8 +1349,8 @@ $highlight = $_GET['h'] ?? '';
   });
 
   // Filtres Vue
-  const falaisesDuTopo = falaises.filter(f => f.access.length > 0);
-  const falaisesHorsTopo = falaises.filter(f => f.access.length === 0);
+  const falaisesDuTopo = falaises.filter(f => f.accessFiltre.length > 0);
+  const falaisesHorsTopo = falaises.filter(f => f.accessFiltre.length === 0);
 
   // Altitude (m) dans l'intervalle [min, max] (bornes incluses, optionnelles).
   // Altitude inconnue (null) exclue dès qu'une borne est définie.
@@ -1298,7 +1379,7 @@ $highlight = $_GET['h'] ?? '';
     const avecgv = filters.typeVoies.grandeVoie;
     const bloc = filters.typeVoies.bloc;
     const psychobloc = filters.typeVoies.psychobloc;
-    const apieduniquement = filters.velo.apiedPossible;
+    const apiedPossible = filters.velo.apiedPossible;
     const tempsMaxVelo = filters.velo.tempsMax;
     const distMaxVelo = filters.velo.distMax;
     const denivMaxVelo = filters.velo.denivMax;
@@ -1319,7 +1400,7 @@ $highlight = $_GET['h'] ?? '';
     const cotFiltered = [cot40, cot50, cot59, cot60, cot69, cot70, cot79, cot80].some(e => e);
     const typeVoiesFiltered = couenne || avecgv || bloc || psychobloc;
 
-    if (!expoFiltered && !altFiltered && !cotFiltered && !typeVoiesFiltered && nbVoies === 0 && !apieduniquement
+    if (!expoFiltered && !altFiltered && !cotFiltered && !typeVoiesFiltered && nbVoies === 0 && !apiedPossible
       && tempsMaxVelo === null && denivMaxVelo === null && distMaxVelo === null && tempsMaxMA === null && !villeSelected) {
       falaises.forEach(f => { f.filteredOut = false; });
     } else {
@@ -1337,7 +1418,7 @@ $highlight = $_GET['h'] ?? '';
           && (!cot79 || ("7+".localeCompare(falaise.falaise_cotmin) >= 0 && falaise.falaise_cotmax.localeCompare("7+") >= 0))
           && (!cot80 || (falaise.falaise_cotmax.localeCompare("8-") >= 0))
         );
-        const estTrainCompatible = falaise.access.some(it => {
+        const estTrainCompatible = falaise.accessFiltre.some(it => {
           const train = it.villes.find(v => v.ville_id === ville);
           return train && (
             (tempsMaxTrain === null || train.temps <= tempsMaxTrain)
@@ -1368,13 +1449,13 @@ $highlight = $_GET['h'] ?? '';
           && estNbVoiesCompatible
           && (!typeVoiesFiltered || estTypeVoiesCompatible)
           && (!villeSelected || estTrainCompatible)
-          && falaise.access.some(it => {
+          && falaise.accessFiltre.some(it => {
             const duration = calculate_time(it);
             return (
               (tempsMaxVelo === null || duration <= tempsMaxVelo)
               && (denivMaxVelo === null || parseInt(it.velo_dplus) <= denivMaxVelo)
               && (distMaxVelo === null || parseFloat(it.velo_km) <= distMaxVelo)
-              && (apieduniquement === false || it.velo_apieduniquement === "1" || it.velo_apiedpossible === "1")
+              && (!apiedPossible || falaise.pieton.length > 0 || it.velo_apiedpossible === "1")
             );
           })
         ) {

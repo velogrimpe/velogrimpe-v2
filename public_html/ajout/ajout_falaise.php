@@ -7,6 +7,26 @@ $config = require $_SERVER["DOCUMENT_ROOT"] . "/../config.php";
 $admin = ($_GET["admin"] ?? false) == $config["admin_token"];
 $falaise_id = $_GET["falaise_id"] ?? null;
 
+// Arrêts proposables pour l'accès à pied (création uniquement : en édition, les
+// accès se gèrent depuis l'éditeur de détails de la falaise).
+$arrets_pietons = [];
+if (!$falaise_id) {
+  require_once $_SERVER["DOCUMENT_ROOT"] . "/lib/arrets_lib.php";
+  $result_arrets = $mysqli->query("SELECT id, nom, commune, ter, tgv, bus, tram, teleph, ST_Y(loc) AS lat, ST_X(loc) AS lng FROM arrets WHERE deleted = 0 ORDER BY nom");
+  while ($row = $result_arrets->fetch_assoc()) {
+    $commune = trim((string) $row['commune']);
+    $arrets_pietons[] = [
+      'id' => (int) $row['id'],
+      // La valeur affichée identifie l'arrêt : commune ajoutée si le nom ne la contient pas.
+      'nom' => ($commune !== '' && mb_stripos($row['nom'], $commune) === false) ? $row['nom'] . ' (' . $commune . ')' : $row['nom'],
+      // Pour la carte de liaison des arrêts (js/components/map/arrets-lies-map.js)
+      'lat' => (float) $row['lat'],
+      'lng' => (float) $row['lng'],
+      'types' => arret_types($row),
+    ];
+  }
+}
+
 if ($falaise_id) {
   $falaises = [];
   if (!$admin) {
@@ -266,7 +286,6 @@ if ($falaise_id) {
 
           const { map, layerControl, searchButton: overpassBtn } = createAjoutMap('map', {
             searchButton: {
-              html: '<img src="/images/map/overpass-turbo.svg" alt="" style="width:16px;height:16px;" />',
               label: 'Falaises OSM',
               title: 'Récupérer les falaises de la zone visible (OpenStreetMap)',
               ariaLabel: 'Falaises OSM',
@@ -323,6 +342,8 @@ if ($falaise_id) {
 
           function createMarker(lat, lng) {
             mapinstructions.style.display = "none";
+            // Position de la falaise connue/changée : la carte des arrêts liés se recentre dessus.
+            document.dispatchEvent(new CustomEvent('velogrimpe:falaise-position', { detail: { lat, lng } }));
             if (marker) {
               map.removeLayer(marker);
             }
@@ -785,6 +806,29 @@ if ($falaise_id) {
           <i class="text-slate-400 text-sm">Informations sur les accès en transports en commun (bus, navettes...) depuis
             la gare ou les villes proches.</i>
         </div>
+        <?php if (!$falaise_id): ?>
+          <div class="form-control" id="acces-pietons-section">
+            <label class="label cursor-pointer justify-start gap-2 p-0">
+              <input type="checkbox" id="acces_pieton_check" class="checkbox checkbox-primary checkbox-sm" />
+              <b>Cette falaise est accessible à pied depuis un arrêt de transport en commun <span
+                  class="text-accent opacity-50">(optionnel)</span></b>
+            </label>
+            <i class="text-slate-400 text-sm">Gare, arrêt de bus, tram, téléphérique… : on peut aller de l'arrêt à la
+              falaise à pied.</i>
+            <div id="vue-arrets-pietons" class="hidden mt-2"
+              data-arrets='<?= htmlspecialchars(json_encode($arrets_pietons), ENT_QUOTES, 'UTF-8') ?>'></div>
+            <!-- Seconde carte (≠ #map, carte de placement de la falaise) : lier les arrêts en les cliquant -->
+            <div id="map-arrets-wrap" class="hidden mt-2">
+              <div id="map-arrets" class="w-full h-[28rem] rounded-lg relative">
+                <div id="map-arrets-instructions" class="pointer-events-none absolute top-2 left-1/2 -translate-x-1/2 z-[10000]">
+                  <span class="bg-base-100/90 border border-base-300 shadow rounded-full px-3 py-1 text-sm font-medium">Placez d'abord la falaise sur la carte ci-dessus</span>
+                </div>
+              </div>
+              <i class="text-slate-400 text-sm">Cliquez un arrêt pour le lier à la falaise (accès à pied) ; zoomez pour les voir.</i>
+            </div>
+            <input type="hidden" id="arrets_pietons" name="arrets_pietons" value="" />
+          </div>
+        <?php endif; ?>
         <label class="form-control" for="falaise_voletcarto">
           <b>Résumé de la fiche falaise</b>
           <textarea class="textarea textarea-primary textarea-sm leading-6" id="falaise_voletcarto"
@@ -1012,6 +1056,7 @@ champ rqvillefalaise_txt de la table rqvillefalaise).</pre>
         // Use Vue setter for falaise name
         if (window.setFalaiseNom) window.setFalaiseNom(falaise.falaise_nom);
         document.getElementById("confirmButton").textContent = "Modifier la falaise";
+        if (window.setAccesPietonsVisible) window.setAccesPietonsVisible(false);
         updateMarker();
       });
   }
@@ -1135,6 +1180,20 @@ champ rqvillefalaise_txt de la table rqvillefalaise).</pre>
       }
     })();
 </script>
+<?php if (!$falaise_id): ?>
+<script type="module">
+  import { initArretsLiesMap } from '/js/components/map/arrets-lies-map.js';
+  // Module séparé de celui de la carte de placement (#map) : portées distinctes. La carte écoute les
+  // événements `velogrimpe:*` posés par la carte de placement et par le composant Vue (dist/ajout-falaise.js).
+  const mount = document.getElementById('vue-arrets-pietons');
+  initArretsLiesMap({
+    elId: 'map-arrets',
+    instructionsEl: document.getElementById('map-arrets-instructions'),
+    arrets: JSON.parse(mount.dataset.arrets || '[]'),
+    setLinked: (id, linked) => window.accesPietonsSetLinked?.(id, linked),
+  });
+</script>
+<?php endif; ?>
 <script type="module" src="/dist/ajout-falaise.js"></script>
 
 </html>

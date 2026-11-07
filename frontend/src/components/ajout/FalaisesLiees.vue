@@ -1,12 +1,12 @@
 <script setup lang="ts">
 /**
- * Liste des falaises liées à un arrêt de bus (formulaire ajout_bus.php).
+ * Liste des falaises liées à un arrêt de bus (formulaire ajout_arret.php).
  *
  * Alternative à la carte : une ligne par falaise liée (avec « délier »), et un
  * autocomplete pour en ajouter une sans avoir à la retrouver sur la carte.
  * Le composant ne tient aucun état de liaison : `linkedIds` lui est fourni et
  * les actions remontent en événements, l'état vivant dans le script carte de la
- * page (cf. `velogrimpe:bus-falaises-changed` dans ajout_bus.php).
+ * page (cf. `velogrimpe:bus-falaises-changed` dans ajout_arret.php).
  */
 import { computed, nextTick, ref } from "vue";
 import FormAutocomplete, {

@@ -1,4 +1,4 @@
-### add_velo.php — soumission du formulaire d'ajout d'itinéraire vélo (multipart/form-data)
+### add_velo.php — soumission du formulaire d'ajout d'accès (mode vélo par défaut, ou mode=pied ; multipart/form-data)
 ### ATTENTION : un envoi valide insère réellement une ligne `velo` et écrit un fichier GPX
 ### dans public/gpx/. À n'exécuter que sur un environnement de test.
 ###
@@ -26,7 +26,7 @@ Content-Disposition: form-data; name="admin"
 
 0
 ------vg
-Content-Disposition: form-data; name="gare_id"
+Content-Disposition: form-data; name="arret_id"
 
 1
 ------vg
@@ -70,7 +70,7 @@ Content-Disposition: form-data; name="velo_public"
 
 2
 ------vg
-Content-Disposition: form-data; name="gare_id"
+Content-Disposition: form-data; name="arret_id"
 
 1
 ------vg
@@ -132,7 +132,7 @@ Content-Disposition: form-data; name="velo_public"
 
 2
 ------vg
-Content-Disposition: form-data; name="gare_id"
+Content-Disposition: form-data; name="arret_id"
 
 1
 ------vg
@@ -183,7 +183,7 @@ Content-Disposition: form-data; name="velo_public"
 
 2
 ------vg
-Content-Disposition: form-data; name="gare_id"
+Content-Disposition: form-data; name="arret_id"
 
 1
 ------vg
@@ -231,7 +231,7 @@ Content-Disposition: form-data; name="velo_public"
 
 2
 ------vg
-Content-Disposition: form-data; name="gare_id"
+Content-Disposition: form-data; name="arret_id"
 
 1
 ------vg

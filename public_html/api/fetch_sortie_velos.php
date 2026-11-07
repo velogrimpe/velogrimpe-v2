@@ -20,7 +20,7 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/database/velogrimpe.php';
 // Query to get bike routes for this crag
 $query = "SELECT
     v.velo_id,
-    v.gare_id,
+    v.arret_id,
     v.velo_depart,
     v.velo_arrivee,
     v.velo_km,
@@ -29,16 +29,14 @@ $query = "SELECT
     v.velo_descr,
     v.velo_openrunner,
     v.velo_variante,
-    v.velo_apieduniquement,
     v.velo_apiedpossible,
-    g.gare_nom,
-    g.gare_nomformate,
-    g.gare_tgv
+    a.nom AS arret_nom,
+    a.slug AS arret_nomformate
   FROM velo v
-  LEFT JOIN gares g ON v.gare_id = g.gare_id
+  LEFT JOIN arrets a ON v.arret_id = a.id
   WHERE v.falaise_id = ?
     AND v.velo_public = 1
-    AND (g.deleted IS NULL OR g.deleted = 0)
+    AND (a.deleted IS NULL OR a.deleted = 0)
   ORDER BY v.velo_km ASC";
 
 $stmt = $mysqli->prepare($query);

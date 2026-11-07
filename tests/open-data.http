@@ -19,8 +19,8 @@ GET http://localhost:4000/open-data/falaises-details.geojson
 ### URL canonique itinéraires vélo (tracés GPX agrégés en LineString)
 GET http://localhost:4000/open-data/itineraires-velo.geojson
 
-### URL canonique gares (points, référentiel hors gares supprimées)
-GET http://localhost:4000/open-data/gares.geojson
+### URL canonique arrêts (points, référentiel multimodal hors arrêts supprimés)
+GET http://localhost:4000/open-data/arrets.geojson
 
 ### URL canonique export complet (toutes les collections fusionnées, tag vg_type)
 GET http://localhost:4000/open-data/complet.geojson
@@ -31,8 +31,8 @@ GET http://localhost:4000/open-data/download.php?f=falaises
 ### Accès direct itinéraires vélo
 GET http://localhost:4000/open-data/download.php?f=itineraires-velo
 
-### Accès direct gares
-GET http://localhost:4000/open-data/download.php?f=gares
+### Accès direct arrêts
+GET http://localhost:4000/open-data/download.php?f=arrets
 
 ### Accès direct export complet
 GET http://localhost:4000/open-data/download.php?f=complet
@@ -44,4 +44,4 @@ GET http://localhost:4000/open-data/download.php?f=nimportequoi
 ### Contrôle après exécution du cron : les 5 fichiers doivent être réécrits
 ### (comparer les dates) et répondre 200 sur leurs URL canoniques ci-dessus.
 ### Le nombre de features est retourné par le cron lui-même :
-###   {"falaises":N,"itineraires_velo":N,"gares":N,"details":N,"complet":N}
+###   {"falaises":N,"itineraires_velo":N,"arrets":N,"details":N,"complet":N}

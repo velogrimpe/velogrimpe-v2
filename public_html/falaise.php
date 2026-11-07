@@ -13,6 +13,7 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/schema.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/richtext.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/paths.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/velo_lib.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/arrets_lib.php';
 
 /**
  * Chemin de données d'une photo de falaise (cf. lib/paths.php).
@@ -78,13 +79,14 @@ $stmtF->close();
 $stmtIt = $mysqli->prepare("
   SELECT
     velo.velo_id, velo.velo_depart, velo.velo_arrivee, velo.velo_varianteformate,
-    velo.velo_km, velo.velo_dplus, velo.velo_apieduniquement,
-    gares.gare_nom, gares.gare_latlng,
-    concat(gares.gare_nom, ' → ', f.falaise_nom, ' (', velo.velo_variante, ')') as velo_nom
+    velo.velo_km, velo.velo_dplus,
+    arrets.nom AS gare_nom,
+    CONCAT(ST_Y(arrets.loc), ',', ST_X(arrets.loc)) AS gare_latlng,
+    concat(arrets.nom, ' → ', f.falaise_nom, ' (', velo.velo_variante, ')') as velo_nom
   FROM velo
-  LEFT JOIN gares ON velo.gare_id = gares.gare_id AND gares.deleted = 0
+  LEFT JOIN arrets ON velo.arret_id = arrets.id AND arrets.deleted = 0
   LEFT JOIN falaises f ON velo.falaise_id = f.falaise_id
-  WHERE velo.falaise_id = ?");
+  WHERE velo.falaise_id = ? AND velo.velo_public >= 0");
 $stmtIt->bind_param("i", $falaise_id);
 $stmtIt->execute();
 $result = $stmtIt->get_result();
@@ -93,6 +95,46 @@ while ($row = $result->fetch_assoc()) {
   $itineraires[] = $row;
 }
 $stmtIt->close();
+
+// Accès à pied depuis un arrêt (acces_pieton_falaise) : une entrée par accès,
+// sans fusion avec les itinéraires vélo. Lignes desservantes d'après `lignes_transport`.
+$stmtAp = $mysqli->prepare("
+  SELECT a.id, a.nom, a.commune, a.ter, a.tgv, a.bus, a.tram, a.teleph,
+    ST_Y(a.loc) AS lat, ST_X(a.loc) AS lng, p.description
+  FROM acces_pieton_falaise p
+  JOIN arrets a ON a.id = p.arret_id AND a.deleted = 0
+  WHERE p.falaise_id = ?
+  ORDER BY a.nom, a.id");
+$stmtAp->bind_param("i", $falaise_id);
+$stmtAp->execute();
+$accesPietons = [];
+foreach ($stmtAp->get_result()->fetch_all(MYSQLI_ASSOC) as $row) {
+  $accesPietons[] = [
+    'arret_id' => (int) $row['id'],
+    'nom' => $row['nom'],
+    'commune' => $row['commune'],
+    'types' => arret_types($row),
+    'type_dominant' => arret_type_dominant($row),
+    'lat' => (float) $row['lat'],
+    'lng' => (float) $row['lng'],
+    'description' => $row['description'],
+    'lignes' => [],
+  ];
+}
+$stmtAp->close();
+if ($accesPietons) {
+  $apIds = implode(',', array_map(fn($a) => (int) $a['arret_id'], $accesPietons));
+  $lignesParArret = [];
+  foreach ($mysqli->query("SELECT alt.arret_id, l.id, l.nom, l.couleur
+      FROM arrets_lignes_transport alt JOIN lignes_transport l ON l.id = alt.ligne_id
+      WHERE alt.arret_id IN ($apIds) ORDER BY l.nom")->fetch_all(MYSQLI_ASSOC) as $l) {
+    $lignesParArret[(int) $l['arret_id']][] = ['id' => (int) $l['id'], 'nom' => $l['nom'], 'couleur' => $l['couleur']];
+  }
+  foreach ($accesPietons as &$ap) {
+    $ap['lignes'] = $lignesParArret[$ap['arret_id']] ?? [];
+  }
+  unset($ap);
+}
 
 $stmtOblyk = $mysqli->prepare("
   SELECT site_url as url, site_name as name
@@ -190,7 +232,7 @@ WHERE t.train_public >= 1
 AND EXISTS (
     SELECT 1
     FROM velo ve
-    WHERE ve.gare_id = t.gare_id AND ve.falaise_id = ?
+    WHERE ve.arret_id = t.arret_id AND ve.falaise_id = ?
 )
 ORDER BY v.ville_nom
 ");
@@ -221,10 +263,10 @@ $stmtC = $mysqli->prepare("
   SELECT
     cf.id, cf.commentaire, cf.date_creation, cf.nom,
     cf.velo_id, cf.ville_nom, cf.gare_depart, cf.gare_arrivee,
-    concat(gares.gare_nom, ' → ', f.falaise_nom, ' (', velo.velo_variante, ')') as velo_nom
+    concat(arrets.nom, ' → ', f.falaise_nom, ' (', velo.velo_variante, ')') as velo_nom
   FROM commentaires_falaises cf
   left join velo on cf.velo_id = velo.velo_id
-  left join gares on velo.gare_id = gares.gare_id AND gares.deleted = 0
+  left join arrets on velo.arret_id = arrets.id AND arrets.deleted = 0
   left join falaises f on velo.falaise_id = f.falaise_id
   WHERE cf.falaise_id = ?
   ORDER BY date_creation DESC
@@ -608,26 +650,22 @@ $stmtC->close();
         }
       }
 
-      //Calculatrice de temps de trajet vélo (km/20+dplus/500 à vélo, km/4+dplus/500 à pied)
+      //Calculatrice de temps de trajet vélo (km/20+dplus/500)
 
-      function calculate_time($distance_km, $elevation_m, $velo_apieduniquement)
+      function calculate_time($distance_km, $elevation_m)
       {
-        if ($velo_apieduniquement == 1) {
-          $time_in_hours = $distance_km / 4 + $elevation_m / 500;
-        } else {
-          $time_in_hours = $distance_km / 20 + $elevation_m / 500;
-        }
+        $time_in_hours = $distance_km / 20 + $elevation_m / 500;
         $time_in_minutes = round($time_in_hours * 60);
         return $time_in_minutes;
       }
 
       $stmtG = $mysqli->prepare("
-      SELECT DISTINCT g.gare_id, g.gare_nom
+      SELECT DISTINCT a.id AS gare_id, a.nom AS gare_nom
       FROM velo v
-      INNER JOIN gares g ON v.gare_id = g.gare_id
-      LEFT JOIN train t ON v.gare_id = t.gare_id AND t.ville_id = ?
-      WHERE v.falaise_id = ?
-      ORDER BY t.ville_id desc, v.velo_km, g.gare_nom
+      INNER JOIN arrets a ON v.arret_id = a.id AND a.deleted = 0
+      LEFT JOIN train t ON v.arret_id = t.arret_id AND t.ville_id = ?
+      WHERE v.falaise_id = ? AND v.velo_public >= 0
+      ORDER BY t.ville_id desc, v.velo_km, a.nom
       ");
       if (!$stmtG) {
         die("Problème de préparation de la requête : " . $mysqli->error);
@@ -652,7 +690,7 @@ $stmtC->close();
             t.train_temps, t.train_descr, t.train_correspmin,
             t.train_correspmax, COALESCE(t.train_tgv, 0) AS train_tgv
             FROM train t
-            WHERE t.ville_id = ? AND t.gare_id = ?
+            WHERE t.ville_id = ? AND t.arret_id = ?
             ORDER BY COALESCE(t.train_tgv, 0) ASC
           ");
         $stmtT->bind_param("ii", $ville_id_get, $gare['gare_id']);
@@ -678,7 +716,7 @@ $stmtC->close();
           SELECT v.ville_id, v.ville_nom
           FROM villes v
           INNER JOIN train t ON v.ville_id = t.ville_id
-          WHERE t.gare_id = ?
+          WHERE t.arret_id = ?
       ");
         $stmtVG->bind_param("i", $gare['gare_id']);
         $stmtVG->execute();
@@ -694,10 +732,10 @@ $stmtC->close();
         $stmtVelo = $mysqli->prepare("
           SELECT
             v.velo_id, v.velo_km, v.velo_dplus, v.velo_dmoins, v.velo_descr,
-            v.velo_variante, v.velo_apieduniquement, velo_varianteformate,
+            v.velo_variante, velo_varianteformate,
             velo_depart, velo_arrivee, velo_openrunner
           FROM velo v
-          WHERE v.gare_id = ? AND v.falaise_id = ?
+          WHERE v.arret_id = ? AND v.falaise_id = ? AND v.velo_public >= 0
       ");
         $stmtVelo->bind_param("ii", $gare['gare_id'], $falaise_id);
         $stmtVelo->execute();
@@ -706,8 +744,8 @@ $stmtC->close();
         //Calcul des temps de trajet pour tous les itinéraires gare->falaise
         $velo_itineraires = [];
         while ($dataVelo = $resVelo->fetch_assoc()) {
-          $dataVelo['velo_tpsa_calculated'] = calculate_time($dataVelo['velo_km'], $dataVelo['velo_dplus'], $dataVelo['velo_apieduniquement']);
-          $dataVelo['velo_tpsr_calculated'] = calculate_time($dataVelo['velo_km'], $dataVelo['velo_dmoins'], $dataVelo['velo_apieduniquement']);
+          $dataVelo['velo_tpsa_calculated'] = calculate_time($dataVelo['velo_km'], $dataVelo['velo_dplus']);
+          $dataVelo['velo_tpsr_calculated'] = calculate_time($dataVelo['velo_km'], $dataVelo['velo_dmoins']);
           $velo_itineraires[] = $dataVelo;
         }
         $stmtVelo->close();
@@ -844,7 +882,7 @@ $stmtC->close();
                           <?php endforeach; ?>
                         </ul>
                       <?php else: ?> Pas d'accès train décrits depuis cette gare. <a class="btn btn-primary btn-xs"
-                          href="/ajout/ajout_train.php?falaise_id=<?= htmlspecialchars($falaise_id) ?>&gare_id=<?= htmlspecialchars($gare['gare_id']) ?>">Proposer
+                          href="/ajout/ajout_train.php?falaise_id=<?= htmlspecialchars($falaise_id) ?>&arret_id=<?= htmlspecialchars($gare['gare_id']) ?>">Proposer
                           un accès train</a>
                       <?php endif ?>
                     </div>
@@ -856,11 +894,7 @@ $stmtC->close();
                 <tr>
                   <td class='justify-center border-t border-r border-b border border-base-300'>
                     <div class='flex flex-col md:flex-row gap-4 items-center'>
-                      <?php if (isset($velo['velo_apieduniquement']) && $velo['velo_apieduniquement'] == 1): ?>
-                        <img src="/images/icons/hiking_color.png" alt="Logo À Pied" class="h-auto w-10">
-                      <?php else: ?>
-                        <img src="/images/icons/bicycle_color.png" alt="Logo Vélo" class="h-auto w-10">
-                      <?php endif ?>
+                      <img src="/images/icons/bicycle_color.png" alt="Logo Vélo" class="h-auto w-10">
                       <div class='flex flex-col items-start'>
                         <?php if (!empty($velo['velo_variante'])): ?>
                           <div class='text-slate-400'><?= htmlspecialchars($velo['velo_variante']) ?></div>
@@ -924,6 +958,36 @@ $stmtC->close();
           </div>
         </div>
       <?php } ?>
+      <?php if ($accesPietons): ?>
+        <!-- Accès à pied depuis un arrêt (acces_pieton_falaise) : un bloc par accès -->
+        <section id="acces-pietons" class="flex flex-col gap-2 w-full">
+          <h3 class="text-lg font-bold my-0 flex items-center gap-2">
+            <img src="/images/icons/hiking_color.png" alt="" class="h-6 w-6" /> La falaise est accessible à pied + Transports en commun !
+          </h3>
+          <?php foreach ($accesPietons as $ap): ?>
+            <article data-arret-id="<?= $ap['arret_id'] ?>"
+              class="rounded-xl shadow bg-base-100 border border-base-300 px-3 py-2 flex flex-col gap-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="font-bold"><?= htmlspecialchars($ap['nom']) ?></span>
+                <?php if (!empty($ap['commune']) && mb_stripos($ap['nom'], $ap['commune']) === false): ?>
+                  <span class="text-slate-400">(<?= htmlspecialchars($ap['commune']) ?>)</span>
+                <?php endif; ?>
+                <?php foreach ($ap['types'] as $t): ?>
+                  <span class="badge badge-sm badge-outline"><?= htmlspecialchars(
+                    ['ter' => 'TER', 'tgv' => 'TGV', 'bus' => 'Bus', 'tram' => 'Tram', 'telepherique' => 'Téléphérique'][$t] ?? $t
+                  ) ?></span>
+                <?php endforeach; ?>
+              </div>
+              <?php if (!empty($ap['description'])): ?>
+                <div class="vg-a-primary"><?= nl2br(htmlspecialchars($ap['description'])) ?></div>
+              <?php endif; ?>
+              <?php if ($ap['lignes']): ?>
+                <div class="text-sm text-slate-500">Lignes : <?= htmlspecialchars(implode(', ', array_column($ap['lignes'], 'nom'))) ?></div>
+              <?php endif; ?>
+            </article>
+          <?php endforeach; ?>
+        </section>
+      <?php endif; ?>
       <!-- Remarque entre tableaux dynamique et tableau descriptif (rq générale sur l'accès) -->
       <?php if (!empty($falaise_txt1)): ?>
         <div class="vg-a-primary">
@@ -1198,7 +1262,14 @@ $stmtC->close();
       "https://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png?apikey=e6b144cfc47a48fd928dad578eb026a6", {
       maxZoom: 19,
       minZoom: 0,
-      attribution: '<a href="http://www.thunderforest.com/outdoors/" target="_blank">Thunderforest</a>/<a href="http://osm.org/copyright" target="_blank">OSM contributors</a>',
+      attribution: '<a href="http://www.thunderforest.com/landscape/" target="_blank">Thunderforest</a>/<a href="http://osm.org/copyright" target="_blank">OSM contributors</a>',
+      crossOrigin: true,
+    })
+    const transportTiles = L.tileLayer(
+      "https://{s}.tile.thunderforest.com/transport/{z}/{x}/{y}.png?apikey=e6b144cfc47a48fd928dad578eb026a6", {
+      maxZoom: 19,
+      minZoom: 0,
+      attribution: '<a href="http://www.thunderforest.com/transport/" target="_blank">Thunderforest</a>/<a href="http://osm.org/copyright" target="_blank">OSM contributors</a>',
       crossOrigin: true,
     })
     const opencyclemapTiles = L.tileLayer(
@@ -1221,6 +1292,7 @@ $stmtC->close();
       'IGNv2': ignTiles,
       'Satellite': ignOrthoTiles,
       'Outdoors': outdoorsTiles,
+      "Transports": transportTiles,
     };
   </script>
   <script type="module">
@@ -1232,6 +1304,7 @@ $stmtC->close();
     import Approche from "/js/components/map/approche.js";
     import Parking from "/js/components/map/parking.js";
     import BusStop from "/js/components/map/bus-stop.js";
+    import { showLigne } from "/js/components/map/ligne-view.js";
     import FalaiseVoisine from "/js/components/map/falaise-voisine.js";
     import Gare from "/js/components/map/gare.js";
     import { campingLayer, giteLayer, trainlinesLayer, tgvLayer, biodivLayer, garesLayer } from "/js/components/map/load-vector-tiles.js";
@@ -1243,12 +1316,14 @@ $stmtC->close();
       'falaise_bloc' => $dataF['falaise_bloc'], // icône (js/components/map/falaise.js)
     ]); ?>;
     const itineraires = <?php echo json_encode($itineraires); ?>;
+    const accesPietons = <?php echo json_encode($accesPietons); ?>;
 
     const center = falaise.falaise_latlng.split(",").map(parseFloat);
     const zoom = 13;
     const bounds = [
       falaise.falaise_latlng.split(",").map(parseFloat),
-      itineraires.map(it => it.gare_latlng.split(",").map(parseFloat))
+      itineraires.map(it => it.gare_latlng.split(",").map(parseFloat)),
+      accesPietons.map(a => [a.lat, a.lng])
     ];
     var map = L.map("map", { layers: [landscapeTiles], center, zoom, fullscreenControl: true });
     L.control.scale({ position: "bottomleft", metric: true, imperial: false, maxWidth: 125 }).addTo(map);
@@ -1374,10 +1449,8 @@ $stmtC->close();
     const showBusArcs = (arret) => {
       busArcLayer.clearLayers();
       const origin = [arret.lat, arret.lng];
-      const bounds = [origin, falaise.falaise_latlng.split(",").map(Number)];
       (arret.liaisons || []).forEach((li) => {
         const dest = [li.lat, li.lng];
-        bounds.push(dest);
         // Tooltip (HTML déjà assaini) : ligne qui relie les deux arrêts + son
         // éventuelle description + le commentaire de la liaison. Affiché sur l'arc
         // (au survol, suit le curseur) et sur l'arrêt relié.
@@ -1414,14 +1487,49 @@ $stmtC->close();
         busLabel(dest, li.nom);
       });
       busLabel(origin, arret.nom);
-      map.flyToBounds(L.latLngBounds(bounds), { padding: [70, 70], maxZoom: 15, duration: 0.5 });
     };
 
-    // Clic ailleurs sur la carte : on efface les arcs.
-    map.on("click", () => busArcLayer.clearLayers());
+    // « Voir la ligne » (Lot 7) : popup de l'arrêt cliqué avec un bouton par ligne
+    // BTT (table lignes_transport) qui la trace (couleur + halo, arrêts desservis
+    // entourés). Effacé au clic ailleurs sur la carte.
+    let ligneGroup = null;
+    const clearLigne = () => { ligneGroup?.remove(); ligneGroup = null; };
+    const showLignesPopup = async (arret) => {
+      clearLigne();
+      let lignes = [];
+      try {
+        const res = await fetch(`/api/fetch_lignes.php?arret_id=${arret.id}`);
+        if (res.ok) lignes = (await res.json()).lignes || [];
+      } catch (e) { return; }
+      if (!lignes.length) return;
+      const div = document.createElement("div");
+      div.className = "flex flex-col gap-1 text-base-content";
+      lignes.forEach((l) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "btn btn-xs btn-outline btn-primary";
+        btn.textContent = `Voir la ligne ${l.numero || l.nom}`;
+        btn.addEventListener("click", () => {
+          clearLigne();
+          // Sans recadrage ni cercles autour des arrêts desservis (terminus compris)
+          ligneGroup = showLigne(map, l, { fit: false, arrets: [] });
+          map.closePopup();
+        });
+        div.appendChild(btn);
+      });
+      L.popup({ offset: [0, -BusStop.iconSize / 2], closeButton: false })
+        .setLatLng([arret.lat, arret.lng])
+        .setContent(div)
+        .openOn(map);
+    };
 
-    // Arrêts de bus liés en base (bus_arrets_falaise).
-    fetch(`/api/fetch_bus_arrets.php?falaise_id=${falaise.falaise_id}`)
+    // Clic ailleurs sur la carte : on efface les arcs et la ligne affichée.
+    map.on("click", () => { busArcLayer.clearLayers(); clearLigne(); });
+
+    // Arrêts liés à la falaise (acces_pieton_falaise), toutes modalités : chacun
+    // avec l'icône de son type (ter > tgv > tram > téléphérique > bus) et un
+    // trait droit vers la falaise.
+    fetch(`/api/fetch_arrets.php?falaise_id=${falaise.falaise_id}`)
       .then(response => response.ok ? response.json() : Promise.reject(new Error("fetch_bus_arrets")))
       .then(data => {
         let added = false;
@@ -1433,8 +1541,12 @@ $stmtC->close();
           const feature = {
             type: "Feature",
             geometry: { type: "Point", coordinates: [arret.lng, arret.lat] },
-            properties: { type: "bus_stop", name: arret.nom, description: descHtml },
+            properties: { type: "bus_stop", name: arret.nom, description: descHtml, types: arret.types, arret_id: arret.id },
           };
+          L.polyline(
+            [[arret.lat, arret.lng], falaise.falaise_latlng.split(",").map(parseFloat)],
+            { className: "vg-pieton-line vg-acces-pieton-line", color: "#334155", weight: 3, dashArray: "2 8", lineCap: "round" }
+          ).addTo(map);
           const obj = new BusStop(map, feature);
           obj._element_id = `bus_db_${arret.id}`;
           featureMap[obj._element_id] = obj;
@@ -1443,6 +1555,7 @@ $stmtC->close();
           obj.layer.on("click", (ev) => {
             L.DomEvent.stopPropagation(ev);
             showBusArcs(arret);
+            showLignesPopup(arret);
           });
           added = true;
         });

@@ -21,11 +21,12 @@ $gares = $mysqli->query("SELECT
   g.*,
   GROUP_CONCAT(CONCAT(t.ville_id, '|', t.train_depart, '|', t.train_temps, '|', t.train_correspmin) SEPARATOR '=|=') AS villes
   FROM gares g
-  LEFT JOIN train t ON t.gare_id = g.gare_id
+  LEFT JOIN train t ON t.arret_id = g.gare_id
   where g.deleted = 0
   GROUP BY g.gare_id;"
 )->fetch_all(MYSQLI_ASSOC);
-$itineraires = $mysqli->query("SELECT * FROM velo WHERE velo_public >= 1")->fetch_all(MYSQLI_ASSOC);
+// Itinéraires depuis un arrêt non-gare : rendu carte au Lot 6.
+$itineraires = $mysqli->query("SELECT *, arret_id AS gare_id FROM velo WHERE velo_public >= 1 AND arret_id IN (SELECT gare_id FROM gares WHERE deleted = 0)")->fetch_all(MYSQLI_ASSOC);
 
 ?>
 <!DOCTYPE html>

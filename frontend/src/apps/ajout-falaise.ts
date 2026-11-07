@@ -7,6 +7,7 @@ import MultiSelect, {
 } from "@/components/shared/MultiSelect.vue";
 import RoseDesVents from "@/components/shared/RoseDesVents.vue";
 import RichTextField from "@/components/shared/RichTextField.vue";
+import ArretsLies from "@/components/ajout/ArretsLies.vue";
 
 // Helper to create search icon slot
 const searchIconSlot = () => ({
@@ -253,6 +254,11 @@ document.addEventListener("DOMContentLoaded", () => {
           if (falaiseNomformateEl)
             falaiseNomformateEl.value = formatNomFalaise(value);
           if (falaiseIdEl) falaiseIdEl.value = "";
+          (
+            window as unknown as {
+              setAccesPietonsVisible?: (visible: boolean) => void;
+            }
+          ).setAccesPietonsVisible?.(true);
         }
       };
 
@@ -336,7 +342,104 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Mount rich text editors (TipTap) on the textarea-replacement mount points
   mountRichTextFields();
+
+  // Accès à pied depuis des arrêts (création uniquement)
+  mountArretsPietons();
 });
+
+/**
+ * « Accessible à pied depuis un arrêt » : case à cocher + liste d'arrêts liés.
+ * L'état part dans le champ caché `arrets_pietons` (liste JSON d'ids), vide
+ * tant que la case est décochée ou la liste vide.
+ */
+function mountArretsPietons() {
+  const mountEl = document.getElementById("vue-arrets-pietons");
+  const check = document.getElementById(
+    "acces_pieton_check",
+  ) as HTMLInputElement | null;
+  const hidden = document.getElementById(
+    "arrets_pietons",
+  ) as HTMLInputElement | null;
+  if (!mountEl || !check || !hidden) return;
+
+  let arrets: Array<{ id: number; nom: string }> = [];
+  try {
+    arrets = JSON.parse(mountEl.dataset.arrets || "[]");
+  } catch (e) {
+    console.error("[velogrimpe] Failed to parse arrets data:", e);
+  }
+
+  const mapWrap = document.getElementById("map-arrets-wrap");
+  const linkedIds = ref<number[]>([]);
+  let wasChecked = false;
+  const sync = () => {
+    mountEl.classList.toggle("hidden", !check.checked);
+    mapWrap?.classList.toggle("hidden", !check.checked);
+    hidden.value =
+      check.checked && linkedIds.value.length
+        ? JSON.stringify(linkedIds.value)
+        : "";
+    // Seconde carte (js/components/map/arrets-lies-map.js) : état des arrêts liés et visibilité.
+    document.dispatchEvent(
+      new CustomEvent("velogrimpe:arrets-pietons-changed", {
+        detail: { ids: [...linkedIds.value] },
+      }),
+    );
+    if (check.checked !== wasChecked) {
+      wasChecked = check.checked;
+      document.dispatchEvent(
+        new CustomEvent("velogrimpe:arrets-pietons-toggle", {
+          detail: { visible: check.checked },
+        }),
+      );
+    }
+  };
+  watch(linkedIds, sync);
+  check.addEventListener("change", sync);
+
+  // Lier / délier depuis la carte : même état que la liste.
+  (window as unknown as Record<string, unknown>).accesPietonsSetLinked = (
+    id: number,
+    linked: boolean,
+  ) => {
+    id = Number(id);
+    if (linked && !linkedIds.value.includes(id))
+      linkedIds.value = [...linkedIds.value, id];
+    if (!linked) linkedIds.value = linkedIds.value.filter((x) => x !== id);
+  };
+
+  createApp({
+    setup: () => () =>
+      h(ArretsLies, {
+        arrets,
+        linkedIds: linkedIds.value,
+        titre: "Arrêts d'où l'on accède à la falaise à pied",
+        vide: "Aucun arrêt pour l'instant. Ajoutez-le ci-dessous.",
+        onLink: (id: number) => {
+          if (!linkedIds.value.includes(id))
+            linkedIds.value = [...linkedIds.value, id];
+        },
+        onUnlink: (id: number) => {
+          linkedIds.value = linkedIds.value.filter((x) => x !== id);
+        },
+      }),
+  }).mount(mountEl);
+
+  // Une falaise existante sélectionnée passe en édition : section masquée
+  // (les accès se gèrent alors depuis l'éditeur de détails).
+  (window as unknown as Record<string, unknown>).setAccesPietonsVisible = (
+    visible: boolean,
+  ) => {
+    document
+      .getElementById("acces-pietons-section")
+      ?.classList.toggle("hidden", !visible);
+    if (!visible) {
+      check.checked = false;
+      linkedIds.value = [];
+      sync();
+    }
+  };
+}
 
 // Registry of mounted rich text editors, keyed by field name, for PHP prefill.
 type RichTextApi = {

@@ -6,7 +6,7 @@ Récapitulons :
 
 #### Unification des tables d'arrêts bus / train --> arrêts multi-modaux
 
-Dans la BDD, fusionner les tables bus_arrets et gares, et renommer la table obtenue en "arrets".
+Dans la BDD, créer une nouvelle table "arrets" et y copier les données de bus_arrets et gares (ids de gares conservés, ids de bus décalés). Les tables gares/bus_arrets ne sont pas renommées ni supprimées : elles restent en place, pleinement fonctionnelles pour le code actuel, jusqu'à la bascule des endpoints puis une migration de nettoyage dédiée (cf. `docs/plan-implementation-arrets.md`, Lot 1 et Lot 9).
 Description de la table arrets:
 
 - id
@@ -22,6 +22,7 @@ Description de la table arrets:
 - tram: boolean (l'arrêt est desservi en tram)
 - teleph: boolean (l'arrêt est desservi en telephérique)
 - deleted: boolean (arrêt supprimé)
+- description: text? (commentaire libre sur l'arrêt, repris de bus_arrets.description)
 
 ##### Migration des arrêts de bus
 
@@ -33,17 +34,21 @@ Actuellement notre base est moins expressive : on n'identifie que les gares TGV 
 
 #### Références externe des arrêts
 
-Accompagné d'une table de références externes (références sncf, osm, motis, etc.). Il peut y avoir plusieurs références pour un même arret et une même source, pas de contraintes d'unicité, donc.
+Accompagné d'une table de références externes (références sncf, osm, motis, etc.). Il peut y avoir plusieurs références pour un même arrêt et une même source (ex. plusieurs tags osm), tant que le couple (arret_id, source, ref) reste unique — pas d'unicité globale sur `ref` seul, deux arrêts différents peuvent référencer le même id externe par erreur ou coïncidence.
 
 - id
 - arret_id: FK --> arrets.id
 - libelle: text? (libelle externe, optionnel)
 - source: varchar(64) (sncf, osm, motis, autre)
 - ref: varchar(128) (code / id dans la référence)
+- data: json? (données brutes de la source, ex. réponse Overpass complète)
+- Contrainte : UNIQUE(arret_id, source, ref)
+
+Migration : `bus_arrets.osm_id` → `references_externes.ref` (avec `source = 'osm'`), `bus_arrets.osm_data` → `references_externes.data`.
 
 #### Liaisons Piétonnes Arrêts --> Falaise
 
-Renommer la table bus_arrets_falaise en acces_pieton_falaise et ajouter un champ description
+Créer une nouvelle table acces_pieton_falaise (avec un champ description) et y copier les données de bus_arrets_falaise (ids remappés). bus_arrets_falaise n'est pas renommée ni supprimée : elle reste en place jusqu'à la bascule des endpoints puis une migration de nettoyage dédiée (cf. `docs/plan-implementation-arrets.md`, Lot 1 et Lot 9).
 
 #### lignes de transports
 
@@ -52,7 +57,7 @@ cf. section dédiée dans l'étape 7.
 ### Etape 2 : Formulaire d'ajout d'arrêt (refonte formulaire ajout bus)
 
 > [!NOTE] Ouvrir à toutes les modalités
-> Je pense qu'il faut ouvrir à toutes les modalités pour permettre d'ajouter et de modifier des gares, surtout pour l'aspect TER / TGV et éviter de créer des exceptions. Les modifications seront toujours réversibles si jamais quelqu'un s'amuse à déplacer une gare TER.
+> Je pense qu'il faut ouvrir à toutes les modalités pour permettre d'ajouter et de modifier des gares, surtout pour l'aspect TER / TGV et éviter de créer des exceptions. Les modifications seront toujours réversibles si jamais quelqu'un s'amuse à déplacer une gare TER. Concrètement, les gares deviennent éditables sans passer par la queue de validation admin, exactement comme les arrêts de bus aujourd'hui.
 
 Modifier le formulaire d'ajout d'arrêt de bus, pour que ce soit un formulaire d'ajout d'arrêt toutes modalités.
 On ajoute l'arrêt avec coord GPS ou scan overpass (comme actuellement).
@@ -71,6 +76,8 @@ Il faut que chaque type d'arrêt soit représenté par un icone différent, repr
 #### Brief — géocodage inverse unitaire (API Adresse / IGN Géoplateforme)
 
 Requête GET sur `https://data.geopf.fr/geocodage/reverse?lon={longitude}&lat={latitude}` (paramètres `lon`/`lat` en degrés décimaux, WGS84). Réponse JSON de type GeoJSON : extraire `features[0].properties`, avec les clés `citycode` (code INSEE), `postcode` (CP) et `city` (nom de commune) — si `features` est vide, aucun résultat trouvé à proximité. Respecter une limite de 50 requêtes/seconde/IP (throttle ~20ms entre appels pour un traitement en boucle).
+
+Le backfill des gares existantes se fait via l'endpoint `api/private/backfill_gares_geocode.php` (admin), qui appelle l'API batch `https://api-adresse.data.gouv.fr/reverse/csv/` (équivalent à `curl -X POST -F data=@gares.csv -F lat=lat -F lon=lon https://api-adresse.data.gouv.fr/reverse/csv/`) pour renseigner `gares.gare_com_insee`/`gare_com_nom`/`gare_com_cp` en un seul appel HTTP pour l'ensemble des gares. Volontairement un endpoint applicatif plutôt qu'un import de fichier dans la migration SQL : un chemin de fichier local (`LOAD DATA INFILE`) ne fonctionne qu'en dev (propre au montage du conteneur Docker), alors que cet endpoint fonctionne identiquement en dev et en prod. À appeler avant de rejouer la migration DB (étape 1), qui copie ensuite ces colonnes dans `arrets`. Les arrêts de bus n'ont pas d'équivalent connu à ce stade.
 
 ### Etape 3 : Éditeur de détails
 
@@ -97,7 +104,7 @@ En version piéton, il n'y a plus qu'à sélectionner la falaise à relier et é
 
 En version vélo, on conserve le reste des champs du formulaire vélo actuel, avec l'ajout du GPX etc.
 
-### Etape 6 : Carte globale
+### Etape 5 : Carte globale
 
 **Important**: Bien modifier les deux versions de la carte (leaflet + maplibre)
 
@@ -112,7 +119,7 @@ Voici les steps de zoom et les options d'apparence:
 
 On garde le même comportement hover/click des gares actuellement. La seule exception est le fait qu'il y aura des itinéraires piétons (liens arrêt -> falaise de la table acces_pieton_falaise) qu'il faut représenter par un trait droit arrêt -> falaise.
 
-### Etape 7 Lignes BTT et représentation
+### Etape 6 Lignes BTT et représentation
 
 Le but des lignes est de les représenter et de lier les arrêts BTT avec leurs terminus ou arrêts intéressants. Surtout dans le cas des bus qui parcourent des distances longues et sont souvent (mais pas toujours) reliés à des terminaux multi-modaux (gares). On ne s'occupe pas des lignes de trains (rails) qui sont toujours représentées sur les cartes.
 
@@ -150,7 +157,8 @@ Formulaire ajout_ligne.php, avec un search param ligne_id qui permet de modifier
 
 Permettre d'importer les données depuis un zip GTFS (Côté front : `fflate` pour dézipper + un parsing CSV maison ou une petite lib (papaparse par ex., browser-compatible)) :
 
-- geometry : lire shapes.txt, et convertir directement en MultiLineString à envoyer à l’API
+- lister les lignes disponibles dans le GTFS à partir de routes.txt (et trips.txt pour les rattacher à leurs shape_id) pour permettre à l'utilisateur de choisir la ligne à importer, avant toute conversion de géométrie
+- geometry : une fois la ligne choisie, résoudre le ou les shape_id associés (via trips.txt) et convertir shapes.txt en MultiLineString à envoyer à l'API
 - reste des champs : lire agency.txt pour extraire agency_name (-> operateur), agency_url (-> operateur_url)
 
 Champs du formulaire pour alimenter les champs texte.
@@ -169,7 +177,7 @@ Comme pour le cas de l'ajout bus, on liste les arrêts liés avec possibilité d
 
 Quand on clique sur un arrêt BTT relié à une ligne, en plus de montrer les itinéraires à partir de cette gare et les falaises reliées, on va faire apparaitre un bouton (dans le panel d'info) "voir la ligne de bus" qui va faire afficher la ligne de bus dans la couleur spécifiée en BDD + "halo" blanc et mettre en évidence les arrêts liés.
 
-### Etape 8 : Falaises accessibles en bus+marche
+### Etape 7 : Falaises accessibles en bus+marche
 
 Dans le formulaire d'ajout de falaise, prévoir un champ "cette falaise est accessible à pied depuis un arrêt BTT", et si on clique dessus, ça demande lequel, avec possibilité d'en sélectionner plusieurs.
 À l'ajout de la falaise, il faudra créer les accès piétons (acces_pieton_falaise) correspondants.
@@ -182,6 +190,6 @@ Les itinéraires dans la table velo marqués apieduniquement devront être migr�
 
 Permettre de filtrer sur le critère "accessible" à pied en se basant non plus sur velo_apieduniquement mais sur la table acces_pieton_falaise
 
-### Etape 9 : Cleaning anciennes entités / tables liées aux bus
+### Etape 8 : Cleaning anciennes entités / tables liées aux bus
 
-bus_lignes et bus_liaisons deviennent obsolètes.
+bus_lignes et bus_liaisons deviennent obsolètes. On ne supprime pas ces tables (les données restent en base indéfiniment) : on arrête simplement de les lire/écrire depuis le code applicatif une fois lignes_transport en production.

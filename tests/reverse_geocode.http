@@ -1,0 +1,14 @@
+
+# Point connu (Lyon, proche gare Part-Dieu) : attendu commune=Lyon, code_insee=69383, cp=69003
+GET http://localhost:4000/api/reverse_geocode.php?lat=45.7596&lng=4.8586
+
+###
+# Aucun résultat à proximité (océan Atlantique) : attendu commune/code_insee/cp = null
+GET http://localhost:4000/api/reverse_geocode.php?lat=0&lng=-30
+
+###
+# Paramètres manquants/invalides : attendu 400
+GET http://localhost:4000/api/reverse_geocode.php?lat=45.7596
+
+###
+GET http://localhost:4000/api/reverse_geocode.php?lat=abc&lng=4.8586

@@ -43,11 +43,11 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 }
 
 // Itinéraire existant
-$stmt = $mysqli->prepare("SELECT v.velo_id, v.gare_id, v.falaise_id, v.velo_depart, v.velo_arrivee, v.velo_varianteformate,
+$stmt = $mysqli->prepare("SELECT v.velo_id, v.arret_id AS gare_id, v.falaise_id, v.velo_depart, v.velo_arrivee, v.velo_varianteformate,
     v.velo_variante, v.velo_km, v.velo_dplus, v.velo_dmoins, v.velo_descr, v.velo_openrunner, v.velo_public,
-    g.gare_nom, f.falaise_nom
+    a.nom AS gare_nom, f.falaise_nom
   FROM velo v
-  LEFT JOIN gares g ON g.gare_id = v.gare_id
+  LEFT JOIN arrets a ON a.id = v.arret_id
   LEFT JOIN falaises f ON f.falaise_id = v.falaise_id
   WHERE v.velo_id = ?");
 $stmt->bind_param("i", $velo_id);
@@ -227,7 +227,7 @@ logChanges($nom_prenom, $email, 'update', 'velo', $velo_id, $old['falaise_id'], 
 ]);
 
 // Notification : admin_mail en mode admin, contact_mail sinon (même schéma que
-// add_falaise.php / add_bus.php). Le lien de validation n'a de sens que si
+// add_falaise.php / add_arret.php). Le lien de validation n'a de sens que si
 // l'itinéraire n'est pas déjà validé par cette écriture.
 require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/sendmail.php';
 $statut = $velo_public === 1 ? 'validé' : 'non validé';

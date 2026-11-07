@@ -60,7 +60,7 @@ test.describe('Aucune adresse mail publiée (hors adresses de contact)', () => {
     const departs = [
       ...(await urlsDuSitemap(request)),
       '/sorties.php',
-      '/carte_maplibre.php',
+      '/carte_leaflet.php',
       '/ajout/falaises_accessibles_a_pied.php',
       '/feed/actualites.xml',
       '/feed/nouveautes.xml',
@@ -117,7 +117,7 @@ test.describe('Aucune adresse mail publiée (hors adresses de contact)', () => {
         `/api/fetch_falaise.php?falaise_id=${id}`,
         `/api/fetch_velos.php?falaise_id=${id}`,
         `/api/fetch_sortie_velos.php?falaise_id=${id}`,
-        `/api/fetch_bus_arrets.php?falaise_id=${id}`,
+        `/api/fetch_arrets.php?falaise_id=${id}`,
         `/api/private/falaise_details.php?falaise_id=${id}`,
       ]),
     ]

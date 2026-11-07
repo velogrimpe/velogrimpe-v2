@@ -1,0 +1,42 @@
+@host = http://localhost:4000
+@admin_token = <copier admin_token depuis config.php>
+
+### Liste des lignes (sans géométrie)
+GET {{host}}/api/fetch_lignes.php
+
+### Lignes desservant un arrêt (avec géométrie + arrêts liés)
+GET {{host}}/api/fetch_lignes.php?arret_id=1
+
+### Lire une ligne
+GET {{host}}/api/fetch_ligne.php?ligne_id=1
+
+### Créer une ligne (arrêts liés 1 et 2 + un nouvel arrêt créé dans le même appel, cf. import GTFS)
+# Pour éditer, renseigner ligne_id. La réponse liste les ids créés dans `arrets_crees`.
+POST {{host}}/api/add_ligne.php
+Content-Type: application/json
+
+{
+  "ligne_id": null,
+  "nom": "Test - Ligne HTTP",
+  "numero": "L21",
+  "operateur": "Opérateur Test",
+  "operateur_url": "https://operateur.example.org",
+  "horaire_url": "https://operateur.example.org/horaires.pdf",
+  "ref": "REF-123",
+  "couleur": "#123456",
+  "geometry": {
+    "type": "MultiLineString",
+    "coordinates": [[[5.3830, 43.8270], [5.3900, 43.8300]], [[5.3900, 43.8300], [5.4000, 43.8350]]]
+  },
+  "arret_ids": [1, 2],
+  "nouveaux_arrets": [
+    { "nom": "Test - Nouvel arrêt HTTP", "lat": 45.5, "lng": 6.1, "types": ["bus"] }
+  ]
+}
+
+### Supprimer une ligne (Bearer admin)
+POST {{host}}/api/delete_ligne.php
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{ "ligne_id": 1 }

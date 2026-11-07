@@ -36,10 +36,10 @@ $admin = hash_equals((string) $config["admin_token"], (string) ($_GET['admin'] ?
 // section de sélection rapide en haut de page.
 $velos_a_valider = [];
 if ($admin) {
-  $res = $mysqli->query("SELECT v.velo_id, v.gare_id, v.falaise_id, v.velo_variante, v.velo_contrib, v.date_creation,
-      g.gare_nom, f.falaise_nom
+  $res = $mysqli->query("SELECT v.velo_id, v.arret_id AS gare_id, v.falaise_id, v.velo_variante, v.velo_contrib, v.date_creation,
+      a.nom AS gare_nom, f.falaise_nom
     FROM velo v
-    LEFT JOIN gares g ON g.gare_id = v.gare_id
+    LEFT JOIN arrets a ON a.id = v.arret_id
     LEFT JOIN falaises f ON f.falaise_id = v.falaise_id
     WHERE v.velo_public = 2
     ORDER BY v.date_creation DESC, v.velo_id DESC");

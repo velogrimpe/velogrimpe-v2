@@ -16,21 +16,14 @@ export function format_time(minutes) {
 }
 
 /**
- * Calculate bike/walk travel time in minutes
- * Formula: km/20 + D+/500 for bike, km/4 + D+/500 for walking
+ * Calculate bike travel time in minutes
+ * Formula: km/20 + D+/500
  */
 export function calculate_time(velo) {
-  const { velo_km, velo_dplus, velo_apieduniquement } = velo;
+  const { velo_km, velo_dplus } = velo;
   const km = parseFloat(velo_km);
   const dplus = parseInt(velo_dplus, 10);
-  const isWalking = velo_apieduniquement === "1" || velo_apieduniquement === 1;
-
-  let time_in_hours;
-  if (isWalking) {
-    time_in_hours = km / 4 + dplus / 500;
-  } else {
-    time_in_hours = km / 20 + dplus / 500;
-  }
+  const time_in_hours = km / 20 + dplus / 500;
   return Math.round(time_in_hours * 60);
 }
 

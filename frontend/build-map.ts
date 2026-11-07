@@ -60,7 +60,7 @@ await build({
 })
 console.log(`Leaflet map bundle built: map-${leafletVer}.js`)
 
-// MapLibre bundle (used by carte_maplibre.php)
+// MapLibre bundle (used by carte.php)
 await cleanOldVersions('map-maplibre')
 await build({
   ...commonOptions,
