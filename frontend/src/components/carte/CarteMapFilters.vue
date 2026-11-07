@@ -443,7 +443,7 @@ function parseNumberInput(value: string): number | null {
                 <div class="font-bold">Altitude 🏔️</div>
                 <div class="flex flex-row gap-2 items-center">
                   <label class="flex flex-row gap-2 items-center">
-                    <div class="text-normal font-bold">Entre</div>
+                    <div class="text-normal">Entre</div>
                     <input
                       type="number"
                       step="50"
@@ -461,7 +461,7 @@ function parseNumberInput(value: string): number | null {
                     <div>m</div>
                   </label>
                   <label class="flex flex-row gap-2 items-center">
-                    <div class="text-normal font-bold">et</div>
+                    <div class="text-normal">et</div>
                     <input
                       type="number"
                       step="50"
@@ -580,22 +580,26 @@ function parseNumberInput(value: string): number | null {
             </div>
           </div>
 
-          <!-- Velo Dropdown -->
+          <!-- Velo + Marche Dropdown -->
           <div class="dropdown w-fit dropdown-end shrink-0 snap-end">
             <div
               tabindex="0"
               role="button"
               class="btn btn-sm md:btn-md text-nowrap focus:pointer-events-none shadow-md border-0"
-              :class="hasVeloFilter ? 'btn-primary' : 'bg-base-100'"
+              :class="
+                hasVeloFilter || hasApprocheFilter
+                  ? 'btn-primary'
+                  : 'bg-base-100'
+              "
             >
-              Vélo 🚲
+              Vélo 🚲 / Marche 🥾
             </div>
             <div
               class="dropdown-content menu bg-base-200 rounded-box z-[1001] m-1 w-64 p-2 shadow-lg"
               tabindex="1"
             >
               <div class="flex flex-row gap-3 items-center">
-                <div>Trajet vélo</div>
+                <div class="font-bold">Trajet vélo</div>
                 <div class="flex flex-col gap-1">
                   <label class="flex flex-row gap-2 flex-wrap items-center">
                     <div class="text-normal font-bold">≤</div>
@@ -675,23 +679,7 @@ function parseNumberInput(value: string): number | null {
                   <div>Accessible à pied</div>
                 </label>
               </div>
-            </div>
-          </div>
-
-          <!-- Approche Dropdown -->
-          <div class="dropdown w-fit dropdown-end shrink-0 snap-end">
-            <div
-              tabindex="0"
-              role="button"
-              class="btn btn-sm md:btn-md text-nowrap focus:pointer-events-none shadow-md border-0"
-              :class="hasApprocheFilter ? 'btn-primary' : 'bg-base-100'"
-            >
-              Marche 🥾
-            </div>
-            <div
-              class="dropdown-content menu bg-base-200 rounded-box z-[1001] m-1 w-56 p-2 shadow-lg"
-              tabindex="1"
-            >
+              <div class="divider my-1"></div>
               <label class="flex flex-row gap-2 items-center">
                 <div class="font-bold">Approche</div>
                 <div class="text-normal font-bold">≤</div>
@@ -859,6 +847,14 @@ function parseNumberInput(value: string): number | null {
 .leaflet-filters-control :deep(.dropdown-content) {
   z-index: 1001;
   margin-right: 20px;
+}
+
+/* Desktop : le JS cale déjà `right` sur le bord droit du bouton, on retire
+   la marge pour que le dropdown soit aligné à droite avec lui. */
+@media (min-width: 768px) {
+  .leaflet-filters-control :deep(.dropdown-content) {
+    margin-right: 0;
+  }
 }
 
 .leaflet-filters-control :deep(.autocomplete-list) {
