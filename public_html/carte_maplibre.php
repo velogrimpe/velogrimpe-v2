@@ -558,7 +558,7 @@ $highlight = $_GET['h'] ?? '';
   const infoControl = {
     onAdd() {
       const div = document.createElement("div");
-      div.className = "info w-[calc(100%-20px)] maplibregl-ctrl";
+      div.className = "info w-[calc(100%-20px)] md:w-max md:max-w-[66.667vw] maplibregl-ctrl";
       div.id = "vue-info-panel";
       stopAllPropagation(div);
       return div;
