@@ -78,15 +78,16 @@ $stmtF->close();
 // js/components/map/velo.js (gpx_path, calculate_time) et les gares de la carte.
 $stmtIt = $mysqli->prepare("
   SELECT
-    velo.velo_id, velo.velo_depart, velo.velo_arrivee, velo.velo_varianteformate,
-    velo.velo_km, velo.velo_dplus,
+    velo.acces_id AS velo_id, velo.depart_slug AS velo_depart, velo.arrivee_slug AS velo_arrivee,
+    velo.variante_formate AS velo_varianteformate,
+    velo.km AS velo_km, velo.dplus AS velo_dplus,
     arrets.nom AS gare_nom,
     CONCAT(ST_Y(arrets.loc), ',', ST_X(arrets.loc)) AS gare_latlng,
-    concat(arrets.nom, ' → ', f.falaise_nom, ' (', velo.velo_variante, ')') as velo_nom
-  FROM velo
+    concat(arrets.nom, ' → ', f.falaise_nom, ' (', velo.variante, ')') as velo_nom
+  FROM acces_falaise velo
   LEFT JOIN arrets ON velo.arret_id = arrets.id AND arrets.deleted = 0
   LEFT JOIN falaises f ON velo.falaise_id = f.falaise_id
-  WHERE velo.falaise_id = ? AND velo.velo_public >= 0");
+  WHERE velo.type = 'velo' AND velo.falaise_id = ? AND velo.public >= 0");
 $stmtIt->bind_param("i", $falaise_id);
 $stmtIt->execute();
 $result = $stmtIt->get_result();
@@ -96,14 +97,15 @@ while ($row = $result->fetch_assoc()) {
 }
 $stmtIt->close();
 
-// Accès à pied depuis un arrêt (acces_pieton_falaise) : une entrée par accès,
+// Accès à pied depuis un arrêt (acces_falaise, type 'pied') : une entrée par accès,
 // sans fusion avec les itinéraires vélo. Lignes desservantes d'après `lignes_transport`.
 $stmtAp = $mysqli->prepare("
   SELECT a.id, a.nom, a.commune, a.ter, a.tgv, a.bus, a.tram, a.teleph,
-    ST_Y(a.loc) AS lat, ST_X(a.loc) AS lng, p.description
-  FROM acces_pieton_falaise p
+    ST_Y(a.loc) AS lat, ST_X(a.loc) AS lng, p.description,
+    p.acces_id, p.km, p.dplus, p.dmoins, p.depart_slug, p.arrivee_slug, p.variante_formate
+  FROM acces_falaise p
   JOIN arrets a ON a.id = p.arret_id AND a.deleted = 0
-  WHERE p.falaise_id = ?
+  WHERE p.type = 'pied' AND p.public >= 0 AND p.falaise_id = ?
   ORDER BY a.nom, a.id");
 $stmtAp->bind_param("i", $falaise_id);
 $stmtAp->execute();
@@ -118,6 +120,13 @@ foreach ($stmtAp->get_result()->fetch_all(MYSQLI_ASSOC) as $row) {
     'lat' => (float) $row['lat'],
     'lng' => (float) $row['lng'],
     'description' => $row['description'],
+    // Liaison arrêt → falaise : km / D+ / D- et trace GPX facultatifs (Lot 8quater)
+    'acces_id' => (int) $row['acces_id'],
+    'km' => $row['km'] !== null ? (float) $row['km'] : null,
+    'dplus' => $row['dplus'] !== null ? (int) $row['dplus'] : null,
+    'dmoins' => $row['dmoins'] !== null ? (int) $row['dmoins'] : null,
+    'gpx_url' => vg_data_exists($gpxRel = velo_gpx_rel((int) $row['acces_id'], $row['depart_slug'], $row['arrivee_slug'], (string) $row['variante_formate']))
+      ? vg_data_url($gpxRel) : null,
     'lignes' => [],
   ];
 }
@@ -235,8 +244,8 @@ INNER JOIN villes v ON t.ville_id = v.ville_id
 WHERE t.train_public >= 1
 AND EXISTS (
     SELECT 1
-    FROM velo ve
-    WHERE ve.arret_id = t.arret_id AND ve.falaise_id = ?
+    FROM acces_falaise ve
+    WHERE ve.type = 'velo' AND ve.arret_id = t.arret_id AND ve.falaise_id = ?
 )
 ORDER BY v.ville_nom
 ");
@@ -267,9 +276,9 @@ $stmtC = $mysqli->prepare("
   SELECT
     cf.id, cf.commentaire, cf.date_creation, cf.nom,
     cf.velo_id, cf.ville_nom, cf.gare_depart, cf.gare_arrivee,
-    concat(arrets.nom, ' → ', f.falaise_nom, ' (', velo.velo_variante, ')') as velo_nom
+    concat(arrets.nom, ' → ', f.falaise_nom, ' (', velo.variante, ')') as velo_nom
   FROM commentaires_falaises cf
-  left join velo on cf.velo_id = velo.velo_id
+  left join acces_falaise velo on cf.velo_id = velo.acces_id
   left join arrets on velo.arret_id = arrets.id AND arrets.deleted = 0
   left join falaises f on velo.falaise_id = f.falaise_id
   WHERE cf.falaise_id = ?
@@ -441,14 +450,14 @@ $stmtC->close();
           </div>
         </div>
       <?php endif; ?>
-      <!-- Message si la falaise n'est reliée à aucune gare (pas visible sur la carte ni dans les tableaux) -->
-      <?php if (count($itineraires) === 0): ?>
+      <!-- Message si la falaise n'a aucun accès décrit, quel qu'en soit le type (vélo ou à pied) -->
+      <?php if (count($itineraires) === 0 && count($accesPietons) === 0): ?>
         <div class="alert alert-warning alert-soft text-center flex flex-col items-center">
           <div class="font-bold text-lg">Falaise non reliée au réseau</div>
-          <div> Cette falaise n'a pas encore d'itinéraire vélo depuis une gare. Elle n'apparaît donc pas sur la carte ni
-            dans les tableaux. </div>
+          <div> Cette falaise n'a pas encore d'accès décrit depuis un arrêt (vélo ou à pied). Elle n'apparaît donc pas
+            sur la carte ni dans les tableaux. </div>
           <a class="btn btn-primary btn-sm mt-2" href="/ajout/ajout_velo.php?falaise_id=<?= $falaise_id ?>">Proposer un
-            accès vélo</a>
+            accès vélo / à pied</a>
         </div>
       <?php endif; ?>
       <div class="flex flex-col items-center mb-10 gap-4">
@@ -665,11 +674,11 @@ $stmtC->close();
 
       $stmtG = $mysqli->prepare("
       SELECT DISTINCT a.id AS gare_id, a.nom AS gare_nom
-      FROM velo v
+      FROM acces_falaise v
       INNER JOIN arrets a ON v.arret_id = a.id AND a.deleted = 0
       LEFT JOIN train t ON v.arret_id = t.arret_id AND t.ville_id = ?
-      WHERE v.falaise_id = ? AND v.velo_public >= 0
-      ORDER BY t.ville_id desc, v.velo_km, a.nom
+      WHERE v.type = 'velo' AND v.falaise_id = ? AND v.public >= 0
+      ORDER BY t.ville_id desc, v.km, a.nom
       ");
       if (!$stmtG) {
         die("Problème de préparation de la requête : " . $mysqli->error);
@@ -735,11 +744,11 @@ $stmtC->close();
 
         $stmtVelo = $mysqli->prepare("
           SELECT
-            v.velo_id, v.velo_km, v.velo_dplus, v.velo_dmoins, v.velo_descr,
-            v.velo_variante, velo_varianteformate,
-            velo_depart, velo_arrivee, velo_openrunner
-          FROM velo v
-          WHERE v.arret_id = ? AND v.falaise_id = ? AND v.velo_public >= 0
+            v.acces_id AS velo_id, v.km AS velo_km, v.dplus AS velo_dplus, v.dmoins AS velo_dmoins,
+            v.description AS velo_descr, v.variante AS velo_variante, v.variante_formate AS velo_varianteformate,
+            v.depart_slug AS velo_depart, v.arrivee_slug AS velo_arrivee, v.lien_openrunner AS velo_openrunner
+          FROM acces_falaise v
+          WHERE v.type = 'velo' AND v.arret_id = ? AND v.falaise_id = ? AND v.public >= 0
       ");
         $stmtVelo->bind_param("ii", $gare['gare_id'], $falaise_id);
         $stmtVelo->execute();
@@ -963,7 +972,7 @@ $stmtC->close();
         </div>
       <?php } ?>
       <?php if ($accesPietons): ?>
-        <!-- Accès à pied depuis un arrêt (acces_pieton_falaise) : un bloc par accès -->
+        <!-- Accès à pied depuis un arrêt (acces_falaise, type 'pied') : un bloc par accès -->
         <section id="acces-pietons" class="flex flex-col gap-2 w-full">
           <?php
           $typeLabels = ['ter' => 'TER', 'tgv' => 'TGV', 'bus' => 'Bus', 'tram' => 'Tram', 'telepherique' => 'Téléphérique'];
@@ -983,9 +992,33 @@ $stmtC->close();
               </div>
               <div class="collapse-content">
                <div class="flex flex-col gap-3 pt-3">
-                <?php if (!empty($ap['description'])): ?>
-                  <div class="vg-a-primary"><?= nl2br(htmlspecialchars($ap['description'])) ?></div>
-                <?php endif; ?>
+                <!-- Partie « liaison arrêt → falaise » : description, distance / dénivelés, trace GPS -->
+                <div class="flex flex-col gap-1" data-testid="acces-pied-liaison">
+                  <div class="text-sm uppercase tracking-wide text-slate-400">De l'arrêt à la falaise</div>
+                  <?php if ($ap['km'] !== null || $ap['dplus'] !== null || $ap['dmoins'] !== null): ?>
+                    <div data-testid="acces-pied-chiffres">
+                      <?= implode(', ', array_filter([
+                        $ap['km'] !== null ? htmlspecialchars((string) $ap['km']) . ' km' : null,
+                        $ap['dplus'] !== null ? $ap['dplus'] . ' D+' : null,
+                        $ap['dmoins'] !== null ? $ap['dmoins'] . ' D-' : null,
+                      ])) ?>.
+                    </div>
+                  <?php endif; ?>
+                  <?php if (!empty($ap['description'])): ?>
+                    <div class="vg-a-primary"><?= nl2br(htmlspecialchars($ap['description'])) ?></div>
+                  <?php endif; ?>
+                  <?php if ($ap['gpx_url']): ?>
+                    <div><a class="font-bold text-primary" href="<?= htmlspecialchars($ap['gpx_url']) ?>" target="_blank">Trace GPS</a></div>
+                  <?php endif; ?>
+                  <?php if (empty($ap['description']) && $ap['km'] === null && $ap['dplus'] === null && $ap['dmoins'] === null && !$ap['gpx_url']): ?>
+                    <div class="text-sm">
+                      <span class="text-slate-500">Accès non détaillé.</span>
+                      <a class="link link-primary" href="/ajout/ajout_velo.php?mode=pied&arret_id=<?= $ap['arret_id'] ?>&falaise_id=<?= (int) $falaise_id ?>">Ajouter des détails</a>
+                    </div>
+                  <?php endif; ?>
+                </div>
+                <!-- Partie « arrêt » : lignes desservantes -->
+                <div class="text-sm uppercase tracking-wide text-slate-400">Arrêt</div>
                 <?php foreach ($ap['lignes'] as $l): ?>
                   <div class="flex flex-col gap-1" data-ligne-id="<?= $l['id'] ?>">
                     <div class="font-bold">
@@ -1368,6 +1401,19 @@ $stmtC->close();
     // --- Ajout de la falaise et itinéraires vélos ---
     const falaiseObject = new Falaise(map, falaise, { visibility: { to: 12 } });
     const veloObjects = itineraires.map((velo, index) => new Velo(map, velo, { index }));
+    // Traces GPX des accès à pied (facultatives) : trait gris-bleu, distance en tooltip si connue
+    accesPietons.filter(a => a.gpx_url).forEach(a => {
+      new L.GPX(a.gpx_url, {
+        async: true,
+        markers: { startIcon: null, endIcon: null },
+        polyline_options: { weight: 5, color: "#334155" },
+      }).on("loaded", (e) => {
+        if (a.km !== null) {
+          e.target.bindTooltip(`${a.km} km`, { className: "vg-velo-tooltip vg-color-pieton", permanent: true, direction: "center" });
+        }
+        e.target.on("click", (ev) => L.DomEvent.stopPropagation(ev));
+      }).addTo(map);
+    });
     const gareObjects = (
       itineraires
         .map(it => ({ gare_nom: it.gare_nom, gare_latlng: it.gare_latlng }))
@@ -1540,7 +1586,7 @@ $stmtC->close();
     // Clic ailleurs sur la carte : on efface les arcs et la ligne affichée.
     map.on("click", () => { busArcLayer.clearLayers(); clearLigne(); });
 
-    // Arrêts liés à la falaise (acces_pieton_falaise), toutes modalités : chacun
+    // Arrêts liés à la falaise (acces_falaise, type 'pied'), toutes modalités : chacun
     // avec l'icône de son type (ter > tgv > tram > téléphérique > bus) et un
     // trait droit vers la falaise.
     fetch(`/api/fetch_arrets.php?falaise_id=${falaise.falaise_id}`)

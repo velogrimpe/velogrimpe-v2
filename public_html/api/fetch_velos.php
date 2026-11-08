@@ -2,7 +2,7 @@
 /**
  * GET /api/fetch_velos.php?falaise_id=123
  *
- * Itinéraires vélo d'une falaise, avec leur gare de départ, pour la cascade de
+ * Itinéraires vélo (acces_falaise, type = 'velo') d'une falaise, avec leur gare de départ, pour la cascade de
  * sélecteurs de la page d'édition (Falaise → Gare → Variante). Ces données sont
  * déjà publiques sur falaise.php.
  */
@@ -24,14 +24,16 @@ if ($falaise_id <= 0) {
 }
 
 $stmt = $mysqli->prepare("
-  SELECT v.velo_id, v.arret_id, v.falaise_id, v.velo_depart, v.velo_arrivee,
-         v.velo_variante, v.velo_varianteformate, v.velo_km, v.velo_dplus, v.velo_dmoins,
-         v.velo_descr, v.velo_openrunner, v.velo_apiedpossible, v.velo_public,
+  SELECT v.acces_id AS velo_id, v.arret_id, v.falaise_id, v.depart_slug AS velo_depart, v.arrivee_slug AS velo_arrivee,
+         v.variante AS velo_variante, v.variante_formate AS velo_varianteformate, v.km AS velo_km,
+         v.dplus AS velo_dplus, v.dmoins AS velo_dmoins,
+         v.description AS velo_descr, v.lien_openrunner AS velo_openrunner,
+         " . acces_a_pied_sql('v') . " AS velo_apiedpossible, v.public AS velo_public,
          a.nom AS arret_nom, a.slug AS arret_nomformate, CONCAT(ST_Y(a.loc), ',', ST_X(a.loc)) AS arret_latlng
-  FROM velo v
+  FROM acces_falaise v
   INNER JOIN arrets a ON a.id = v.arret_id AND a.deleted = 0
-  WHERE v.falaise_id = ? AND v.velo_public >= 0
-  ORDER BY a.nom, v.velo_variante, v.velo_id");
+  WHERE v.type = 'velo' AND v.falaise_id = ? AND v.public >= 0
+  ORDER BY a.nom, v.variante, v.acces_id");
 $stmt->bind_param("i", $falaise_id);
 $stmt->execute();
 $res = $stmt->get_result();

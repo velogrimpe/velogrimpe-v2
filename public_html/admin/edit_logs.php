@@ -27,6 +27,7 @@ $table_labels = [
   'falaises_liens' => "Lien Falaise",
   'arrets' => "Arrêt",
   'acces_pieton_falaise' => "Accès piéton falaise",
+  'acces_falaise' => "Accès falaise",
   'gares' => "Gare",
   'train' => "Train",
   'velo' => "Itinéraire Vélo",

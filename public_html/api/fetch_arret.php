@@ -49,7 +49,7 @@ $arret = [
 
 // --- Falaises liées ---
 $falaise_ids = [];
-$stmt = $mysqli->prepare("SELECT falaise_id FROM acces_pieton_falaise WHERE arret_id = ?");
+$stmt = $mysqli->prepare("SELECT falaise_id FROM acces_falaise WHERE type = 'pied' AND arret_id = ?");
 $stmt->bind_param("i", $arret_id);
 $stmt->execute();
 $res = $stmt->get_result();

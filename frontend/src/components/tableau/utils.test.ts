@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { accesPietonLabel } from './utils'
+import { accesPietonLabel, accesPietonChiffres } from './utils'
 
 describe('accesPietonLabel', () => {
   test('gare : « en gare de <nom> »', () => {
@@ -24,5 +24,25 @@ describe('accesPietonLabel', () => {
     expect(accesPietonLabel({ gare_nom: 'Belley', acces_pieton_types: ['ter', 'bus'], acces_pieton_lignes: [] })).toBe(
       'Accès piéton possible via TER, Bus en gare de Belley',
     )
+  })
+})
+
+describe('accesPietonChiffres', () => {
+  test('km, D+ et D- renseignés', () => {
+    expect(accesPietonChiffres({ acces_pieton_km: 1.5, acces_pieton_dplus: 120, acces_pieton_dmoins: 20 })).toBe('1.5 km, 120 D+, 20 D-')
+  })
+
+  test('uniquement ce qui est renseigné', () => {
+    expect(accesPietonChiffres({ acces_pieton_km: 0.4, acces_pieton_dplus: null, acces_pieton_dmoins: null })).toBe('0.4 km')
+    expect(accesPietonChiffres({ acces_pieton_km: null, acces_pieton_dplus: 40, acces_pieton_dmoins: null })).toBe('40 D+')
+  })
+
+  test('un 0 est une vraie valeur, pas une absence', () => {
+    expect(accesPietonChiffres({ acces_pieton_km: 2, acces_pieton_dplus: 0, acces_pieton_dmoins: 0 })).toBe('2 km, 0 D+, 0 D-')
+  })
+
+  test('rien de renseigné (ou champs absents, itinéraire vélo) : chaîne vide', () => {
+    expect(accesPietonChiffres({ acces_pieton_km: null, acces_pieton_dplus: null, acces_pieton_dmoins: null })).toBe('')
+    expect(accesPietonChiffres({})).toBe('')
   })
 })

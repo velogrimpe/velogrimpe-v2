@@ -31,9 +31,9 @@ abstract class ApiTestCase extends TestCase
    * WITNESS_FALAISE_ID (accès piéton + vélo depuis la même gare, accès vélo
    * faisable à pied, accès vélo depuis plusieurs gares).
    */
-  const WITNESS_FALAISE_HOSTIAZ_ID = 25; // "Hostiaz - La guinguette" : accès piéton uniquement (velo_id 19) + accès vélo (velo_id 18), tous deux depuis la gare 12 (Tenay-Hauteville)
-  const WITNESS_FALAISE_VIRIEU_ID = 26; // "Virieu le Grand" : accès vélo (velo_id 20) faisable aussi à pied (velo_apiedpossible = 1)
-  const WITNESS_FALAISE_CONTREVOZ_ID = 27; // "Essieu - Contrevoz" : deux accès vélo depuis 2 gares différentes (velo_id 21 → gare 7 Virieu-le-Grand-Belley, velo_id 73 → gare 6 Culoz)
+  const WITNESS_FALAISE_HOSTIAZ_ID = 25; // "Hostiaz - La guinguette" : accès piéton uniquement (acces_id 19) + accès vélo (acces_id 18), tous deux depuis la gare 12 (Tenay-Hauteville)
+  const WITNESS_FALAISE_VIRIEU_ID = 26; // "Virieu le Grand" : accès vélo (acces_id 20) faisable aussi à pied (≤ 5 km)
+  const WITNESS_FALAISE_CONTREVOZ_ID = 27; // "Essieu - Contrevoz" : deux accès vélo depuis 2 gares différentes (acces_id 21 → gare 7 Virieu-le-Grand-Belley, acces_id 73 → gare 6 Culoz)
 
   /** @var string[] Requêtes SQL de nettoyage, exécutées en ordre inverse dans tearDown(). */
   private array $cleanupSql = [];
@@ -95,6 +95,7 @@ abstract class ApiTestCase extends TestCase
   {
     $this->fixtureArretIds[] = $id;
     $this->cleanupOnTearDown("DELETE FROM arrets WHERE id = $id");
+    $this->cleanupOnTearDown("DELETE FROM acces_falaise WHERE arret_id = $id"); // pas de cascade (Lot 8quater)
   }
 
   /**
@@ -326,6 +327,9 @@ abstract class ApiTestCase extends TestCase
       )"
     );
     $this->cleanupOnTearDown("DELETE FROM falaises WHERE falaise_id = $id");
+    // acces_falaise n'a pas de ON DELETE CASCADE (Lot 8quater) : les accès créés
+    // pendant le test (fixtures ou via l'API) partent avant la falaise.
+    $this->cleanupOnTearDown("DELETE FROM acces_falaise WHERE falaise_id = $id");
     return $id;
   }
 
@@ -362,6 +366,38 @@ abstract class ApiTestCase extends TestCase
     );
     $this->cleanupOnTearDown("DELETE FROM gares WHERE gare_id = $id");
     return $id;
+  }
+
+  /**
+   * Accès arrêt → falaise (`acces_falaise`, Lot 8quater), supprimé en tearDown.
+   * Options : type ('velo'|'pied'), km, dplus, dmoins, description, variante,
+   * variante_formate, public, contrib, contrib_mail, depart_slug, arrivee_slug.
+   */
+  protected function createFixtureAcces(int $arretId, int $falaiseId, array $options = []): int
+  {
+    $o = $options + [
+      'type' => 'velo', 'km' => null, 'dplus' => null, 'dmoins' => null, 'description' => '',
+      'variante' => '', 'variante_formate' => '', 'public' => 1,
+      'contrib' => 'phpunit', 'contrib_mail' => 'phpunit@example.org',
+      'depart_slug' => 'phpunit-depart', 'arrivee_slug' => 'phpunit-arrivee',
+    ];
+    $num = fn($v) => $v === null ? 'NULL' : (string) (0 + $v);
+    $txt = fn($v) => "'" . self::escape((string) $v) . "'";
+    $id = self::dbInsert(
+      "INSERT INTO acces_falaise (type, arret_id, falaise_id, depart_slug, arrivee_slug, km, dplus, dmoins,
+         description, public, variante, variante_formate, contrib, contrib_mail)
+       VALUES ({$txt($o['type'])}, $arretId, $falaiseId, {$txt($o['depart_slug'])}, {$txt($o['arrivee_slug'])},
+         {$num($o['km'])}, {$num($o['dplus'])}, {$num($o['dmoins'])}, {$txt($o['description'])}, " . (int) $o['public'] . ",
+         {$txt($o['variante'])}, {$txt($o['variante_formate'])}, {$txt($o['contrib'])}, {$txt($o['contrib_mail'])})"
+    );
+    $this->cleanupOnTearDown("DELETE FROM acces_falaise WHERE acces_id = $id");
+    return $id;
+  }
+
+  /** Accès à pied simple (variante ''), cf. createFixtureAcces(). */
+  protected function createFixtureAccesPied(int $arretId, int $falaiseId, string $description = ''): int
+  {
+    return $this->createFixtureAcces($arretId, $falaiseId, ['type' => 'pied', 'description' => $description]);
   }
 
   protected static function escape(string $value): string

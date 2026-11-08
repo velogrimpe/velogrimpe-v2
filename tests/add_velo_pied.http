@@ -1,5 +1,6 @@
-### add_velo.php?mode=pied — accès à pied uniquement (Lot 5) : écrit dans
-### `acces_pieton_falaise`, jamais dans `velo`, aucun GPX requis.
+### add_velo.php?type=pied (ou mode=pied, ancien nom) — accès à pied (Lot 5, 8quater) :
+### écrit une ligne `acces_falaise` de type `pied`, aucun GPX requis ; km / D+ / D-
+### (velo_km, velo_dplus, velo_dmoins) sont facultatifs.
 ### ATTENTION : un envoi valide insère réellement une ligne. À n'exécuter que sur un environnement de test.
 ### Remplacer arret_id / falaise_id par des ids existants (ex. arrêt 6461, falaise 39).
 
@@ -27,6 +28,55 @@ Content-Disposition: form-data; name="falaise_id"
 Content-Disposition: form-data; name="description"
 
 Sentier balisé depuis l'arrêt, environ 15 min.
+------vg
+Content-Disposition: form-data; name="nom_prenom"
+
+Test
+------vg
+Content-Disposition: form-data; name="email"
+
+test@example.org
+------vg--
+
+### Même requête avec distance, dénivelés et trace GPX facultatifs.
+### Si l'accès existe déjà : seuls les champs encore VIDES sont complétés (jamais d'écrasement) ;
+### s'il n'y a plus rien à ajouter => « Un accès à pied existe déjà ... avec ces informations ».
+POST http://localhost:4000/api/add_velo.php
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="mode"
+
+pied
+------vg
+Content-Disposition: form-data; name="admin"
+
+0
+------vg
+Content-Disposition: form-data; name="arret_id"
+
+6461
+------vg
+Content-Disposition: form-data; name="falaise_id"
+
+39
+------vg
+Content-Disposition: form-data; name="velo_km"
+
+1.8
+------vg
+Content-Disposition: form-data; name="velo_dplus"
+
+120
+------vg
+Content-Disposition: form-data; name="velo_dmoins"
+
+15
+------vg
+Content-Disposition: form-data; name="gpx_file"; filename="velo-with-wpt.gpx"
+Content-Type: application/gpx+xml
+
+< ./fixtures/velo-with-wpt.gpx
 ------vg
 Content-Disposition: form-data; name="nom_prenom"
 

@@ -177,6 +177,8 @@ try {
 // ne jamais créer une falaise sans les accès demandés.
 $arrets_pietons = [];
 $arrets_pietons_noms = [];
+$arrets_pietons_details = [];
+$arrets_pietons_gpx = [];
 if (!$isEdition && trim($_POST['arrets_pietons'] ?? '') !== '') {
   $decoded = json_decode($_POST['arrets_pietons'], true);
   if (!is_array($decoded) || !array_is_list($decoded)) {
@@ -200,6 +202,24 @@ if (!$isEdition && trim($_POST['arrets_pietons'] ?? '') !== '') {
     $arrets_pietons_noms[$arretId] = $rowArret['nom'];
   }
   $stmtArret->close();
+
+  // Détails facultatifs de chaque accès (description, km, D+, D-) : champs
+  // `acces_pieton[<arret_id>][...]`, et trace GPX `acces_gpx_<arret_id>`. Les GPX
+  // sont lus et nettoyés ici, avant l'INSERT : un fichier invalide interrompt tout.
+  require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/velo_lib.php';
+  foreach ($arrets_pietons as $arretId) {
+    $src = $_POST['acces_pieton'][$arretId] ?? [];
+    $arrets_pietons_details[$arretId] = acces_lire_details(is_array($src) ? $src : []);
+    $arrets_pietons_gpx[$arretId] = velo_charger_gpx_upload("acces_gpx_$arretId");
+  }
+  if (array_filter($arrets_pietons_gpx)) {
+    try {
+      vg_data_prepare(VELO_GPX_DIR);
+    } catch (VgDataException $e) {
+      error_log('[add_falaise] ' . $e->getMessage());
+      respondError("Le dossier des traces GPX est indisponible, la falaise n'a pas été enregistrée. Merci de réessayer plus tard.", 500);
+    }
+  }
 }
 
 
@@ -418,14 +438,10 @@ $falaise_id = $mysqli->insert_id;
 $stmt->close();
 
 if ($res && $arrets_pietons) {
-  $stmtAcces = $mysqli->prepare(
-    "INSERT IGNORE INTO acces_pieton_falaise (arret_id, falaise_id, contrib, contrib_mail) VALUES (?, ?, ?, ?)"
-  );
+  require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/velo_lib.php';
   foreach ($arrets_pietons as $arretId) {
-    $stmtAcces->bind_param("iiss", $arretId, $falaise_id, $nom_prenom, $email);
-    $stmtAcces->execute();
+    acces_pied_lier($mysqli, (int) $arretId, (int) $falaise_id, $nom_prenom, $email, $arrets_pietons_details[$arretId] ?? [], $arrets_pietons_gpx[$arretId] ?? null);
   }
-  $stmtAcces->close();
 }
 $mysqli->close();
 
@@ -556,10 +572,15 @@ $changes_json = logChanges(
   $oldFalaise
 );
 foreach ($arrets_pietons_noms as $arretId => $arretNom) {
-  logChanges($nom_prenom, $email, 'insert', 'acces_pieton_falaise', $arretId, $falaise_id, [
+  logChanges($nom_prenom, $email, 'insert', 'acces_falaise', $arretId, $falaise_id, [
     'Arrêt' => $arretNom,
     'Falaise' => $falaise_nom,
     'Lien' => 'lié',
+    'Description' => $arrets_pietons_details[$arretId]['description'] ?? '',
+    'km' => (string) ($arrets_pietons_details[$arretId]['km'] ?? ''),
+    'D+' => (string) ($arrets_pietons_details[$arretId]['dplus'] ?? ''),
+    'D-' => (string) ($arrets_pietons_details[$arretId]['dmoins'] ?? ''),
+    'Trace GPX' => ($arrets_pietons_gpx[$arretId] ?? null) ? 'fournie' : '',
   ]);
 }
 ////// FIN GESTION DES CHANGEMENTS

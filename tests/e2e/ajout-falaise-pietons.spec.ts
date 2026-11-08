@@ -48,6 +48,30 @@ test.describe("Ajout de falaise : accès à pied depuis un arrêt", () => {
     await expect(page.getByRole('button', { name: /Lier un arrêt/ })).toBeVisible()
   })
 
+  test("chaque arrêt lié propose des détails facultatifs (description, km, D+, D-, GPX), envoyés avec le formulaire", async ({ page }) => {
+    await page.goto('/ajout/ajout_falaise.php')
+    const [a, b] = await deuxArrets(page)
+    await page.getByLabel(/accessible à pied depuis un arrêt/i).check()
+    await lier(page, a)
+
+    const details = page.getByTestId(`acces-details-${a.id}`)
+    await expect(details).toBeVisible()
+    await details.locator('summary').click()
+    // Champs natifs du formulaire : lus par api/add_falaise.php
+    await expect(details.locator(`textarea[name="acces_pieton[${a.id}][description]"]`)).toBeVisible()
+    await expect(details.locator(`input[name="acces_pieton[${a.id}][km]"]`)).toBeVisible()
+    await expect(details.locator(`input[name="acces_pieton[${a.id}][dplus]"]`)).toBeVisible()
+    await expect(details.locator(`input[name="acces_pieton[${a.id}][dmoins]"]`)).toBeVisible()
+    await expect(details.locator(`input[type=file][name="acces_gpx_${a.id}"]`)).toBeVisible()
+
+    // Saisies conservées quand on lie un autre arrêt, et le détail disparaît avec l'arrêt retiré
+    await details.locator(`input[name="acces_pieton[${a.id}][km]"]`).fill('1.5')
+    await lier(page, b)
+    await expect(details.locator(`input[name="acces_pieton[${a.id}][km]"]`)).toHaveValue('1.5')
+    await page.getByRole('button', { name: `Retirer ${a.nom}` }).click()
+    await expect(page.getByTestId(`acces-details-${a.id}`)).toHaveCount(0)
+  })
+
   test('plusieurs arrêts peuvent être liés, puis retirés', async ({ page }) => {
     await page.goto('/ajout/ajout_falaise.php')
     const [a, b] = await deuxArrets(page)

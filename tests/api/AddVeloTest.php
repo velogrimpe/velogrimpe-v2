@@ -37,31 +37,71 @@ final class AddVeloTest extends ApiTestCase
     // Exploitable sur falaise.php (donnée publique affichée aux visiteurs)
     $foundOnPage = $this->trouverSurFalaisePhp($veloId);
     $this->assertNotNull($foundOnPage, "l'itinéraire créé (#$veloId) n'apparaît pas sur falaise.php");
-    $this->assertSame(self::WITNESS_GARE_ID, (int) $foundOnPage['gare_id']);
+    // falaise.php n'expose plus gare_id ni falaise_id (champs réduits, cf. « fix email leak ») :
+    // le nom et les coordonnées de la gare jointe prouvent que l'arrêt est bien relié.
     $this->assertNotEmpty($foundOnPage['gare_nom']);
+    $this->assertNotEmpty($foundOnPage['gare_latlng']);
   }
 
   public function testFlagPiedUniquementEstIgnoreEnModeVelo(): void
   {
-    // Lot 5 : les accès à pied uniquement passent par mode=pied
-    // (acces_pieton_falaise), cf. AddAccesTest. Un ancien formulaire en cache
-    // qui enverrait encore la case ne doit pas créer d'itinéraire « à pied uniquement ».
+    // Lot 5 : les accès à pied passent par mode=pied, cf. AddAccesTest. Un ancien
+    // formulaire en cache qui enverrait encore la case ne doit pas créer d'accès
+    // « à pied uniquement » : en mode vélo, le type stocké reste `velo`.
     $created = $this->creerItineraireVelo(['velo_apieduniquement' => '1']);
 
     $foundOnPage = $this->trouverSurFalaisePhp($created['veloId']);
     $this->assertNotNull($foundOnPage);
-    $stocke = self::dbQueryOne("SELECT velo_apieduniquement FROM velo WHERE velo_id = {$created['veloId']}");
-    $this->assertSame('0', $stocke['velo_apieduniquement']);
+    $stocke = self::dbQueryOne("SELECT type FROM acces_falaise WHERE acces_id = {$created['veloId']}");
+    $this->assertSame('velo', $stocke['type']);
   }
 
-  public function testItineraireVeloEtPiedApparaitDansListeVelos(): void
+  public function testItineraireDeMoinsDeCinqKmEstFaisableAPiedSansCaseCochee(): void
   {
-    $created = $this->creerItineraireVelo(['velo_apiedpossible' => '1']);
+    // Lot 8quater : « à pied possible » se déduit de la distance (≤ 5 km), il n'est plus saisi.
+    $created = $this->creerItineraireVelo(['velo_km' => '4.5']);
 
     $found = $this->trouverDansFetchVelos($created['veloId']);
-    $this->assertNotNull($found, "l'itinéraire vélo-et-pied n'apparaît pas dans la liste des itinéraires vélo");
-    $this->assertArrayNotHasKey('velo_apieduniquement', $found, 'Lot 8 : champ retiré, les accès à pied sont dans acces_pieton_falaise');
+    $this->assertNotNull($found, "l'itinéraire court n'apparaît pas dans la liste des itinéraires vélo");
+    $this->assertArrayNotHasKey('velo_apieduniquement', $found, 'Lot 8 : champ retiré, les accès à pied sont de type pied');
     $this->assertSame(1, $found['velo_apiedpossible']);
+  }
+
+  public function testItineraireDePlusDeCinqKmNEstPasFaisableAPiedMemeAvecLAncienneCase(): void
+  {
+    $created = $this->creerItineraireVelo(['velo_km' => '5.5', 'velo_apiedpossible' => '1']);
+
+    $found = $this->trouverDansFetchVelos($created['veloId']);
+    $this->assertNotNull($found);
+    $this->assertSame(0, $found['velo_apiedpossible'], 'la case de l\'ancien formulaire est ignorée : seule la distance compte');
+  }
+
+  public function testContributeurEstEcritEnNomEtMailSepares(): void
+  {
+    $created = $this->creerItineraireVelo();
+    $row = self::dbQueryOne("SELECT type, contrib, contrib_mail FROM acces_falaise WHERE acces_id = {$created['veloId']}");
+    $this->assertSame('velo', $row['type']);
+    $this->assertSame('PHPUnit', $row['contrib']);
+    $this->assertSame('phpunit@example.org', $row['contrib_mail']);
+  }
+
+  public function testUneVarianteDejaPresenteEstRefuseeSansCreerDeDoublon(): void
+  {
+    $created = $this->creerItineraireVelo();
+    $row = self::dbQueryOne("SELECT variante FROM acces_falaise WHERE acces_id = {$created['veloId']}");
+    $gare = self::dbQueryOne('SELECT gare_nomformate FROM gares WHERE gare_id = ' . self::WITNESS_GARE_ID);
+    $falaise = self::dbQueryOne('SELECT falaise_nomformate FROM falaises WHERE falaise_id = ' . self::WITNESS_FALAISE_ID);
+
+    $res = $this->httpPostMultipart(
+      '/api/add_velo.php',
+      $this->champsDeBase($gare, $falaise, 'phpunit-test-' . bin2hex(random_bytes(4))), // même variante « {$row['variante']} »
+      ['gpx_file' => self::GPX_FIXTURE]
+    );
+
+    $this->assertStringContainsString('existe déjà', $res['raw']);
+    $n = self::dbQueryOne("SELECT COUNT(*) AS n FROM acces_falaise WHERE type = 'velo' AND arret_id = " . self::WITNESS_GARE_ID
+      . " AND falaise_id = " . self::WITNESS_FALAISE_ID . " AND variante = '" . self::escape($row['variante']) . "'");
+    $this->assertSame('1', $n['n']);
   }
 
   public function testSansFichierGpxEstRefuse(): void
@@ -74,8 +114,8 @@ final class AddVeloTest extends ApiTestCase
 
     $this->assertStringContainsString('Il manque le fichier GPX.', $res['raw']);
     $this->assertNull(
-      self::dbQueryOne("SELECT velo_id FROM velo WHERE velo_varianteformate = '$varianteformate'"),
-      'aucune ligne velo ne doit être créée sans fichier GPX'
+      self::dbQueryOne("SELECT acces_id FROM acces_falaise WHERE variante_formate = '$varianteformate'"),
+      'aucun accès ne doit être créé sans fichier GPX'
     );
   }
 
@@ -103,8 +143,8 @@ final class AddVeloTest extends ApiTestCase
 
     $this->assertStringContainsString($messageAttendu, $res['raw']);
     $this->assertNull(
-      self::dbQueryOne("SELECT velo_id FROM velo WHERE velo_varianteformate = '$varianteformate'"),
-      'aucune ligne velo ne doit être créée avec un GPX invalide'
+      self::dbQueryOne("SELECT acces_id FROM acces_falaise WHERE variante_formate = '$varianteformate'"),
+      'aucun accès ne doit être créé avec un GPX invalide'
     );
   }
 
@@ -126,13 +166,13 @@ final class AddVeloTest extends ApiTestCase
     $this->assertStringContainsString('/ajout/confirmation_velo.php', $res['location']);
 
     $created = self::dbQueryOne(
-      "SELECT velo_id FROM velo WHERE arret_id = " . self::WITNESS_GARE_ID
+      "SELECT acces_id FROM acces_falaise WHERE type = 'velo' AND arret_id = " . self::WITNESS_GARE_ID
       . " AND falaise_id = " . self::WITNESS_FALAISE_ID
-      . " AND velo_varianteformate = '$varianteformate'"
+      . " AND variante_formate = '$varianteformate'"
     );
-    $this->assertNotNull($created, "aucune ligne velo créée pour la variante $varianteformate");
-    $veloId = (int) $created['velo_id'];
-    $this->cleanupOnTearDown("DELETE FROM velo WHERE velo_id = $veloId");
+    $this->assertNotNull($created, "aucun accès vélo créé pour la variante $varianteformate");
+    $veloId = (int) $created['acces_id'];
+    $this->cleanupOnTearDown("DELETE FROM acces_falaise WHERE acces_id = $veloId");
 
     $gpxPath = dirname(__DIR__, 2) . "/public/gpx/{$veloId}_{$gare['gare_nomformate']}_{$falaise['falaise_nomformate']}_{$varianteformate}.gpx";
     $this->cleanupCallbackOnTearDown(function () use ($gpxPath) {

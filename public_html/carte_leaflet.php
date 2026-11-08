@@ -22,8 +22,8 @@ $highlight = $_GET['h'] ?? '';
   <title>Vélogrimpe.fr</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <!-- Meta tags for SEO and Social Networks -->
-  <meta name="robots" content="index, follow">
-  <link rel="canonical" href="https://velogrimpe.fr/" />
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="canonical" href="https://velogrimpe.fr/carte.php" />
   <link rel="alternate" type="application/rss+xml" title="Nouveautes Velogrimpe (falaises et itineraires)"
     href="/feed/nouveautes.xml">
   <meta name="description"
@@ -123,12 +123,9 @@ $highlight = $_GET['h'] ?? '';
   const arretIconForMode = (arret) =>
     arret.displayMode === "point" ? arretIconMod.arretDotIcon(arret.types) : arretIcon(arret.types, 24);
   const arretColor = (types) => arretIconMod.arretIconColor(arretIconMod.arretTypeDominant(types));
-  // Trait droit arrêt → falaise (accès piéton : pas de trace GPS)
-  const renderPieton = (arret, falaise) =>
-    L.polyline(
-      [arret.arret_latlng.split(",").map(parseFloat), falaise.falaise_latlng.split(",").map(parseFloat)],
-      { className: "vg-pieton-line", color: "#334155", weight: 3, dashArray: "2 8", lineCap: "round" }
-    ).addTo(map);
+  // Trace GPX d'un accès à pied (il n'y a plus de trait droit arrêt → falaise) :
+  // trait gris-bleu, tooltip = distance si connue.
+  const piedGpxOpts = (acces) => ({ lineColor: "#334155", tipClass: "pieton", tipText: acces.km != null ? `${acces.km} km` : null });
 
   // format_time and calculate_time are loaded from /js/utils-global.js
 
@@ -245,8 +242,9 @@ $highlight = $_GET['h'] ?? '';
     });
   };
 
-  function renderGpx(it, c) {
-    const lopts = { weight: 5, color: c };
+  // opts : lineColor, tipClass, tipText (null = pas de tooltip) — cf. carte.php
+  function renderGpx(it, c, opts = {}) {
+    const lopts = { weight: 5, color: opts.lineColor || c };
     const options = {
       async: true,
       markers: {
@@ -258,16 +256,19 @@ $highlight = $_GET['h'] ?? '';
     return new L.GPX("/public/gpx/" + gpx_path(it), options)
       .addTo(map)
       .on('loaded', e => {
-        e.target.bindTooltip(
-          format_time(calculate_time(it)),
-          {
-            className: `vg-velo-tooltip vg-color-${c}`,
-            permanent: true,
-            direction: "center",
-          });
+        const tipText = opts.tipText !== undefined ? opts.tipText : format_time(calculate_time(it));
+        if (tipText !== null) {
+          e.target.bindTooltip(
+            tipText,
+            {
+              className: `vg-velo-tooltip vg-color-${opts.tipClass || c}`,
+              permanent: true,
+              direction: "center",
+            });
+        }
         e.target.on('mouseover', e => {
           e.originalEvent.target.ownerSVGElement.appendChild(e.originalEvent.target);
-          e.target.eachLayer((l) => l.setStyle({ weight: 10, color: c }))
+          e.target.eachLayer((l) => l.setStyle({ weight: 10, color: opts.lineColor || c }))
         });
         e.target.on('mouseout', e => {
           e.target.eachLayer((l) => l.setStyle(lopts))
@@ -369,8 +370,8 @@ $highlight = $_GET['h'] ?? '';
                 className: `vg-station-tooltip vg-color-${c}`,
               });
             });
-            falaise.pieton.forEach(({ arret }) => {
-              itinerairesLines.push(renderPieton(arret, falaise));
+            falaise.pieton.forEach(({ arret, acces }) => {
+              if (acces.has_gpx) itinerairesLines.push(renderGpx(acces, "pieton", piedGpxOpts(acces)));
               const station = arrets.find(g => g.arret_id === arret.arret_id);
               station.marker?.unbindTooltip();
               station.marker?.bindTooltip(station.arret_nom, {
@@ -455,7 +456,7 @@ $highlight = $_GET['h'] ?? '';
         falaise.falaise_latlng.split(","),
         {
           icon: falaiseIcon(size, falaise.falaise_fermee, falaise.falaise_bloc),
-          opacity: 0.75,
+          opacity: 0.7, // icône des falaises hors topo : 70 %
           riseOnHover: true,
           autoPanOnFocus: true,
         }
@@ -477,7 +478,7 @@ $highlight = $_GET['h'] ?? '';
       falaise.marker = marker;
       marker.bindPopup(
         `<div class="flex flex-col gap-1">`
-        + `<div class="text-slate-400"><span class="uppercase">hors topo</span> (aucun accès 🚲 décrit)</div>`
+        + `<div class="text-slate-400"><span class="uppercase">hors topo</span> (aucun accès décrit)</div>`
         + `<div class="text-sm font-bold">${escapeHtml(falaise.falaise_nom)}</div>`
         + `${falaise.falaise_fermee ? `<div class="text-error">${escapeHtml(falaise.falaise_fermee).replace(/\n/g, "<br>")}</div>` : ""}`
         + `<div class="flex gap-2 w-full justify-end">`
@@ -561,10 +562,11 @@ $highlight = $_GET['h'] ?? '';
             className: `vg-station-tooltip vg-color-${c}`,
           });
         });
-        // Accès piéton : trait droit arrêt → falaise
-        arret.pieton.forEach((f) => {
-          if (falaises.find(x => x.falaise_id === f.falaise_id)?.filteredOut) return;
-          itinerairesLines.push(renderPieton(arret, f));
+        // Accès à pied qui ont une trace GPX (sans trace : rien n'est dessiné)
+        arret.piedAcces.forEach((acces) => {
+          if (!acces.has_gpx) return;
+          if (falaises.find(x => x.falaise_id === acces.falaise_id)?.filteredOut) return;
+          itinerairesLines.push(renderGpx(acces, "pieton", piedGpxOpts(acces)));
         });
       }, 0.76 * 1000);
       marker.unbindTooltip();
@@ -643,7 +645,7 @@ $highlight = $_GET['h'] ?? '';
     if (highlightedFalaiseIds.includes(f.falaise_id)) {
       f.highlighted = true;
     }
-    const pieton = accesPieton.filter(p => p.falaise_id === f.falaise_id).map(p => ({ arret: arretsBase.find(a => a.arret_id === p.arret_id) })).filter(p => p.arret);
+    const pieton = accesPieton.filter(p => p.falaise_id === f.falaise_id).map(p => ({ arret: arretsBase.find(a => a.arret_id === p.arret_id), acces: p })).filter(p => p.arret);
     // Accès pris en compte par les filtres : itinéraires vélo + accès à pied depuis un
     // arrêt (sans temps vélo) quand cet arrêt n'a pas déjà un itinéraire vers la falaise.
     const accessFiltre = [
@@ -664,7 +666,7 @@ $highlight = $_GET['h'] ?? '';
       return { ...it, falaise }
     }).sort((a, b) => a.tempsVelo - b.tempsVelo);
     const pieton = accesPieton.filter(p => p.arret_id === g.arret_id).map(p => falaisesBase.find(f => f.falaise_id === p.falaise_id)).filter(Boolean);
-    return { ...g, access, pieton }
+    return { ...g, access, pieton, piedAcces: accesPieton.filter(p => p.arret_id === g.arret_id) }
   })
 
   var map = L.map("map", {
@@ -733,7 +735,8 @@ $highlight = $_GET['h'] ?? '';
     const zoom = map.getZoom();
     falaises.map((falaise) => {
       if (!falaise.falaise_latlng) return;
-      if (falaise.access.length === 0) {
+      // Du topo dès qu'un accès est décrit, vélo ou à pied.
+      if (falaise.access.length === 0 && falaise.pieton.length === 0) {
         falaise.type = "falaise_hors_topo";
         if (zoom < 11 || falaise.filteredOut) {
           setFalaiseHTMarker(falaise, map, "hidden");

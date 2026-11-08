@@ -86,9 +86,21 @@ séparément.
 
 **Databases:**
 
-- `u829510062_bdd` - Main DB (falaises, velo, gares, villes, train, bus\_\*,
-  sorties, pages, newsletters…). Nom et identifiants dans `config.php` ;
+- `u829510062_bdd` - Main DB (falaises, arrets, acces\_falaise, gares, villes,
+  train, bus\_\*, sorties, pages, newsletters…). Nom et identifiants dans `config.php` ;
   connexion via `public_html/database/velogrimpe.php`.
+
+**Accès arrêt → falaise (`acces_falaise`) :** une seule table pour les
+itinéraires vélo (`type = 'velo'`, avec trace GPX) et les accès à pied
+(`type = 'pied'`, sans trace) ; elle remplace `velo` et `acces_pieton_falaise`
+(Lot 8quater). Clé `acces_id` (= l'ancien `velo_id`, préfixe du nom du GPX),
+unicité `(arret_id, falaise_id, type, variante)`, FK vers `arrets` et `falaises`
+**sans cascade**. « Faisable à pied » n'est pas stocké : `type = 'pied'` ou
+`km <= 5`, calculé par `acces_a_pied_possible()` / `acces_a_pied_sql()`
+(`public_html/lib/velo_lib.php`). Un accès `pied` peut aussi porter description,
+`km` / `dplus` / `dmoins` et une trace GPX (même nommage que les vélos) : création
+et complétion par `acces_pied_enregistrer()` (champs vides seulement, jamais
+d'écrasement).
 
 **Chemins de données (`public_html/lib/paths.php`) :**
 

@@ -25,12 +25,7 @@ final class TrainReadersTest extends ApiTestCase
        VALUES ($villeId, $arretId, 'lyon-part-dieu', 'phpunit-car-lyon', 40, 0, 0, '', 1, 'phpunit', 0)"
     );
     $this->cleanupOnTearDown("DELETE FROM train WHERE train_id = $trainId");
-    $veloId = self::dbInsert(
-      "INSERT INTO velo (arret_id, falaise_id, velo_depart, velo_arrivee, velo_km, velo_dplus, velo_dmoins, velo_descr,
-        velo_variante, velo_varianteformate, velo_public, velo_contrib)
-       VALUES ($arretId, $falaiseId, 'a', 'b', 8, 50, 50, '', '', '', 1, 'phpunit')"
-    );
-    $this->cleanupOnTearDown("DELETE FROM velo WHERE velo_id = $veloId");
+    $this->createFixtureAcces($arretId, $falaiseId, ['km' => 8, 'dplus' => 50, 'dmoins' => 50, 'depart_slug' => 'a', 'arrivee_slug' => 'b']);
     return ['falaiseId' => $falaiseId, 'arretId' => $arretId];
   }
 

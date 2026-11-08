@@ -3,6 +3,7 @@
  * Données embarquées par les cartes globales (carte.php, carte_leaflet.php).
  */
 require_once __DIR__ . '/arrets_lib.php';
+require_once __DIR__ . '/velo_lib.php';
 
 /**
  * Arrêts (toutes modalités) avec leurs temps de train depuis chaque ville.
@@ -15,8 +16,7 @@ function carte_charger_arrets(mysqli $mysqli, bool $garesHorsTopo = true): array
 {
   $filtre = $garesHorsTopo ? '' : "AND (
       (a.ter = 0 AND a.tgv = 0)
-      OR a.id IN (SELECT arret_id FROM velo WHERE velo_public >= 1)
-      OR a.id IN (SELECT arret_id FROM acces_pieton_falaise)
+      OR a.id IN (SELECT arret_id FROM acces_falaise WHERE public >= 1)
     )";
   $rows = $mysqli->query("SELECT
     a.id AS arret_id, a.nom AS arret_nom,
@@ -39,26 +39,52 @@ function carte_charger_arrets(mysqli $mysqli, bool $garesHorsTopo = true): array
 function carte_charger_itineraires(mysqli $mysqli): array
 {
   // Envoyé tel quel au JS : liste explicite de colonnes, jamais de SELECT *
-  // (velo_contrib porte un email). Les accès « à pied uniquement » sont dans
-  // acces_pieton_falaise (Lot 8), pas dans velo.
+  // (contrib / contrib_mail portent un email). Les accès « à pied » (type = 'pied')
+  // sont servis par carte_charger_acces_pieton(). Les clés JSON gardent leurs noms
+  // d'avant le Lot 8quater (front) ; velo_apiedpossible est calculé (≤ 5 km).
   $rows = $mysqli->query("SELECT
-    v.falaise_id, v.arret_id, v.velo_apiedpossible, v.velo_arrivee,
-    v.velo_depart, v.velo_dplus, v.velo_id, v.velo_km, v.velo_varianteformate
-    FROM velo v
+    v.falaise_id, v.arret_id, " . acces_a_pied_sql('v') . " AS velo_apiedpossible, v.arrivee_slug AS velo_arrivee,
+    v.depart_slug AS velo_depart, v.dplus AS velo_dplus, v.acces_id AS velo_id, v.km AS velo_km,
+    v.variante_formate AS velo_varianteformate
+    FROM acces_falaise v
     JOIN arrets a ON a.id = v.arret_id AND a.deleted = 0
-    WHERE v.velo_public >= 1")->fetch_all(MYSQLI_ASSOC);
+    WHERE v.type = 'velo' AND v.public >= 1")->fetch_all(MYSQLI_ASSOC);
   return array_map(function ($r) {
     $r['arret_id'] = (int) $r['arret_id'];
     return $r;
   }, $rows);
 }
 
-/** Accès piéton arrêt → falaise (falaises publiées, arrêts non supprimés). */
+/**
+ * Accès à pied arrêt → falaise (falaises publiées, arrêts non supprimés).
+ *
+ * Un accès à pied peut porter km / D+ / D- et une trace GPX (Lot 8quater). Les
+ * clés `velo_*` + `has_gpx` permettent aux cartes de réutiliser leur rendu GPX
+ * des itinéraires vélo ; colonnes explicites, jamais de contributeur (email).
+ */
 function carte_charger_acces_pieton(mysqli $mysqli): array
 {
-  $rows = $mysqli->query("SELECT p.arret_id, p.falaise_id
-    FROM acces_pieton_falaise p
+  $rows = $mysqli->query("SELECT p.acces_id, p.arret_id, p.falaise_id, p.km, p.dplus, p.dmoins,
+      p.depart_slug, p.arrivee_slug, p.variante_formate
+    FROM acces_falaise p
     JOIN arrets a ON a.id = p.arret_id AND a.deleted = 0
-    JOIN falaises f ON f.falaise_id = p.falaise_id AND f.falaise_public >= 1")->fetch_all(MYSQLI_ASSOC);
-  return array_map(fn($r) => ['arret_id' => (int) $r['arret_id'], 'falaise_id' => $r['falaise_id']], $rows);
+    JOIN falaises f ON f.falaise_id = p.falaise_id AND f.falaise_public >= 1
+    WHERE p.type = 'pied' AND p.public >= 1")->fetch_all(MYSQLI_ASSOC);
+  return array_map(function ($r) {
+    $rel = velo_gpx_rel((int) $r['acces_id'], $r['depart_slug'], $r['arrivee_slug'], (string) $r['variante_formate']);
+    return [
+      'arret_id' => (int) $r['arret_id'],
+      'falaise_id' => $r['falaise_id'],
+      'acces_id' => (int) $r['acces_id'],
+      'km' => $r['km'] !== null ? (float) $r['km'] : null,
+      'dplus' => $r['dplus'] !== null ? (int) $r['dplus'] : null,
+      'dmoins' => $r['dmoins'] !== null ? (int) $r['dmoins'] : null,
+      // Clés de gpx_path() côté carte (même nommage que les itinéraires vélo)
+      'velo_id' => (int) $r['acces_id'],
+      'velo_depart' => $r['depart_slug'],
+      'velo_arrivee' => $r['arrivee_slug'],
+      'velo_varianteformate' => $r['variante_formate'],
+      'has_gpx' => vg_data_exists($rel),
+    ];
+  }, $rows);
 }

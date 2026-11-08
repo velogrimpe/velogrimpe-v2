@@ -1,5 +1,7 @@
-### add_velo.php — soumission du formulaire d'ajout d'accès (mode vélo par défaut, ou mode=pied ; multipart/form-data)
-### ATTENTION : un envoi valide insère réellement une ligne `velo` et écrit un fichier GPX
+### add_velo.php — soumission du formulaire d'ajout d'accès (type vélo par défaut, ou type=pied / mode=pied ; multipart/form-data)
+### « À pied possible » n'est plus un champ : un accès de 5 km ou moins l'est d'office (Lot 8quater).
+### Une variante déjà présente entre le même arrêt et la même falaise est refusée (« existe déjà »).
+### ATTENTION : un envoi valide insère réellement une ligne `acces_falaise` (type `velo`) et écrit un fichier GPX
 ### dans public/gpx/. À n'exécuter que sur un environnement de test.
 ###
 ### Comportement vérifié ici :
@@ -292,6 +294,6 @@ GET http://localhost:4000/bdd/gpx/{{velo_id}}_gare-test_falaise-test_.gpx
 ###   docker exec velogrimpe touch /opt/lampp/public/gpx
 ###   # rejouer l'ajout valide ci-dessus
 ###   #   attendu : "Le dossier des traces GPX est indisponible…"
-###   #   ET : SELECT MAX(velo_id) FROM velo;  -- inchangé
+###   #   ET : SELECT MAX(acces_id) FROM acces_falaise;  -- inchangé
 ###   docker exec velogrimpe rm /opt/lampp/public/gpx
 ###   docker exec velogrimpe mv /opt/lampp/public/gpx_BAK /opt/lampp/public/gpx

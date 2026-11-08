@@ -60,6 +60,7 @@ fournit :
 - `httpGet()` / `httpPostJson()` / `httpPostMultipart()` — requêtes contre le conteneur (JSON ou formulaire multipart à l'ancienne, type `add_velo.php`)
 - `dbExec()` / `dbQuery()` / `dbQueryOne()` / `dbInsert()` — requêtes SQL via `docker exec`
 - `createFixtureFalaise()` / `createFixtureArret()` / `createFixtureGare()` — fixtures courantes, nettoyées automatiquement
+- `createFixtureAcces()` / `createFixtureAccesPied()` — accès arrêt → falaise (`acces_falaise`, vélo ou pied). La table n'a pas de `ON DELETE CASCADE` : les fixtures falaise et arrêt purgent d'elles-mêmes les accès qui les référencent, y compris ceux créés via l'API pendant le test
 - `cleanupOnTearDown($sql)` / `cleanupCallbackOnTearDown($fn)` / `registerFixtureArret($id)` — nettoyage manuel (SQL ou autre, ex. fichier GPX) pour les cas non couverts par les helpers ci-dessus
 - `extractJsValue($html, $marker)` — extrait un JSON embarqué dans une réponse HTML après un marqueur (ex. `'const falaisesBase = '`), par appariement de profondeur plutôt que regex gourmande (robuste aux valeurs texte contenant `];`/`};`)
 

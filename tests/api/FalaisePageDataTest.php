@@ -6,7 +6,7 @@ require_once __DIR__ . '/ApiTestCase.php';
  * Non-régression sur les données embarquées par falaise.php (`const falaise`
  * et `const itineraires`, falaise.php:1196-1197) : chaque itinéraire doit
  * référencer la bonne falaise et exposer une gare complète (nom, coordonnées,
- * commune) — c'est la seule page du site qui joint `velo` × `gares` sans
+ * commune) — c'est la seule page du site qui joint `acces_falaise` × `arrets` sans
  * filtrer les colonnes, donc la meilleure source pour vérifier que les gares
  * ne sont pas orphelines ou incomplètes. S'appuie sur la falaise témoin
  * ApiTestCase::WITNESS_FALAISE_ID ("Pont de Barret - Eson"), déjà utilisée
@@ -28,18 +28,19 @@ final class FalaisePageDataTest extends ApiTestCase
     $this->assertNotEmpty($itineraires, 'la falaise témoin devrait avoir au moins un itinéraire publié — la BDD locale a-t-elle changé ?');
 
     foreach ($itineraires as $it) {
-      $this->assertSame(
-        self::WITNESS_FALAISE_ID,
-        (int) $it['falaise_id'],
-        "un itinéraire de falaise.php?falaise_id=" . self::WITNESS_FALAISE_ID . " référence une autre falaise"
-      );
+      // falaise.php n'embarque plus falaise_id (champs réduits, « fix email leak ») :
+      // on relit l'accès en base pour vérifier qu'il appartient bien à la falaise.
+      $ligne = self::dbQueryOne("SELECT falaise_id, type FROM acces_falaise WHERE acces_id = " . (int) $it['velo_id']);
+      $this->assertNotNull($ligne, "l'itinéraire #{$it['velo_id']} n'existe pas dans acces_falaise");
+      $this->assertSame(self::WITNESS_FALAISE_ID, (int) $ligne['falaise_id'], "un itinéraire de falaise.php?falaise_id=" . self::WITNESS_FALAISE_ID . " référence une autre falaise");
+      $this->assertSame('velo', $ligne['type'], "seuls les accès vélo sont des itinéraires (les accès à pied ont leur section)");
 
       // La jointure `LEFT JOIN gares ... AND gares.deleted = 0` renvoie des
       // colonnes gare_* NULL si la gare référencée a été supprimée/désactivée
       // (velo.gare_id reste NOT NULL) : un gare_nom vide signale un lien cassé.
       $this->assertNotEmpty(
         $it['gare_nom'],
-        "l'itinéraire vélo #{$it['velo_id']} référence une gare supprimée/désactivée (gare_id={$it['gare_id']})"
+        "l'itinéraire vélo #{$it['velo_id']} référence un arrêt supprimé/désactivé"
       );
       $this->assertNotEmpty($it['gare_latlng'], "coordonnées de gare manquantes pour l'itinéraire #{$it['velo_id']}");
       $coords = array_map('trim', explode(',', (string) $it['gare_latlng']));
@@ -51,9 +52,9 @@ final class FalaisePageDataTest extends ApiTestCase
 
   public function testItineraireMigreVersAccesPietonNApparaitPlusCommeItineraireVelo(): void
   {
-    // Hostiaz : l'ancien itinéraire « à pied uniquement » (velo_id 19) a été
-    // migré vers acces_pieton_falaise (Lot 8) et masqué dans velo ; l'accès
-    // vélo (velo_id 18) reste affiché.
+    // Hostiaz : l'ancien itinéraire « à pied uniquement » (acces_id 19) est de
+    // type `pied` depuis le Lot 8quater (il avait été copié puis masqué au Lot 8) ;
+    // l'accès vélo (acces_id 18) reste affiché.
     $res = $this->httpGet('/falaise.php?falaise_id=' . self::WITNESS_FALAISE_HOSTIAZ_ID);
     $this->assertSame(200, $res['status']);
     $itineraires = self::extractJsValue($res['raw'], 'const itineraires = ');
@@ -65,19 +66,21 @@ final class FalaisePageDataTest extends ApiTestCase
       $this->assertArrayNotHasKey('velo_apieduniquement', $it);
     }
 
-    $acces = self::dbQueryOne('SELECT 1 AS x FROM acces_pieton_falaise WHERE arret_id = 12 AND falaise_id = ' . self::WITNESS_FALAISE_HOSTIAZ_ID);
-    $this->assertNotNull($acces, "l'accès piéton migré doit exister dans acces_pieton_falaise");
+    $acces = self::dbQueryOne("SELECT acces_id FROM acces_falaise WHERE type = 'pied' AND arret_id = 12 AND falaise_id = " . self::WITNESS_FALAISE_HOSTIAZ_ID);
+    $this->assertNotNull($acces, "l'accès piéton migré doit exister dans acces_falaise");
+    $this->assertSame('19', $acces['acces_id'], 'conservé sous son ancien velo_id');
   }
 
   public function testItineraireVirieuLeGrandResteFaisableAPied(): void
   {
-    $res = $this->httpGet('/falaise.php?falaise_id=' . self::WITNESS_FALAISE_VIRIEU_ID);
+    // « À pied possible » est calculé (≤ 5 km, Lot 8quater) et n'est pas embarqué
+    // par falaise.php : fetch_velos.php l'expose.
+    $res = $this->httpGet('/api/fetch_velos.php?falaise_id=' . self::WITNESS_FALAISE_VIRIEU_ID);
     $this->assertSame(200, $res['status']);
-    $itineraires = self::extractJsValue($res['raw'], 'const itineraires = ');
 
     $found = null;
-    foreach ($itineraires as $it) {
-      if ((int) ($it['velo_apiedpossible'] ?? 0) === 1) {
+    foreach ($res['body']['velos'] as $it) {
+      if ((int) $it['velo_apiedpossible'] === 1) {
         $found = $it;
         break;
       }
@@ -91,7 +94,8 @@ final class FalaisePageDataTest extends ApiTestCase
     $this->assertSame(200, $res['status']);
     $itineraires = self::extractJsValue($res['raw'], 'const itineraires = ');
 
-    $gareIds = array_unique(array_map(fn($it) => (int) $it['gare_id'], $itineraires));
+    // gare_id n'est plus embarqué : on compte les gares distinctes par leur nom.
+    $gareIds = array_unique(array_map(fn($it) => (string) $it['gare_nom'], $itineraires));
     $this->assertGreaterThanOrEqual(
       2,
       count($gareIds),

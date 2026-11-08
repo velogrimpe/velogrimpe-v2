@@ -12,7 +12,7 @@ export interface CarteFalaise {
   falaise_bloc: string | null
   type: 'falaise' | 'falaise_hors_topo'
   access: CarteItineraire[]
-  /** Arrêts reliés à pied (acces_pieton_falaise) */
+  /** Arrêts reliés à pied (acces_falaise, type 'pied') */
   pieton?: Array<{ arret: CarteArret }>
   filteredOut?: boolean
 }
@@ -26,7 +26,7 @@ export interface CarteArret {
   types: ArretType[]
   type: 'arret' | 'arret_hors_topo'
   access: CarteItineraire[]
-  /** Falaises reliées à pied (acces_pieton_falaise) */
+  /** Falaises reliées à pied (acces_falaise, type 'pied') */
   pieton: CarteFalaise[]
 }
 

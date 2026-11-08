@@ -3,7 +3,7 @@ import { computed } from "vue";
 import type { TableauFalaise, TableauItinerary } from "@/types/tableau";
 import { formatTime, calculateVeloTime } from "@/utils";
 import RoseDesVents from "@/components/shared/RoseDesVents.vue";
-import { accesPietonLabel } from "./utils";
+import { accesPietonLabel, accesPietonChiffres } from "./utils";
 
 const props = defineProps<{
   falaise: TableauFalaise;
@@ -120,6 +120,9 @@ function formatCorrespondances(it: TableauItinerary): string {
                 :data-testid="`acces-pieton-${common.falaise_id}`"
 >{{ accesPietonLabel(row) }}</span
               >
+              <template v-if="accesPietonChiffres(row)">
+                <br /><span :data-testid="`acces-pieton-chiffres-${common.falaise_id}`">{{ accesPietonChiffres(row) }}</span>
+              </template>
             </template>
             <template v-else>
               {{ formatTime(calculateVeloTime(row)) }} a velo

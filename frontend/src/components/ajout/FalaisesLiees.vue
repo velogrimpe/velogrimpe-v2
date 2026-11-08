@@ -23,8 +23,14 @@ const props = withDefaults(
   defineProps<{
     falaises?: FalaiseItem[];
     linkedIds?: number[];
+    /**
+     * Champs facultatifs de l'accès à pied de chaque falaise liée (description, km, D+, D-) :
+     * `acces_pieton[<id>][description|km|dplus|dmoins]`, lus au submit par ajout-bus.ts
+     * (`falaises_acces`). Pas de GPX ici (envoi JSON) : à ajouter ensuite depuis la fiche falaise.
+     */
+    accesDetails?: boolean;
   }>(),
-  { falaises: () => [], linkedIds: () => [] },
+  { falaises: () => [], linkedIds: () => [], accesDetails: false },
 );
 
 const emit = defineEmits<{
@@ -93,7 +99,7 @@ function onSelect(item: FormAutocompleteItem | null) {
       <li
         v-for="falaise in linked"
         :key="falaise.id"
-        class="flex items-center gap-2 py-1 pl-2 pr-1 rounded-lg border border-base-200 bg-base-100"
+        class="flex flex-wrap items-center gap-2 py-1 pl-2 pr-1 rounded-lg border border-base-200 bg-base-100"
       >
         <Icon name="map-pin" class="w-4 h-4 text-primary shrink-0" />
         <button
@@ -113,6 +119,49 @@ function onSelect(item: FormAutocompleteItem | null) {
         >
           <Icon name="close" class="w-4 h-4" />
         </button>
+        <details v-if="accesDetails" class="basis-full pb-1 pr-1" :data-testid="`acces-details-${falaise.id}`">
+          <summary class="text-xs cursor-pointer text-primary">
+            Détails de l'accès à pied (optionnel)
+          </summary>
+          <div class="flex flex-col gap-2 mt-2">
+            <textarea
+              :name="`acces_pieton[${falaise.id}][description]`"
+              rows="2"
+              class="textarea textarea-sm leading-5 w-full"
+              placeholder="Description : durée, sentier balisé ou non, passages délicats…"
+            ></textarea>
+            <div class="flex flex-wrap gap-2">
+              <input
+                type="number"
+                :name="`acces_pieton[${falaise.id}][km]`"
+                step="0.1"
+                min="0"
+                placeholder="km"
+                aria-label="Distance (km)"
+                class="input input-sm w-24"
+              />
+              <input
+                type="number"
+                :name="`acces_pieton[${falaise.id}][dplus]`"
+                min="0"
+                placeholder="D+ (m)"
+                aria-label="D+ (m)"
+                class="input input-sm w-24"
+              />
+              <input
+                type="number"
+                :name="`acces_pieton[${falaise.id}][dmoins]`"
+                min="0"
+                placeholder="D- (m)"
+                aria-label="D- (m)"
+                class="input input-sm w-24"
+              />
+            </div>
+            <p class="text-xs text-slate-500 my-0">
+              Une trace GPS peut être ajoutée ensuite depuis la fiche de la falaise.
+            </p>
+          </div>
+        </details>
       </li>
     </ul>
 

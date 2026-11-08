@@ -33,7 +33,7 @@ export interface TableauItinerary {
   velo_dplus: number;
   velo_dmoins: number;
   velo_apiedpossible: number;
-  /** 1 : ligne issue d'un accès à pied depuis l'arrêt (acces_pieton_falaise), sans itinéraire vélo. */
+  /** 1 : ligne issue d'un accès à pied depuis l'arrêt (acces_falaise, type 'pied'), sans itinéraire vélo. */
   acces_pieton: number;
   /** 1 : la falaise a au moins un accès à pied depuis un arrêt (critère du filtre « Accessible à pied »). */
   falaise_acces_pieton: number;
@@ -43,6 +43,10 @@ export interface TableauItinerary {
   acces_pieton_types: string[];
   /** Noms des lignes qui desservent l'arrêt d'un accès à pied. */
   acces_pieton_lignes: string[];
+  /** Distance et dénivelés de l'accès à pied, quand ils sont renseignés (null sinon ; toujours null pour un itinéraire vélo). */
+  acces_pieton_km: number | null;
+  acces_pieton_dplus: number | null;
+  acces_pieton_dmoins: number | null;
   variante: number;
   variante_a_pied: number;
   ville_nom: string;

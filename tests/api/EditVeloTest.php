@@ -29,10 +29,10 @@ final class EditVeloTest extends ApiTestCase
     $this->assertSame(302, $res['status'], "réponse inattendue : {$res['raw']}");
     $this->assertStringContainsString('type=update', $res['location']);
 
-    $row = self::dbQueryOne("SELECT velo_km, velo_descr, velo_public FROM velo WHERE velo_id = $veloId");
-    $this->assertSame('15.5', $row['velo_km']);
-    $this->assertSame('Description modifiée par le contributeur.', $row['velo_descr']);
-    $this->assertSame('0', $row['velo_public'], 'un contributeur ne doit pas pouvoir valider lui-même un itinéraire');
+    $row = self::dbQueryOne("SELECT km, description, public FROM acces_falaise WHERE acces_id = $veloId");
+    $this->assertSame('15.5', $row['km']);
+    $this->assertSame('Description modifiée par le contributeur.', $row['description']);
+    $this->assertSame('0', $row['public'], 'un contributeur ne doit pas pouvoir valider lui-même un itinéraire');
   }
 
   public function testAdminModifieEtValideLItineraire(): void
@@ -52,9 +52,9 @@ final class EditVeloTest extends ApiTestCase
 
     $this->assertSame(302, $res['status'], "réponse inattendue : {$res['raw']}");
 
-    $row = self::dbQueryOne("SELECT velo_km, velo_public FROM velo WHERE velo_id = $veloId");
-    $this->assertSame('20', $row['velo_km']);
-    $this->assertSame('1', $row['velo_public'], 'une édition admin doit valider l\'itinéraire');
+    $row = self::dbQueryOne("SELECT km, public FROM acces_falaise WHERE acces_id = $veloId");
+    $this->assertSame('20', $row['km']);
+    $this->assertSame('1', $row['public'], 'une édition admin doit valider l\'itinéraire');
   }
 
   public function testSuggestionSurItineraireValideNeModifieRien(): void
@@ -75,8 +75,8 @@ final class EditVeloTest extends ApiTestCase
     $this->assertSame(302, $res['status'], "réponse inattendue : {$res['raw']}");
     $this->assertStringContainsString('type=suggestion', $res['location']);
 
-    $row = self::dbQueryOne("SELECT velo_descr, velo_km FROM velo WHERE velo_id = $veloId");
-    $this->assertSame('Description originale.', $row['velo_descr'], 'une suggestion ne doit rien écrire en base');
+    $row = self::dbQueryOne("SELECT description, km FROM acces_falaise WHERE acces_id = $veloId");
+    $this->assertSame('Description originale.', $row['description'], 'une suggestion ne doit rien écrire en base');
   }
 
   public function testSuggestionSansChangementEstRefusee(): void
@@ -110,7 +110,7 @@ final class EditVeloTest extends ApiTestCase
   {
     $defaults = [
       'velo_descr' => 'Description de test.',
-      'velo_variante' => 'Test PHPUnit',
+      'velo_variante' => 'Test PHPUnit ' . bin2hex(random_bytes(3)),
       'velo_varianteformate' => 'phpunit-test-' . bin2hex(random_bytes(4)),
       'velo_km' => 5.0,
       'velo_dplus' => 100,
@@ -118,21 +118,16 @@ final class EditVeloTest extends ApiTestCase
       'velo_public' => 0,
     ];
     $v = array_merge($defaults, $overrides);
-    $descr = self::escape($v['velo_descr']);
-    $variante = self::escape($v['velo_variante']);
-    $varianteformate = self::escape($v['velo_varianteformate']);
 
-    $id = self::dbInsert(
-      "INSERT INTO velo (
-        arret_id, falaise_id, velo_depart, velo_arrivee, velo_km, velo_dplus, velo_dmoins,
-        velo_descr, velo_variante, velo_varianteformate, velo_public, velo_contrib
-      ) VALUES (
-        " . self::WITNESS_GARE_ID . ", " . self::WITNESS_FALAISE_ID . ", 'phpunit-depart', 'phpunit-arrivee',
-        {$v['velo_km']}, {$v['velo_dplus']}, {$v['velo_dmoins']},
-        '$descr', '$variante', '$varianteformate', {$v['velo_public']}, \"'PHPUnit','phpunit@example.org'\"
-      )"
-    );
-    $this->cleanupOnTearDown("DELETE FROM velo WHERE velo_id = $id");
-    return $id;
+    return $this->createFixtureAcces(self::WITNESS_GARE_ID, self::WITNESS_FALAISE_ID, [
+      'type' => 'velo',
+      'km' => $v['velo_km'],
+      'dplus' => $v['velo_dplus'],
+      'dmoins' => $v['velo_dmoins'],
+      'description' => $v['velo_descr'],
+      'variante' => $v['velo_variante'],
+      'variante_formate' => $v['velo_varianteformate'],
+      'public' => $v['velo_public'],
+    ]);
   }
 }

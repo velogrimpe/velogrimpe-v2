@@ -16,6 +16,7 @@ Content-Type: application/json
   "osm_id": null,
   "osm_data": null,
   "falaise_ids": [39],
+  "falaises_acces": { "39": { "description": "Sentier balisé, 15 min.", "km": 1.2, "dplus": 80, "dmoins": 10 } },
   "lignes": [
     { "id": null, "key": "new:zou! l12", "nom": "Zou! L12", "description": "<p>Apt - Buoux</p>", "lien": "https://zou.maregionsud.fr" }
   ],
@@ -78,6 +79,54 @@ Content-Type: application/json
   "nom_prenom": "Testeur",
   "email": "test@example.org"
 }
+
+### Lier avec les détails facultatifs de l'accès à pied (description, km, D+, D-) ;
+### un accès déjà renseigné n'est jamais écrasé (seuls les champs vides sont complétés). Réponse : { success, linked, acces_id }
+POST {{host}}/api/link_arret_falaise.php
+Content-Type: application/json
+
+{
+  "arret_id": 1,
+  "falaise_id": 39,
+  "action": "link",
+  "nom_prenom": "Testeur",
+  "email": "test@example.org",
+  "description": "Sentier balisé, 15 min.",
+  "km": 1.2,
+  "dplus": 80,
+  "dmoins": 10
+}
+
+### Même chose avec une trace GPX facultative : multipart/form-data (le JSON ne porte pas de fichier)
+POST {{host}}/api/link_arret_falaise.php
+Content-Type: multipart/form-data; boundary=----vg
+
+------vg
+Content-Disposition: form-data; name="arret_id"
+
+1
+------vg
+Content-Disposition: form-data; name="falaise_id"
+
+39
+------vg
+Content-Disposition: form-data; name="action"
+
+link
+------vg
+Content-Disposition: form-data; name="nom_prenom"
+
+Testeur
+------vg
+Content-Disposition: form-data; name="email"
+
+test@example.org
+------vg
+Content-Disposition: form-data; name="gpx_file"; filename="velo-with-wpt.gpx"
+Content-Type: application/gpx+xml
+
+< ./fixtures/velo-with-wpt.gpx
+------vg--
 
 ### Délier l'arrêt 1 de la falaise 39
 POST {{host}}/api/link_arret_falaise.php

@@ -10,3 +10,5 @@
 
 - [ ] Supprimer la case velo_apiedpossible dans le form et règle de décision auto = km <= 5km
 - [ ] Aussi accessible à pied --> Accessible sans vélo (apiedpossible || variante à pied || lien arret falaise)
+
+- [ ] Restaurer le tooltip permanent au clic sur la falaise, et tenter d'enlever le nom du layer pmtile

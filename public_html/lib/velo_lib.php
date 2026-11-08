@@ -122,10 +122,194 @@ function velo_charger_gpx_upload(string $champ = 'gpx_file'): ?DOMDocument
   return $dom;
 }
 
-/** Chaîne `velo_contrib` telle que stockée en base depuis l'origine du site. */
-function velo_contrib_string(string $nom_prenom, string $email): string
+/**
+ * Types d'accès de la table `acces_falaise` (Lot 8quater) : `velo` ou `pied`.
+ */
+const ACCES_TYPES = ['velo', 'pied'];
+
+/** Distance (km) jusqu'à laquelle un accès est considéré comme faisable à pied. */
+const ACCES_A_PIED_KM_MAX = 5;
+
+/**
+ * « Faisable à pied » : un accès de type `pied`, ou n'importe quel accès d'au
+ * plus 5 km. Remplace l'ancienne colonne `velo_apiedpossible`. Équivalent SQL :
+ * acces_a_pied_sql() — les lecteurs l'exposent au front sous l'ancienne clé JSON
+ * `velo_apiedpossible`, calculée une seule fois ici (pas de miroir TS).
+ */
+function acces_a_pied_possible(string $type, $km): bool
 {
-  return trim("'" . $nom_prenom . "','" . $email . "'");
+  return $type === 'pied' || ($km !== null && $km !== '' && (float) $km <= ACCES_A_PIED_KM_MAX);
+}
+
+/** Condition SQL équivalente à acces_a_pied_possible(), pour la table (ou l'alias) donnée. */
+function acces_a_pied_sql(string $alias = 'acces_falaise'): string
+{
+  // COALESCE : km inconnu => 0 (pas « à pied »), jamais NULL, y compris sous un NOT.
+  return "({$alias}.type = 'pied' OR COALESCE({$alias}.km <= " . ACCES_A_PIED_KM_MAX . ", 0))";
+}
+
+/**
+ * Crée l'accès `pied` (variante `''`) entre un arrêt et une falaise, ou complète
+ * celui qui existe : seuls les champs encore VIDES sont renseignés, rien de ce qui
+ * l'est déjà n'est écrasé (formulaires publics). Un accès à pied peut porter une
+ * description, km / D+ / D- (tous facultatifs) et une trace GPX.
+ *
+ * $arret : ['id','nom','slug'] (cf. velo_trouver_arret), $falaise : ['falaise_id',
+ * 'falaise_nom','falaise_nomformate'] (cf. velo_trouver_falaise).
+ * $d : description (string), km (float|null), dplus (int|null), dmoins (int|null).
+ * $dom : GPX déjà nettoyé (velo_charger_gpx_upload) ou null. L'appelant a fait
+ * vg_data_prepare(VELO_GPX_DIR) avant toute mutation s'il en fournit un.
+ *
+ * @return array{acces_id:int, cree:bool, remplis:string[], gpx:string} gpx :
+ *   'ecrit' | 'echec' (écriture impossible) | 'present' (déjà là, conservé) | 'absent'
+ */
+function acces_pied_enregistrer(mysqli $mysqli, array $arret, array $falaise, array $d, ?DOMDocument $dom, string $contrib, string $contrib_mail): array
+{
+  $arret_id = (int) $arret['id'];
+  $falaise_id = (int) $falaise['falaise_id'];
+  $description = trim((string) ($d['description'] ?? ''));
+  $km = $d['km'] ?? null;
+  $dplus = $d['dplus'] ?? null;
+  $dmoins = $d['dmoins'] ?? null;
+
+  $stmt = $mysqli->prepare(
+    "SELECT acces_id, description, km, dplus, dmoins, depart_slug, arrivee_slug, variante_formate
+     FROM acces_falaise WHERE type = 'pied' AND variante = '' AND arret_id = ? AND falaise_id = ?"
+  );
+  $stmt->bind_param("ii", $arret_id, $falaise_id);
+  $stmt->execute();
+  $existant = $stmt->get_result()->fetch_assoc();
+  $stmt->close();
+
+  $remplis = [];
+  if ($existant === null) {
+    $depart_slug = $arret['slug'];
+    $arrivee_slug = $falaise['falaise_nomformate'];
+    $stmt = $mysqli->prepare(
+      "INSERT INTO acces_falaise (type, arret_id, falaise_id, depart_slug, arrivee_slug, description, km, dplus, dmoins, public, contrib, contrib_mail)
+       VALUES ('pied', ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)"
+    );
+    $stmt->bind_param("iisssdiiss", $arret_id, $falaise_id, $depart_slug, $arrivee_slug, $description, $km, $dplus, $dmoins, $contrib, $contrib_mail);
+    $stmt->execute();
+    $acces_id = (int) $stmt->insert_id;
+    $stmt->close();
+    $cree = true;
+    foreach (['description' => $description !== '', 'km' => $km !== null, 'dplus' => $dplus !== null, 'dmoins' => $dmoins !== null] as $champ => $ok) {
+      if ($ok) {
+        $remplis[] = $champ;
+      }
+    }
+    $depart_slug_gpx = $depart_slug;
+    $arrivee_slug_gpx = $arrivee_slug;
+    $variante_formate = '';
+  } else {
+    $acces_id = (int) $existant['acces_id'];
+    $cree = false;
+    $sets = [];
+    $types = '';
+    $vals = [];
+    if ($description !== '' && trim((string) $existant['description']) === '') {
+      $sets[] = 'description = ?'; $types .= 's'; $vals[] = $description; $remplis[] = 'description';
+    }
+    foreach (['km' => [$km, 'd'], 'dplus' => [$dplus, 'i'], 'dmoins' => [$dmoins, 'i']] as $champ => [$val, $t]) {
+      if ($val !== null && $existant[$champ] === null) {
+        $sets[] = "$champ = ?"; $types .= $t; $vals[] = $val; $remplis[] = $champ;
+      }
+    }
+    if ($sets) {
+      $types .= 'i';
+      $vals[] = $acces_id;
+      $stmt = $mysqli->prepare("UPDATE acces_falaise SET " . implode(', ', $sets) . ", date_modification = CURRENT_TIMESTAMP WHERE acces_id = ?");
+      $stmt->bind_param($types, ...$vals);
+      $stmt->execute();
+      $stmt->close();
+    }
+    $depart_slug_gpx = $existant['depart_slug'];
+    $arrivee_slug_gpx = $existant['arrivee_slug'];
+    $variante_formate = (string) $existant['variante_formate'];
+  }
+
+  $gpx = 'absent';
+  if ($dom !== null) {
+    $rel = velo_gpx_rel($acces_id, $depart_slug_gpx, $arrivee_slug_gpx, $variante_formate);
+    if (!$cree && vg_data_exists($rel)) {
+      $gpx = 'present'; // jamais d'écrasement par un formulaire public
+    } elseif ($dom->save(vg_data_path($rel)) === false) {
+      error_log("acces_pied_enregistrer: échec de l'écriture du GPX pour acces_id=$acces_id");
+      $gpx = 'echec';
+    } else {
+      $gpx = 'ecrit';
+      $remplis[] = 'gpx';
+    }
+  }
+  return ['acces_id' => $acces_id, 'cree' => $cree, 'remplis' => $remplis, 'gpx' => $gpx];
+}
+
+/**
+ * Lie un arrêt à une falaise par un accès `pied`. Retourne true si le lien a été
+ * créé, false s'il existait déjà (éventuellement complété avec $d / $dom, cf.
+ * acces_pied_enregistrer) ou si l'arrêt ou la falaise n'existe pas.
+ */
+function acces_pied_lier(mysqli $mysqli, int $arret_id, int $falaise_id, string $contrib, string $contrib_mail, array $d = [], ?DOMDocument $dom = null): bool
+{
+  $arret = velo_trouver_arret($mysqli, $arret_id);
+  $falaise = velo_trouver_falaise($mysqli, $falaise_id);
+  if ($arret === null || $falaise === null) {
+    return false;
+  }
+  return acces_pied_enregistrer($mysqli, $arret, $falaise, $d, $dom, $contrib, $contrib_mail)['cree'];
+}
+
+/**
+ * Lit description / km / D+ / D- d'un accès à pied dans un tableau (champs d'un
+ * formulaire ou objet JSON). Valeurs absentes, vides, négatives ou non
+ * numériques : ignorées (null), comme velo_lire_indicateurs().
+ *
+ * @return array{description:string, km:?float, dplus:?int, dmoins:?int}
+ */
+function acces_lire_details(array $src): array
+{
+  $nombre = fn($v) => (is_numeric($v) && $v >= 0) ? $v + 0 : null;
+  $km = $nombre($src['km'] ?? null);
+  $dplus = $nombre($src['dplus'] ?? null);
+  $dmoins = $nombre($src['dmoins'] ?? null);
+  return [
+    'description' => trim((string) ($src['description'] ?? '')),
+    'km' => $km === null ? null : (float) $km,
+    'dplus' => $dplus === null ? null : (int) $dplus,
+    'dmoins' => $dmoins === null ? null : (int) $dmoins,
+  ];
+}
+
+/** Supprime l'accès `pied` entre un arrêt et une falaise (les accès vélo ne sont jamais touchés). */
+function acces_pied_delier(mysqli $mysqli, int $arret_id, int $falaise_id): void
+{
+  $stmt = $mysqli->prepare("DELETE FROM acces_falaise WHERE type = 'pied' AND arret_id = ? AND falaise_id = ?");
+  $stmt->bind_param("ii", $arret_id, $falaise_id);
+  $stmt->execute();
+  $stmt->close();
+}
+
+/** Ids des falaises reliées à un arrêt par un accès `pied`. */
+function acces_pied_falaise_ids(mysqli $mysqli, int $arret_id): array
+{
+  $stmt = $mysqli->prepare("SELECT falaise_id FROM acces_falaise WHERE type = 'pied' AND arret_id = ? ORDER BY falaise_id");
+  $stmt->bind_param("i", $arret_id);
+  $stmt->execute();
+  $ids = array_map(fn($r) => (int) $r['falaise_id'], $stmt->get_result()->fetch_all(MYSQLI_ASSOC));
+  $stmt->close();
+  return $ids;
+}
+
+/** Type d'accès lu dans une saisie ; `velo` par défaut, 400 si inconnu. */
+function acces_lire_type($valeur): string
+{
+  $type = $valeur === null || $valeur === '' ? 'velo' : (string) $valeur;
+  if (!in_array($type, ACCES_TYPES, true)) {
+    http_response_code(400);
+    die("Type d'accès invalide : $type");
+  }
+  return $type;
 }
 
 /**
@@ -177,7 +361,7 @@ function velo_trouver_arret(mysqli $mysqli, int $arret_id): ?array
 /** Falaise d'arrivée d'un accès, ou null si elle n'existe pas. */
 function velo_trouver_falaise(mysqli $mysqli, int $falaise_id): ?array
 {
-  $stmt = $mysqli->prepare("SELECT falaise_id, falaise_nom FROM falaises WHERE falaise_id = ?");
+  $stmt = $mysqli->prepare("SELECT falaise_id, falaise_nom, falaise_nomformate FROM falaises WHERE falaise_id = ?");
   $stmt->bind_param("i", $falaise_id);
   $stmt->execute();
   $row = $stmt->get_result()->fetch_assoc();

@@ -9,7 +9,7 @@ if (!isset($_GET['falaise_id']) || $arret_id === null) {
   exit;
 }
 
-$stmt = $mysqli->prepare("SELECT velo_id FROM velo WHERE falaise_id = ? AND arret_id = ?");
+$stmt = $mysqli->prepare("SELECT acces_id FROM acces_falaise WHERE type = 'velo' AND falaise_id = ? AND arret_id = ?");
 $stmt->execute([$_GET['falaise_id'], $arret_id]);
 $velo = $stmt->fetch();
 

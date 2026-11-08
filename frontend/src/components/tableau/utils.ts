@@ -39,3 +39,19 @@ export function accesPietonLabel(it: {
   const estGare = it.acces_pieton_types.some((t) => t === 'ter' || t === 'tgv')
   return `Accès piéton possible via ${modes}${lignes} ${estGare ? 'en gare de' : "à l'arrêt"} ${it.gare_nom}`
 }
+
+/**
+ * Distance et dénivelés d'un accès à pied, quand ils sont renseignés (« 1.5 km, 120 D+, 20 D- ») ;
+ * chaîne vide si aucun. 0 est une valeur, pas une absence.
+ */
+export function accesPietonChiffres(it: {
+  acces_pieton_km?: number | null
+  acces_pieton_dplus?: number | null
+  acces_pieton_dmoins?: number | null
+}): string {
+  const parts: string[] = []
+  if (it.acces_pieton_km != null) parts.push(`${it.acces_pieton_km} km`)
+  if (it.acces_pieton_dplus != null) parts.push(`${it.acces_pieton_dplus} D+`)
+  if (it.acces_pieton_dmoins != null) parts.push(`${it.acces_pieton_dmoins} D-`)
+  return parts.join(', ')
+}

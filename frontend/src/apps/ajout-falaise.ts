@@ -415,6 +415,7 @@ function mountArretsPietons() {
         linkedIds: linkedIds.value,
         titre: "Arrêts d'où l'on accède à la falaise à pied",
         vide: "Aucun arrêt pour l'instant. Ajoutez-le ci-dessous.",
+        accesDetails: true,
         onLink: (id: number) => {
           if (!linkedIds.value.includes(id))
             linkedIds.value = [...linkedIds.value, id];

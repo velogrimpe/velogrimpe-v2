@@ -2,7 +2,7 @@
 import { computed } from "vue";
 import type { TableauFalaise, TableauItinerary } from "@/types/tableau";
 import { formatTime, calculateVeloTime } from "@/utils";
-import { getNbVoiesLabel, accesPietonLabel } from "./utils";
+import { getNbVoiesLabel, accesPietonLabel, accesPietonChiffres } from "./utils";
 import RoseDesVents from "@/components/shared/RoseDesVents.vue";
 
 const props = defineProps<{
@@ -113,6 +113,12 @@ function getVeloReturnTime(it: TableauItinerary): string {
           class="col-span-2 bg-base-100 flex flex-col justify-center py-2 px-2"
         >
           {{ accesPietonLabel(row) }}
+          <div
+            v-if="accesPietonChiffres(row)"
+            :data-testid="`acces-pieton-chiffres-${common.falaise_id}`"
+          >
+            {{ accesPietonChiffres(row) }}
+          </div>
         </div>
         <template v-else>
           <div

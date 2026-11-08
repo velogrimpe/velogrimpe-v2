@@ -1,4 +1,4 @@
-### accept_velo.php — validation d'un itinéraire vélo (velo_public = 1) depuis le lien des mails admin
+### accept_velo.php — validation d'un itinéraire vélo (acces_falaise.public = 1) depuis le lien des mails admin
 ### Même principe que accept_falaise.php. Token via {{admin_token}} (fichier d'environnement, D007).
 
 ### Sans token => 401 + WWW-Authenticate

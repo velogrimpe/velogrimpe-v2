@@ -33,6 +33,7 @@ function calculate_time($distance_km, $elevation_m)
 require_once $_SERVER['DOCUMENT_ROOT'] . '/database/velogrimpe.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/vite.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/schema.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/velo_lib.php';
 
 $ville_id = (int) $ville_id;
 $ville = $mysqli->query("SELECT ville_nom FROM villes WHERE ville_id = $ville_id")->fetch_assoc();
@@ -48,22 +49,22 @@ $stmt = $mysqli->prepare("
     f.falaise_fermee, f.falaise_zonename, f.falaise_deptname, f.falaise_deptcode,
     a.nom AS gare_nom,
     t.train_arrivee, t.train_temps, t.train_correspmin, t.train_correspmax, COALESCE(t.train_tgv, 0) AS train_tgv,
-      v.velo_km, v.velo_dplus, v.velo_dmoins, velo_apiedpossible,
+      v.km AS velo_km, v.dplus AS velo_dplus, v.dmoins AS velo_dmoins, " . acces_a_pied_sql('v') . " AS velo_apiedpossible,
       0 AS acces_pieton,
-      EXISTS(SELECT 1 FROM acces_pieton_falaise p WHERE p.falaise_id = f.falaise_id) AS falaise_acces_pieton,
+      EXISTS(SELECT 1 FROM acces_falaise p WHERE p.type = 'pied' AND p.falaise_id = f.falaise_id) AS falaise_acces_pieton,
       villes.ville_nom
   FROM `falaises` f
-  left join velo v on v.falaise_id = f.falaise_id
+  left join acces_falaise v on v.falaise_id = f.falaise_id and v.type = 'velo'
   left join arrets a on a.id = v.arret_id AND a.deleted = 0
   left join train t on t.arret_id = a.id
   left join villes on villes.ville_id = t.ville_id
   where
     f.falaise_fermee = ''
     and villes.ville_id = ?
-    and v.velo_id is not null
+    and v.acces_id is not null
     and t.train_id is not null
     and f.falaise_public >= 0
-    and v.velo_public >= 0
+    and v.public >= 0
     and t.train_public >= 0
   order by f.falaise_id;
   ");
@@ -86,15 +87,18 @@ $stmtPieton = $mysqli->prepare("
     a.ter, a.tgv, a.bus, a.tram, a.teleph, a.id AS acces_pieton_arret_id,
     t.train_arrivee, t.train_temps, t.train_correspmin, t.train_correspmax, COALESCE(t.train_tgv, 0) AS train_tgv,
     0 AS velo_km, 0 AS velo_dplus, 0 AS velo_dmoins,
+    p.km AS acces_pieton_km, p.dplus AS acces_pieton_dplus, p.dmoins AS acces_pieton_dmoins,
     1 AS velo_apiedpossible, 1 AS acces_pieton, 1 AS falaise_acces_pieton,
     villes.ville_nom
-  FROM acces_pieton_falaise p
+  FROM acces_falaise p
   JOIN falaises f ON f.falaise_id = p.falaise_id
   JOIN arrets a ON a.id = p.arret_id AND a.deleted = 0
   JOIN train t ON t.arret_id = a.id
   JOIN villes ON villes.ville_id = t.ville_id
   WHERE
-    f.falaise_fermee = ''
+    p.type = 'pied'
+    AND p.public >= 0
+    AND f.falaise_fermee = ''
     AND villes.ville_id = ?
     AND f.falaise_public >= 0
     AND t.train_public >= 0
@@ -117,6 +121,10 @@ $rowsPieton = array_map(function ($r) use ($lignesParArret) {
   $r['acces_pieton_types'] = arret_types($r);
   $r['acces_pieton_lignes'] = $lignesParArret[(int) $r['acces_pieton_arret_id']] ?? [];
   unset($r['ter'], $r['tgv'], $r['bus'], $r['tram'], $r['teleph'], $r['acces_pieton_arret_id']);
+  // Distance / dénivelés de l'accès, quand renseignés (null sinon)
+  $r['acces_pieton_km'] = $r['acces_pieton_km'] !== null ? (float) $r['acces_pieton_km'] : null;
+  $r['acces_pieton_dplus'] = $r['acces_pieton_dplus'] !== null ? (int) $r['acces_pieton_dplus'] : null;
+  $r['acces_pieton_dmoins'] = $r['acces_pieton_dmoins'] !== null ? (int) $r['acces_pieton_dmoins'] : null;
   $r['temps_total'] = null;
   $r['variante'] = 0;
   $r['variante_a_pied'] = 1;
@@ -129,6 +137,7 @@ if (count($rows) > 0 || count($rowsPieton) > 0) {
   foreach ($rows as $row) {
     $row['acces_pieton_types'] = [];
     $row['acces_pieton_lignes'] = [];
+    $row['acces_pieton_km'] = $row['acces_pieton_dplus'] = $row['acces_pieton_dmoins'] = null;
     $row['temps_total'] = calculate_time($row['velo_km'], $row['velo_dplus']) + $row["train_temps"] + $row["falaise_maa"];
     // If there is already a record for this falaise with the same train_arrivee, keep the one with the shortest total time and increment an attribute 'variante'
     // 1. find the existing row with the same train_arrivee

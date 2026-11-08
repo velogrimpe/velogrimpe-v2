@@ -4,7 +4,7 @@ require_once __DIR__ . '/ApiTestCase.php';
 
 /**
  * Lot 8ter : falaise.php liste les accès à pied depuis un arrêt
- * (`acces_pieton_falaise`) avec leurs caractéristiques. Données embarquées :
+ * (`acces_falaise`, type `pied`) avec leurs caractéristiques. Données embarquées :
  * `const accesPietons = [...]`, une entrée par accès, avec
  *   arret_id, nom, commune, types[], type_dominant, lat, lng, description,
  *   lignes[{id, nom, couleur}].
@@ -18,19 +18,12 @@ final class FalaiseAccesPietonsTest extends ApiTestCase
 {
   private function lier(int $arretId, int $falaiseId, ?string $description = null): void
   {
-    $d = $description === null ? 'NULL' : "'" . self::escape($description) . "'";
-    self::dbExec("INSERT INTO acces_pieton_falaise (arret_id, falaise_id, description, contrib, contrib_mail)
-      VALUES ($arretId, $falaiseId, $d, 'phpunit', 'phpunit@example.org')");
+    $this->createFixtureAccesPied($arretId, $falaiseId, $description ?? '');
   }
 
   private function velo(int $arretId, int $falaiseId, int $public = 1): void
   {
-    $id = self::dbInsert(
-      "INSERT INTO velo (arret_id, falaise_id, velo_depart, velo_arrivee, velo_km, velo_dplus, velo_dmoins, velo_descr,
-        velo_variante, velo_varianteformate, velo_public, velo_contrib)
-       VALUES ($arretId, $falaiseId, 'a', 'b', 5, 40, 40, '', '', '', $public, 'phpunit')"
-    );
-    $this->cleanupOnTearDown("DELETE FROM velo WHERE velo_id = $id");
+    $this->createFixtureAcces($arretId, $falaiseId, ['km' => 5, 'dplus' => 40, 'dmoins' => 40, 'depart_slug' => 'a', 'arrivee_slug' => 'b', 'public' => $public]);
   }
 
   /** @return array<int, array<string, mixed>> accès indexés par arret_id */
@@ -143,5 +136,29 @@ final class FalaiseAccesPietonsTest extends ApiTestCase
 
     $this->assertArrayHasKey(2273, $acces);
     $this->assertSame('ter', $acces[2273]['type_dominant']);
+  }
+
+  public function testAvertissementFalaiseNonRelieeSeulementSansAucunAcces(): void
+  {
+    $falaiseId = $this->createFixtureFalaise();
+    $arretId = $this->createFixtureArret('PHPUnit Avertissement', 45.15, 5.16, ['bus']);
+
+    $sans = $this->httpGet("/falaise.php?falaise_id=$falaiseId");
+    $this->assertStringContainsString('Falaise non reliée au réseau', $sans['raw'], 'aucun accès : avertissement');
+    $this->assertMatchesRegularExpression('#Proposer\s+un\s+accès\s+vélo\s+/\s+à\s+pied#', $sans['raw']);
+
+    $this->lier($arretId, $falaiseId);
+    $apied = $this->httpGet("/falaise.php?falaise_id=$falaiseId");
+    $this->assertStringNotContainsString('Falaise non reliée au réseau', $apied['raw'], 'un accès à pied suffit : la falaise est reliée');
+  }
+
+  public function testPasDAvertissementAvecUnItineraireVelo(): void
+  {
+    $falaiseId = $this->createFixtureFalaise();
+    $arretId = $this->createFixtureArret('PHPUnit Avertissement vélo', 45.15, 5.16, ['ter']);
+    $this->velo($arretId, $falaiseId);
+
+    $res = $this->httpGet("/falaise.php?falaise_id=$falaiseId");
+    $this->assertStringNotContainsString('Falaise non reliée au réseau', $res['raw']);
   }
 }

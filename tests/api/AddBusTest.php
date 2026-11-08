@@ -133,8 +133,7 @@ final class AddBusTest extends ApiTestCase
     $arretId = $this->createFixtureArret();
 
     // Lien initial vers falaise A
-    self::dbExec("INSERT INTO acces_pieton_falaise (arret_id, falaise_id, contrib, contrib_mail)
-                  VALUES ($arretId, $falaiseA, 'phpunit', 'phpunit@example.org')");
+    $this->createFixtureAccesPied($arretId, $falaiseA);
 
     $res = $this->httpPostJson('/api/add_arret.php', [
       'admin' => '0',
@@ -161,5 +160,36 @@ final class AddBusTest extends ApiTestCase
     $this->assertSame('PHPUnit - Arrêt modifié', $body['arret']['nom']);
     $this->assertSame('node/999', $body['arret']['osm_id']);
     $this->assertSame([$falaiseB], $body['falaise_ids'], 'le set de falaises liées doit être remplacé, pas cumulé');
+  }
+
+  public function testAddArretRenseigneLesDetailsDesAccesEtGardeLesExistants(): void
+  {
+    $falaiseA = $this->createFixtureFalaise('PHPUnit Fixture Falaise A');
+    $falaiseB = $this->createFixtureFalaise('PHPUnit Fixture Falaise B');
+    $arretId = $this->createFixtureArret();
+    // A est déjà lié, avec sa description et son dénivelé : ils doivent survivre à l'édition
+    $this->createFixtureAcces($arretId, $falaiseA, ['type' => 'pied', 'description' => 'Sentier d\'origine', 'dplus' => 50]);
+
+    $res = $this->httpPostJson('/api/add_arret.php', [
+      'admin' => '0', 'arret_id' => $arretId, 'nom' => 'PHPUnit - Arrêt détails', 'loc' => '43.8300,5.3900',
+      'description' => '', 'types' => ['bus'], 'osm_id' => '', 'osm_data' => null,
+      'falaise_ids' => [$falaiseA, $falaiseB],
+      'falaises_acces' => [
+        (string) $falaiseA => ['description' => 'Texte ignoré', 'km' => 9, 'dplus' => 999],
+        (string) $falaiseB => ['description' => 'Chemin du bois', 'km' => 1.2, 'dplus' => 40, 'dmoins' => 10],
+      ],
+      'lignes' => [], 'liaisons' => [], 'nom_prenom' => 'Testeur', 'email' => 'test@example.org', 'message' => '',
+    ]);
+
+    $this->assertSame(200, $res['status'], $res['raw']);
+    $b = self::dbQueryOne("SELECT description, km, dplus, dmoins FROM acces_falaise WHERE type = 'pied' AND arret_id = $arretId AND falaise_id = $falaiseB");
+    $this->assertSame('Chemin du bois', $b['description']);
+    $this->assertEquals(1.2, (float) $b['km']);
+    $this->assertSame('40', $b['dplus']);
+    $this->assertSame('10', $b['dmoins']);
+    $a = self::dbQueryOne("SELECT description, km, dplus FROM acces_falaise WHERE type = 'pied' AND arret_id = $arretId AND falaise_id = $falaiseA");
+    $this->assertSame('Sentier d\'origine', $a['description'], 'description existante conservée');
+    $this->assertSame('50', $a['dplus'], 'D+ existant conservé');
+    $this->assertEquals(9.0, (float) $a['km'], 'le km, vide jusque-là, est complété');
   }
 }

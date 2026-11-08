@@ -40,7 +40,7 @@ final class TableauPageDataTest extends ApiTestCase
         $this->assertNotEmpty($row['gare_nom'], "gare_nom manquant pour la falaise #{$row['falaise_id']}");
         $this->assertNotEmpty($row['train_arrivee'], "train_arrivee manquant pour la falaise #{$row['falaise_id']}");
         $this->assertArrayHasKey('velo_km', $row);
-        $this->assertArrayNotHasKey('velo_apieduniquement', $row, "le champ « à pied uniquement » est retiré (Lot 8) : ces accès sont dans acces_pieton_falaise");
+        $this->assertArrayNotHasKey('velo_apieduniquement', $row, "le champ « à pied uniquement » est retiré (Lot 8) : ces accès sont de type pied dans acces_falaise");
         $this->assertArrayHasKey('falaise_acces_pieton', $row);
         // Champ jamais construit par calculate_time() sans les deux composantes.
         $this->assertArrayHasKey('temps_total', $row);
@@ -89,7 +89,7 @@ final class TableauPageDataTest extends ApiTestCase
   public function testFalaiseAccessibleAPiedDepuisUnArretRelieALaVilleEstListee(): void
   {
     [$falaiseId, $arretId, $nom] = $this->falaiseEtArretRelies();
-    self::dbExec("INSERT INTO acces_pieton_falaise (arret_id, falaise_id, contrib, contrib_mail) VALUES ($arretId, $falaiseId, 'phpunit', 'phpunit@example.org')");
+    $this->createFixtureAccesPied($arretId, $falaiseId);
 
     $group = $this->groupeDeLaFalaise($falaiseId);
 
@@ -109,7 +109,7 @@ final class TableauPageDataTest extends ApiTestCase
   {
     [$falaiseId, $arretId] = $this->falaiseEtArretRelies();
     self::dbExec("UPDATE arrets SET bus = 1 WHERE id = $arretId");
-    self::dbExec("INSERT INTO acces_pieton_falaise (arret_id, falaise_id, contrib, contrib_mail) VALUES ($arretId, $falaiseId, 'phpunit', 'phpunit@example.org')");
+    $this->createFixtureAccesPied($arretId, $falaiseId);
     $ligneId = self::dbInsert("INSERT INTO lignes_transport (nom, numero, contrib, contrib_mail) VALUES ('PHPUnit Ligne Tableau', 'L77', 'phpunit', 'phpunit@example.org')");
     $this->cleanupOnTearDown("DELETE FROM lignes_transport WHERE id = $ligneId");
     self::dbExec("INSERT INTO arrets_lignes_transport (ligne_id, arret_id) VALUES ($ligneId, $arretId)");
@@ -124,7 +124,7 @@ final class TableauPageDataTest extends ApiTestCase
   {
     [$falaiseId] = $this->falaiseEtArretRelies();
     $autre = $this->createFixtureArret('PHPUnit Arrêt non relié', 45.6, 5.6, ['bus']);
-    self::dbExec("INSERT INTO acces_pieton_falaise (arret_id, falaise_id, contrib, contrib_mail) VALUES ($autre, $falaiseId, 'phpunit', 'phpunit@example.org')");
+    $this->createFixtureAccesPied($autre, $falaiseId);
 
     $this->assertNull($this->groupeDeLaFalaise($falaiseId));
   }
@@ -132,13 +132,8 @@ final class TableauPageDataTest extends ApiTestCase
   public function testUnItineraireVeloDepuisLeMemeArretEtLAccesPietonSontDeuxLignes(): void
   {
     [$falaiseId, $arretId] = $this->falaiseEtArretRelies();
-    self::dbExec("INSERT INTO acces_pieton_falaise (arret_id, falaise_id, contrib, contrib_mail) VALUES ($arretId, $falaiseId, 'phpunit', 'phpunit@example.org')");
-    $veloId = self::dbInsert(
-      "INSERT INTO velo (arret_id, falaise_id, velo_depart, velo_arrivee, velo_km, velo_dplus, velo_dmoins, velo_descr,
-        velo_variante, velo_varianteformate, velo_apieduniquement, velo_public, velo_contrib)
-       VALUES ($arretId, $falaiseId, 'a', 'b', 10, 100, 100, '', '', '', 0, 1, 'phpunit')"
-    );
-    $this->cleanupOnTearDown("DELETE FROM velo WHERE velo_id = $veloId");
+    $this->createFixtureAccesPied($arretId, $falaiseId);
+    $this->createFixtureAcces($arretId, $falaiseId, ['km' => 10, 'dplus' => 100, 'dmoins' => 100, 'depart_slug' => 'a', 'arrivee_slug' => 'b']);
 
     $group = $this->groupeDeLaFalaise($falaiseId);
 
@@ -156,12 +151,7 @@ final class TableauPageDataTest extends ApiTestCase
   public function testItineraireVeloMasqueNEstPasListe(): void
   {
     [$falaiseId, $arretId] = $this->falaiseEtArretRelies();
-    $veloId = self::dbInsert(
-      "INSERT INTO velo (arret_id, falaise_id, velo_depart, velo_arrivee, velo_km, velo_dplus, velo_dmoins, velo_descr,
-        velo_variante, velo_varianteformate, velo_apieduniquement, velo_public, velo_contrib)
-       VALUES ($arretId, $falaiseId, 'a', 'b', 10, 100, 100, '', '', '', 0, -1, 'phpunit')"
-    );
-    $this->cleanupOnTearDown("DELETE FROM velo WHERE velo_id = $veloId");
+    $this->createFixtureAcces($arretId, $falaiseId, ['km' => 10, 'dplus' => 100, 'dmoins' => 100, 'depart_slug' => 'a', 'arrivee_slug' => 'b', 'public' => -1]);
 
     $this->assertNull($this->groupeDeLaFalaise($falaiseId));
   }
@@ -170,7 +160,7 @@ final class TableauPageDataTest extends ApiTestCase
   {
     [$falaiseId] = $this->falaiseEtArretRelies();
     $arretId = (int) self::dbQueryOne("SELECT arret_id FROM train WHERE train_arrivee = 'phpunit-gare-tableau'")['arret_id'];
-    self::dbExec("INSERT INTO acces_pieton_falaise (arret_id, falaise_id, contrib, contrib_mail) VALUES ($arretId, $falaiseId, 'phpunit', 'phpunit@example.org')");
+    $this->createFixtureAccesPied($arretId, $falaiseId);
 
     $res = $this->httpGet('/tableau.php?ville_id=' . self::WITNESS_VILLE_ID);
     $blockPos = strpos($res['raw'], 'window.__TABLEAU_DATA__ = ');

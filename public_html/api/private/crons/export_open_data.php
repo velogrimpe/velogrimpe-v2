@@ -178,29 +178,29 @@ $falaises = $mysqli->query("SELECT
 // filter and for every crag (open data exports everything).
 $velosByFalaise = [];
 $veloResult = $mysqli->query("SELECT
-  v.velo_id,
+  v.acces_id AS velo_id,
   v.falaise_id,
-  v.velo_depart,
-  v.velo_arrivee,
-  v.velo_varianteformate,
-  v.velo_km,
-  v.velo_dplus,
-  v.velo_dmoins,
-  v.velo_descr,
-  v.velo_openrunner,
-  v.velo_variante,
-  v.velo_apiedpossible,
+  v.depart_slug AS velo_depart,
+  v.arrivee_slug AS velo_arrivee,
+  v.variante_formate AS velo_varianteformate,
+  v.km AS velo_km,
+  v.dplus AS velo_dplus,
+  v.dmoins AS velo_dmoins,
+  v.description AS velo_descr,
+  v.lien_openrunner AS velo_openrunner,
+  v.variante AS velo_variante,
+  " . acces_a_pied_sql('v') . " AS velo_apiedpossible,
   a.nom AS gare_nom,
   COALESCE(g.gare_commune, a.commune) AS gare_commune,
   g.gare_departement,
   CONCAT(ST_Y(a.loc), ',', ST_X(a.loc)) AS gare_latlng,
   g.gare_codeuic,
   a.tgv AS gare_tgv
-  FROM velo v
+  FROM acces_falaise v
   LEFT JOIN arrets a ON v.arret_id = a.id
   LEFT JOIN gares g ON g.gare_id = a.id AND a.ter = 1
-  WHERE v.velo_public >= 0
-  ORDER BY v.falaise_id, v.velo_km ASC")->fetch_all(MYSQLI_ASSOC);
+  WHERE v.type = 'velo' AND v.public >= 0
+  ORDER BY v.falaise_id, v.km ASC")->fetch_all(MYSQLI_ASSOC);
 
 // Lookup falaise_id => nom pour étiqueter les tracés vélo sans relancer de requête.
 $falaiseNomById = [];
@@ -259,7 +259,7 @@ foreach ($veloResult as $velo) {
   $geometry = is_file($gpxPath) ? gpx_to_geometry($gpxPath) : null;
   if ($geometry === null) {
     $gpxSansTrace[] = [
-      'velo_id' => (int) $velo['velo_id'],
+      'acces_id' => (int) $velo['velo_id'],
       'falaise_id' => (int) $velo['falaise_id'],
       'falaise_nom' => $falaiseNomById[$velo['falaise_id']] ?? null,
       'gpx_attendu' => $gpxRel,
@@ -271,7 +271,7 @@ foreach ($veloResult as $velo) {
     'type' => 'Feature',
     'properties' => array_merge(
       [
-        'velo_id' => (int) $velo['velo_id'],
+        'acces_id' => (int) $velo['velo_id'],
         'falaise_id' => (int) $velo['falaise_id'],
         'falaise_nom' => $falaiseNomById[$velo['falaise_id']] ?? null,
         'attribution' => $ATTRIBUTION,
@@ -295,7 +295,7 @@ foreach ($liensResult as $lien) {
   ];
 }
 
-// Pre-load stops linked to crags by foot (acces_pieton_falaise, cf. Lot 2 —
+// Pre-load stops linked to crags by foot (acces_falaise type 'pied', cf. Lot 2 / 8quater —
 // anciennement bus_arrets_falaise/bus_arrets), with their lines and liaisons
 // (connections to other stops — bus_lignes/bus_liaisons, en cours de
 // décommissionnement, cf. conception-bus.md Étape 8). Grouped by falaise. A
@@ -305,9 +305,10 @@ $arretEntryById = [];
 $arretFalaises = []; // [ [falaise_id, arret_id], ... ]
 $arretRows = $mysqli->query("SELECT baf.falaise_id, a.id, a.nom, a.description, re.ref AS osm_id,
     ST_Y(a.loc) AS lat, ST_X(a.loc) AS lng
-  FROM acces_pieton_falaise baf
+  FROM acces_falaise baf
   JOIN arrets a ON a.id = baf.arret_id
   LEFT JOIN references_externes re ON re.arret_id = a.id AND re.source = 'osm'
+  WHERE baf.type = 'pied'
   ORDER BY baf.falaise_id, a.nom")->fetch_all(MYSQLI_ASSOC);
 foreach ($arretRows as $r) {
   $aid = (int) $r['id'];

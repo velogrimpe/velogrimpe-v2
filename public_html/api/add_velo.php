@@ -11,9 +11,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $nom_prenom = trim($_POST['nom_prenom'] ?? '');
   $email = trim($_POST['email'] ?? '');
   $message = trim($_POST['message'] ?? '');
-  $mode = $_POST['mode'] ?? 'velo';
+  // `mode` est l'ancien nom du paramètre `type` (Lot 5) : les deux sont acceptés.
+  $mode = $_POST['type'] ?? $_POST['mode'] ?? 'velo';
 
-  if (!in_array($mode, ['velo', 'pied'], true)) {
+  if (!in_array($mode, ACCES_TYPES, true)) {
     die("Mode d'accès inconnu : " . htmlspecialchars($mode));
   }
   velo_verifier_obligatoires(['arret_id' => $arret_id, 'falaise_id' => $falaise_id]);
@@ -32,48 +33,82 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   if ($mode === 'pied') {
     $description = trim($_POST['description'] ?? '');
+    // km / D+ / D- et GPX restent facultatifs sur un accès à pied.
+    [$km, $dplus, $dmoins] = velo_lire_indicateurs($_POST);
+    $dom = velo_charger_gpx_upload('gpx_file');
+    if ($dom !== null) {
+      try {
+        vg_data_prepare(VELO_GPX_DIR);
+      } catch (VgDataException $e) {
+        error_log('[add_velo/pied] ' . $e->getMessage());
+        die("Le dossier des traces GPX est indisponible, l'accès n'a pas été enregistré. Merci de réessayer plus tard.");
+      }
+    }
 
-    $stmt = $mysqli->prepare("SELECT 1 FROM acces_pieton_falaise WHERE arret_id = ? AND falaise_id = ?");
+    // Un accès à pied existe déjà ? On ne le complète que s'il y a quelque chose à ajouter,
+    // sans jamais écraser ce qui est renseigné (formulaire public).
+    $stmt = $mysqli->prepare("SELECT description, km, dplus, dmoins, acces_id, depart_slug, arrivee_slug, variante_formate FROM acces_falaise WHERE type = 'pied' AND variante = '' AND arret_id = ? AND falaise_id = ?");
     $stmt->bind_param("ii", $arret_id, $falaise_id);
     $stmt->execute();
-    $existe = $stmt->get_result()->num_rows > 0;
+    $existant = $stmt->get_result()->fetch_assoc();
     $stmt->close();
-    if ($existe) {
-      die("Un accès à pied existe déjà entre cet arrêt et cette falaise. Pour le corriger, contactez-nous.");
+    if ($existant) {
+      $a_ajouter = ($description !== '' && trim((string) $existant['description']) === '')
+        || ($km !== null && $existant['km'] === null)
+        || ($dplus !== null && $existant['dplus'] === null)
+        || ($dmoins !== null && $existant['dmoins'] === null)
+        || ($dom !== null && !vg_data_exists(velo_gpx_rel((int) $existant['acces_id'], $existant['depart_slug'], $existant['arrivee_slug'], (string) $existant['variante_formate'])));
+      if (!$a_ajouter) {
+        die("Un accès à pied existe déjà entre cet arrêt et cette falaise, avec ces informations. Pour le corriger, contactez-nous.");
+      }
     }
 
-    $stmt = $mysqli->prepare(
-      "INSERT INTO acces_pieton_falaise (arret_id, falaise_id, description, contrib, contrib_mail) VALUES (?, ?, ?, ?, ?)"
-    );
-    $stmt->bind_param("iisss", $arret_id, $falaise_id, $description, $nom_prenom, $email);
-    if (!$stmt->execute()) {
-      die("Erreur lors de l'insertion : " . $mysqli->error);
-    }
-    $stmt->close();
+    $res = acces_pied_enregistrer($mysqli, $arret, $falaise, [
+      'description' => $description, 'km' => $km, 'dplus' => $dplus, 'dmoins' => $dmoins,
+    ], $dom, $nom_prenom, $email);
+    $acces_id = $res['acces_id'];
+    $verbe = $res['cree'] ? 'ajouté' : 'complété';
 
     require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/edit_logs.php';
-    logChanges($nom_prenom, $email, 'insert', 'acces_pieton_falaise', $arret_id, $falaise_id, [
+    logChanges($nom_prenom, $email, $res['cree'] ? 'insert' : 'update', 'acces_falaise', $acces_id, $falaise_id, [
+      'Type' => 'pied',
       'Arrêt' => $arret['nom'],
       'Falaise' => $falaise['falaise_nom'],
       'Description' => $description,
+      'km' => $km === null ? '' : (string) $km,
+      'D+' => $dplus === null ? '' : (string) $dplus,
+      'D-' => $dmoins === null ? '' : (string) $dmoins,
+      'Champs renseignés' => implode(', ', $res['remplis']),
+      'Trace GPX' => $res['gpx'],
     ]);
 
     require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/sendmail.php';
     $arret_nom_h = htmlspecialchars($arret['nom']);
     $falaise_nom_h = htmlspecialchars($falaise['falaise_nom']);
     $html = "<html><body>";
-    $html .= "<h1>Accès à pied ajouté : $arret_nom_h ⇢ $falaise_nom_h</h1>";
+    $html .= "<h1>Accès à pied $verbe : $arret_nom_h ⇢ $falaise_nom_h</h1>";
     $html .= "<p>Par " . htmlspecialchars($nom_prenom) . " (<a href='mailto:" . htmlspecialchars($email) . "'>" . htmlspecialchars($email) . "</a>)</p>";
     if ($message) {
       $html .= "<p>Message additionnel : " . nl2br(htmlspecialchars($message)) . "</p>";
     }
     $html .= "<p><b>Description</b> : " . nl2br(htmlspecialchars($description)) . "</p>";
+    $html .= "<ul><li><b>Distance</b> : " . ($km === null ? '—' : "$km km") . "</li><li><b>D+</b> : " . ($dplus === null ? '—' : "$dplus m")
+      . "</li><li><b>D-</b> : " . ($dmoins === null ? '—' : "$dmoins m") . "</li></ul>";
+    if (!$res['cree']) {
+      $html .= "<p>Accès existant complété : seuls les champs encore vides ont été renseignés (" . htmlspecialchars(implode(', ', $res['remplis']) ?: 'aucun') . ").</p>";
+    }
+    $html .= match ($res['gpx']) {
+      'ecrit' => "<p>Trace GPX enregistrée.</p>",
+      'echec' => "<p>⚠️ <b>La trace GPX n'a pas pu être enregistrée sur le serveur.</b> Redemander le fichier au contributeur.</p>",
+      'present' => "<p>Une trace GPX existait déjà : elle n'a pas été remplacée.</p>",
+      default => "",
+    };
     $html .= "<p><a href='https://velogrimpe.fr/falaise.php?falaise_id=$falaise_id'>Voir la falaise</a></p>";
     $html .= "</body></html>";
     try {
       sendMail([
         'to' => $admin ? $config["admin_mail"] : $config["contact_mail"],
-        'subject' => "🚶 Accès à pied $arret[nom] ⇢ $falaise[falaise_nom] ajouté par $nom_prenom",
+        'subject' => "🚶 Accès à pied $arret[nom] ⇢ $falaise[falaise_nom] $verbe par $nom_prenom",
         'html' => $html,
         'h:Reply-To' => $email,
       ]);
@@ -94,7 +129,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $velo_arrivee = $_POST['velo_arrivee'] ?? null;
   [$velo_km, $velo_dplus, $velo_dmoins] = velo_lire_indicateurs($_POST);
   $velo_descr = $_POST['velo_descr'] ?? null;
-  $velo_contrib = velo_contrib_string($nom_prenom, $email);
 
   // Vérification des champs obligatoires
   velo_verifier_obligatoires([
@@ -108,8 +142,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $velo_variante = $_POST['velo_variante'] ?? null;
   $velo_varianteformate = $_POST['velo_varianteformate'] ?? null;
   $velo_openrunner = $_POST['velo_openrunner'] ?? null;
-  // Les accès à pied uniquement passent par le mode `pied` (acces_pieton_falaise).
-  $velo_apiedpossible = isset($_POST['velo_apiedpossible']) ? 1 : 0;
+  // « À pied possible » n'est plus saisi : il se déduit du type et de la distance (acces_a_pied_possible).
+  $velo_apiedpossible = acces_a_pied_possible('velo', $velo_km) ? 1 : 0;
   $velo_public = isset($_POST['velo_public']) ? intval($_POST['velo_public']) : 0;
 
   // Ces trois champs composent le nom du fichier GPX écrit plus bas (cf. D002).
@@ -139,15 +173,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
 
   // Préparer la requête
-  $stmt = $mysqli->prepare("INSERT INTO velo 
-        (arret_id, falaise_id, velo_depart, velo_arrivee, velo_km, velo_dplus, velo_dmoins,
-        velo_descr, velo_public, velo_variante, velo_varianteformate, velo_openrunner,
-        velo_apiedpossible, velo_contrib) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+  $velo_variante = (string) $velo_variante;
+  $velo_varianteformate = (string) $velo_varianteformate;
+  $velo_descr = (string) $velo_descr;
+  $stmt = $mysqli->prepare("INSERT INTO acces_falaise
+        (type, arret_id, falaise_id, depart_slug, arrivee_slug, km, dplus, dmoins,
+        description, public, variante, variante_formate, lien_openrunner,
+        contrib, contrib_mail)
+        VALUES ('velo', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
   if ($stmt) {
     $stmt->bind_param(
-      "iissdiisisssis",
+      "iissdiisisssss",
       $arret_id,
       $falaise_id,
       $velo_depart,
@@ -160,11 +197,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $velo_variante,
       $velo_varianteformate,
       $velo_openrunner,
-      $velo_apiedpossible,
-      $velo_contrib
+      $nom_prenom,
+      $email
     );
 
-    $stmt->execute();
+    try {
+      $stmt->execute();
+    } catch (mysqli_sql_exception $e) {
+      if ($e->getCode() === 1062) {
+        die("Un accès vélo avec cette variante existe déjà entre cet arrêt et cette falaise. Pour le corriger, contactez-nous.");
+      }
+      throw $e;
+    }
     $velo_id = $stmt->insert_id;
 
     // Sans cette garde, un insert_id à 0 ferait écrire la trace sous « 0_… », en
@@ -203,14 +247,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       "velo_variante" => $velo_variante,
       "velo_varianteformate" => $velo_varianteformate,
       "velo_openrunner" => $velo_openrunner,
-      "velo_apiedpossible" => $velo_apiedpossible,
-      "velo_contrib" => $velo_contrib
+      "contrib" => $nom_prenom,
+      "contrib_mail" => $email,
     ];
     logChanges(
       $nom_prenom,
       $email,
       'insert',
-      'velo',
+      'acces_falaise',
       $velo_id,
       $falaise_id,
       $new_comment

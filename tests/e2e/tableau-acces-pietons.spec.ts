@@ -21,7 +21,9 @@ test.describe('Tableau : accès à pied', () => {
     const row = page.getByTestId(`falaise-row-${FALAISE}`)
     await expect(row).toBeVisible()
     const cellule = row.getByTestId(`acces-pieton-${FALAISE}`)
-    await expect(cellule).toHaveText('Accès piéton possible via TER en gare de Niolon')
+    await expect(cellule).toContainText('Accès piéton possible via TER en gare de Niolon')
+    // Distance et dénivelés de l'accès (ex-itinéraire « à pied uniquement » : 0,4 km, 10 D+, 20 D-), sous le libellé
+    await expect(row.getByTestId(`acces-pieton-chiffres-${FALAISE}`)).toHaveText('0.4 km, 10 D+, 20 D-')
     // Texte courant : ni gras ni vert
     await expect(cellule).toHaveCSS('font-weight', '400')
     await expect(cellule).not.toHaveClass(/text-primary/)
@@ -38,6 +40,7 @@ test.describe('Tableau : accès à pied', () => {
     await expect(carte).toBeVisible()
     const texte = carte.getByTestId(`acces-pieton-${FALAISE}`)
     await expect(texte).toHaveText('Accès piéton possible via TER en gare de Niolon')
+    await expect(carte.getByTestId(`acces-pieton-chiffres-${FALAISE}`)).toHaveText('0.4 km, 10 D+, 20 D-')
     await expect(texte).toHaveCSS('font-weight', '400')
     await expect(texte).not.toHaveClass(/text-primary/)
   })
@@ -92,7 +95,8 @@ test.describe('Tableau : accès à pied', () => {
       )
     const trains = await boites('[data-testid="cellule-train"]')
     const velos = await boites('[data-testid="cellule-velo"]')
-    const pietons = await boites('[data-testid^="acces-pieton-"]')
+    // (hors lignes de chiffres, imbriquées dans la cellule)
+    const pietons = await boites('[data-testid^="acces-pieton-"]:not([data-testid^="acces-pieton-chiffres-"])')
     expect(trains.length).toBeGreaterThan(5)
     expect(pietons.length).toBeGreaterThan(0)
 

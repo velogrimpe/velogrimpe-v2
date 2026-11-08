@@ -6,10 +6,10 @@ require_once __DIR__ . '/ApiTestCase.php';
  * api/add_velo.php, Lot 5 : le formulaire devient un formulaire d'ajout
  * d'ACCÈS arrêt → falaise. Deux modes, discriminés par le champ `mode` :
  *  - `velo` (défaut) : itinéraire vélo depuis un arrêt QUELCONQUE (les cars
- *    qui prennent les vélos existent) → table `velo`, clé `arret_id`
- *    (renommée depuis `gare_id`, cf. sql_migrations/3_velo_arret_id.sql) ;
- *  - `pied` : accès piéton (description, pas de GPX) → `acces_pieton_falaise`,
- *    jamais `velo`.
+ *    qui prennent les vélos existent) → `acces_falaise` type `velo`, clé
+ *    `arret_id` (renommée depuis `gare_id`, cf. sql_migrations/3_velo_arret_id.sql) ;
+ *  - `pied` : accès piéton (description, pas de GPX) → `acces_falaise` type
+ *    `pied` (Lot 8quater : une seule table pour les deux).
  * Les cas vélo depuis une gare sont dans AddVeloTest.
  */
 final class AddAccesTest extends ApiTestCase
@@ -18,7 +18,7 @@ final class AddAccesTest extends ApiTestCase
 
   // --- Mode piéton ---------------------------------------------------------
 
-  public function testAccesPietonEcritDansAccesPietonFalaiseEtPasDansVelo(): void
+  public function testAccesPietonEcritUneLigneDeTypePiedEtAucuneDeTypeVelo(): void
   {
     $falaiseId = $this->createFixtureFalaise();
     $arretId = $this->createFixtureArret();
@@ -30,16 +30,18 @@ final class AddAccesTest extends ApiTestCase
     $this->assertStringContainsString('mode=pied', $res['location']);
 
     $row = self::dbQueryOne(
-      "SELECT description, contrib, contrib_mail FROM acces_pieton_falaise WHERE arret_id = $arretId AND falaise_id = $falaiseId"
+      "SELECT type, public, description, contrib, contrib_mail FROM acces_falaise WHERE arret_id = $arretId AND falaise_id = $falaiseId"
     );
-    $this->assertNotNull($row, "l'accès piéton aurait dû être écrit dans acces_pieton_falaise");
+    $this->assertNotNull($row, "l'accès piéton aurait dû être écrit dans acces_falaise");
+    $this->assertSame('pied', $row['type']);
+    $this->assertSame('1', $row['public'], 'un accès à pied est publié tout de suite');
     $this->assertSame('Sentier balisé, 15 min.', $row['description']);
     $this->assertSame('PHPUnit', $row['contrib']);
     $this->assertSame('phpunit@example.org', $row['contrib_mail']);
 
     $this->assertNull(
-      self::dbQueryOne("SELECT velo_id FROM velo WHERE arret_id = $arretId AND falaise_id = $falaiseId"),
-      "un accès piéton ne doit créer aucune ligne dans velo"
+      self::dbQueryOne("SELECT acces_id FROM acces_falaise WHERE type = 'velo' AND arret_id = $arretId AND falaise_id = $falaiseId"),
+      "un accès piéton ne doit créer aucune ligne de type velo"
     );
   }
 
@@ -54,6 +56,123 @@ final class AddAccesTest extends ApiTestCase
     $liste = $fetch['body']['arrets'] ?? $fetch['body'];
     $ids = array_map(fn($a) => (int) $a['id'], $liste);
     $this->assertContains($arretId, $ids, "l'arrêt lié doit apparaître dans fetch_arrets.php pour la falaise");
+  }
+
+  public function testAccesPietonCreeApparaitSurLaPageFalaiseEtSurLaCarte(): void
+  {
+    $falaiseId = $this->createFixtureFalaise();
+    $arretId = $this->createFixtureArret('PHPUnit Accès exploitable', 45.2, 5.2, ['bus']);
+    $this->postPied($arretId, $falaiseId, ['description' => 'Chemin du lavoir.']);
+
+    // Page falaise : section « Accès à pied » (const accesPietons)
+    $page = $this->httpGet("/falaise.php?falaise_id=$falaiseId");
+    $acces = array_column(self::extractJsValue($page['raw'], 'const accesPietons = '), null, 'arret_id');
+    $this->assertArrayHasKey($arretId, $acces, "l'accès à pied créé n'apparaît pas sur falaise.php");
+    $this->assertSame('Chemin du lavoir.', $acces[$arretId]['description']);
+
+    // Carte globale : liste des liens arrêt → falaise
+    $carte = $this->httpGet('/carte.php');
+    $liens = array_map(fn($p) => (int) $p['arret_id'] . '-' . (int) $p['falaise_id'], self::extractJsValue($carte['raw'], 'const accesPieton = '));
+    $this->assertContains("$arretId-$falaiseId", $liens, "l'accès à pied créé n'apparaît pas dans les données de carte.php");
+  }
+
+  public function testAccesPietonAvecKmDenivelesEtGpx(): void
+  {
+    $falaiseId = $this->createFixtureFalaise();
+    $arretId = $this->createFixtureArret('PHPUnit Accès détaillé', 45.2, 5.2, ['bus']);
+
+    $res = $this->postPied($arretId, $falaiseId, ['velo_km' => '1.8', 'velo_dplus' => '120', 'velo_dmoins' => '15'], ['gpx_file' => self::GPX_FIXTURE]);
+
+    $this->assertSame(302, $res['status'], $res['raw']);
+    $row = self::dbQueryOne("SELECT acces_id, type, km, dplus, dmoins FROM acces_falaise WHERE arret_id = $arretId AND falaise_id = $falaiseId");
+    $this->assertSame('pied', $row['type']);
+    $this->assertEquals(1.8, (float) $row['km']);
+    $this->assertSame('120', $row['dplus']);
+    $this->assertSame('15', $row['dmoins']);
+    $gpx = $this->gpxDeLAcces((int) $row['acces_id']);
+    $this->assertFileExists($gpx, 'le GPX d\'un accès à pied est écrit comme celui d\'un itinéraire vélo');
+    $this->assertStringNotContainsString('<wpt', file_get_contents($gpx), 'waypoints retirés');
+    $this->assertStringContainsString('<trkpt', file_get_contents($gpx));
+
+    // Page falaise : chiffres, lien vers la trace, trace embarquée pour la carte
+    $page = $this->httpGet("/falaise.php?falaise_id=$falaiseId");
+    $acces = array_column(self::extractJsValue($page['raw'], 'const accesPietons = '), null, 'arret_id')[$arretId];
+    $this->assertEquals(1.8, $acces['km']);
+    $this->assertSame(120, $acces['dplus']);
+    $this->assertSame(15, $acces['dmoins']);
+    $this->assertStringContainsString("/public/gpx/{$row['acces_id']}_", (string) $acces['gpx_url']);
+    $this->assertMatchesRegularExpression('#1\.8 km, 120 D\+, 15 D-#', $page['raw'], 'section « liaison » du bloc de l\'accès');
+
+    // Carte globale : trace signalée, mêmes clés que les itinéraires vélo pour le rendu GPX
+    $carte = $this->httpGet('/carte.php');
+    $p = array_values(array_filter(self::extractJsValue($carte['raw'], 'const accesPieton = '), fn($x) => $x['arret_id'] === $arretId))[0];
+    $this->assertTrue($p['has_gpx']);
+    $this->assertSame((int) $row['acces_id'], $p['velo_id']);
+    $this->assertEquals(1.8, $p['km']);
+  }
+
+  public function testTableauExposeKmEtDenivelesDeLAccesAPied(): void
+  {
+    $falaiseId = $this->createFixtureFalaise();
+    $arretId = $this->createFixtureArret('PHPUnit Tableau chiffres', 45.2, 5.2, ['ter']);
+    $trainId = self::dbInsert(
+      "INSERT INTO train (ville_id, arret_id, train_depart, train_arrivee, train_temps, train_correspmin, train_correspmax, train_descr, train_public, train_contrib, train_tgv)
+       VALUES (" . self::WITNESS_VILLE_ID . ", $arretId, 'lyon-part-dieu', 'phpunit-chiffres', 40, 0, 0, '', 1, 'phpunit', 0)"
+    );
+    $this->cleanupOnTearDown("DELETE FROM train WHERE train_id = $trainId");
+    $this->postPied($arretId, $falaiseId, ['velo_km' => '2.5', 'velo_dplus' => '80']);
+
+    $res = $this->httpGet('/tableau.php?ville_id=' . self::WITNESS_VILLE_ID);
+    $groupes = self::extractJsValue($res['raw'], 'falaises: ', strpos($res['raw'], 'window.__TABLEAU_DATA__ = '));
+    $ligne = null;
+    foreach ($groupes as $g) {
+      foreach ($g as $row) {
+        if ((int) $row['falaise_id'] === $falaiseId && (int) $row['acces_pieton'] === 1) {
+          $ligne = $row;
+        }
+      }
+    }
+    $this->assertNotNull($ligne, 'la ligne piéton doit figurer au tableau');
+    $this->assertSame(2.5, $ligne['acces_pieton_km']);
+    $this->assertSame(80, $ligne['acces_pieton_dplus']);
+    $this->assertNull($ligne['acces_pieton_dmoins'], 'non renseigné : null, pas 0');
+    $this->assertSame(0, (int) $ligne['velo_km'], 'les filtres vélo continuent d\'écarter les lignes piéton');
+  }
+
+  public function testAccesPietonExistantEstCompleteSansEcraser(): void
+  {
+    $falaiseId = $this->createFixtureFalaise();
+    $arretId = $this->createFixtureArret('PHPUnit Accès complété', 45.2, 5.2, ['bus']);
+    $this->postPied($arretId, $falaiseId, ['description' => 'Description d\'origine.', 'velo_km' => '3']);
+    $accesId = (int) self::dbQueryOne("SELECT acces_id FROM acces_falaise WHERE arret_id = $arretId AND falaise_id = $falaiseId")['acces_id'];
+    $gpx = $this->gpxDeLAcces($accesId);
+
+    // Complément : D+ et GPX manquants sont ajoutés ; description et km déjà renseignés ne bougent pas
+    $res = $this->postPied($arretId, $falaiseId, ['description' => 'Autre texte.', 'velo_km' => '99', 'velo_dplus' => '60'], ['gpx_file' => self::GPX_FIXTURE]);
+
+    $this->assertSame(302, $res['status'], $res['raw']);
+    $row = self::dbQueryOne("SELECT description, km, dplus FROM acces_falaise WHERE acces_id = $accesId");
+    $this->assertSame('Description d\'origine.', $row['description'], 'jamais d\'écrasement par un formulaire public');
+    $this->assertEquals(3.0, (float) $row['km']);
+    $this->assertSame('60', $row['dplus']);
+    $this->assertFileExists($gpx);
+    $this->assertSame('1', self::dbQueryOne("SELECT COUNT(*) AS n FROM acces_falaise WHERE arret_id = $arretId AND falaise_id = $falaiseId")['n'], 'pas de doublon');
+
+    // Plus rien à ajouter : refusé
+    $encore = $this->postPied($arretId, $falaiseId, ['description' => 'Encore.', 'velo_km' => '5', 'velo_dplus' => '70'], ['gpx_file' => self::GPX_FIXTURE]);
+    $this->assertStringContainsString('existe déjà', $encore['raw']);
+    $this->assertEquals(3.0, (float) self::dbQueryOne("SELECT km FROM acces_falaise WHERE acces_id = $accesId")['km']);
+  }
+
+  public function testAccesPietonGpxInvalideNeCreeRien(): void
+  {
+    $falaiseId = $this->createFixtureFalaise();
+    $arretId = $this->createFixtureArret('PHPUnit GPX invalide', 45.2, 5.2, ['bus']);
+
+    $res = $this->postPied($arretId, $falaiseId, [], ['gpx_file' => __DIR__ . '/../fixtures/not-a-gpx.xml']);
+
+    $this->assertStringContainsString("n'est pas valide", $res['raw']);
+    $this->assertNull(self::dbQueryOne("SELECT 1 AS x FROM acces_falaise WHERE arret_id = $arretId AND falaise_id = $falaiseId"));
   }
 
   public function testAccesPietonNeDemandePasDeGpx(): void
@@ -77,7 +196,7 @@ final class AddAccesTest extends ApiTestCase
 
     $this->assertNotSame(500, $res['status']);
     $this->assertStringContainsString('existe déjà', $res['raw']);
-    $rows = self::dbQuery("SELECT description FROM acces_pieton_falaise WHERE arret_id = $arretId AND falaise_id = $falaiseId");
+    $rows = self::dbQuery("SELECT description FROM acces_falaise WHERE type = 'pied' AND arret_id = $arretId AND falaise_id = $falaiseId");
     $this->assertCount(1, $rows);
     $this->assertSame('Première version', $rows[0]['description'], "le doublon ne doit pas écraser l'existant");
   }
@@ -89,7 +208,7 @@ final class AddAccesTest extends ApiTestCase
     $res = $this->postPied(999999999, $falaiseId);
 
     $this->assertStringContainsString('arrêt', mb_strtolower($res['raw']));
-    $this->assertNull(self::dbQueryOne("SELECT 1 AS x FROM acces_pieton_falaise WHERE falaise_id = $falaiseId"));
+    $this->assertNull(self::dbQueryOne("SELECT 1 AS x FROM acces_falaise WHERE falaise_id = $falaiseId"));
   }
 
   public function testAccesPietonAvecFalaiseInexistanteEstRefuse(): void
@@ -99,7 +218,7 @@ final class AddAccesTest extends ApiTestCase
     $res = $this->postPied($arretId, 32000);
 
     $this->assertStringContainsString('falaise', mb_strtolower($res['raw']));
-    $this->assertNull(self::dbQueryOne("SELECT 1 AS x FROM acces_pieton_falaise WHERE arret_id = $arretId"));
+    $this->assertNull(self::dbQueryOne("SELECT 1 AS x FROM acces_falaise WHERE arret_id = $arretId"));
   }
 
   // --- Mode vélo depuis un arrêt quelconque -------------------------------
@@ -117,10 +236,10 @@ final class AddAccesTest extends ApiTestCase
     );
 
     $this->assertSame(302, $res['status'], $res['raw']);
-    $created = self::dbQueryOne("SELECT velo_id FROM velo WHERE arret_id = $arretId AND falaise_id = $falaiseId");
-    $this->assertNotNull($created, "l'itinéraire vélo depuis un arrêt de bus aurait dû être créé dans velo.arret_id");
+    $created = self::dbQueryOne("SELECT acces_id AS velo_id FROM acces_falaise WHERE type = 'velo' AND arret_id = $arretId AND falaise_id = $falaiseId");
+    $this->assertNotNull($created, "l'itinéraire vélo depuis un arrêt de bus aurait dû être créé dans acces_falaise.arret_id");
     $veloId = (int) $created['velo_id'];
-    $this->cleanupOnTearDown("DELETE FROM velo WHERE velo_id = $veloId");
+    $this->cleanupOnTearDown("DELETE FROM acces_falaise WHERE acces_id = $veloId");
     $gpxPath = dirname(__DIR__, 2) . "/public/gpx/{$veloId}_phpunit-car-velo_phpunit-fixture_{$varianteformate}.gpx";
     $this->cleanupCallbackOnTearDown(function () use ($gpxPath) {
       if (file_exists($gpxPath)) {
@@ -129,8 +248,8 @@ final class AddAccesTest extends ApiTestCase
     });
 
     $this->assertNull(
-      self::dbQueryOne("SELECT 1 AS x FROM acces_pieton_falaise WHERE arret_id = $arretId AND falaise_id = $falaiseId"),
-      "un itinéraire vélo ne doit pas écrire dans acces_pieton_falaise"
+      self::dbQueryOne("SELECT 1 AS x FROM acces_falaise WHERE type = 'pied' AND arret_id = $arretId AND falaise_id = $falaiseId"),
+      "un itinéraire vélo ne doit pas créer d'accès de type pied"
     );
 
     // Exploitable : relu par fetch_velos.php (clés `arret_id` / `arret`, renommées au Lot 6) avec l'arrêt joint.
@@ -159,7 +278,7 @@ final class AddAccesTest extends ApiTestCase
     );
 
     $this->assertStringContainsString('arrêt', mb_strtolower($res['raw']));
-    $this->assertNull(self::dbQueryOne("SELECT velo_id FROM velo WHERE velo_varianteformate = '$varianteformate'"));
+    $this->assertNull(self::dbQueryOne("SELECT acces_id FROM acces_falaise WHERE variante_formate = '$varianteformate'"));
   }
 
   public function testPageAjoutVeloPrerempliDepuisArretId(): void
@@ -174,7 +293,7 @@ final class AddAccesTest extends ApiTestCase
 
   // --- Helpers -------------------------------------------------------------
 
-  private function postPied(int $arretId, int $falaiseId, array $extra = []): array
+  private function postPied(int $arretId, int $falaiseId, array $extra = [], array $files = []): array
   {
     return $this->httpPostMultipart('/api/add_velo.php', array_merge([
       'mode' => 'pied',
@@ -184,7 +303,20 @@ final class AddAccesTest extends ApiTestCase
       'description' => 'Accès piéton de test.',
       'nom_prenom' => 'PHPUnit',
       'email' => 'phpunit@example.org',
-    ], $extra));
+    ], $extra), $files);
+  }
+
+  /** Chemin disque du GPX d'un accès à pied (variante vide) + nettoyage en tearDown. */
+  private function gpxDeLAcces(int $accesId): string
+  {
+    $row = self::dbQueryOne("SELECT depart_slug, arrivee_slug FROM acces_falaise WHERE acces_id = $accesId");
+    $path = dirname(__DIR__, 2) . "/public/gpx/{$accesId}_{$row['depart_slug']}_{$row['arrivee_slug']}_.gpx";
+    $this->cleanupCallbackOnTearDown(function () use ($path) {
+      if (file_exists($path)) {
+        unlink($path);
+      }
+    });
+    return $path;
   }
 
   private function champsVelo(int $arretId, int $falaiseId, string $depart, string $arrivee, string $varianteformate): array

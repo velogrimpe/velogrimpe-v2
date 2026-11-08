@@ -22,12 +22,10 @@ final class FetchBusArretsTest extends ApiTestCase
     $inBboxUnlinked = $this->createFixtureArret('PHPUnit In Bbox Unlinked', 43.8270, 5.3830);
     // Dans la bbox, lié à la falaise
     $inBboxLinked = $this->createFixtureArret('PHPUnit In Bbox Linked', 43.8280, 5.3840);
-    self::dbExec("INSERT INTO acces_pieton_falaise (arret_id, falaise_id, contrib, contrib_mail)
-                  VALUES ($inBboxLinked, $falaiseId, 'phpunit', 'phpunit@example.org')");
+    $this->createFixtureAccesPied($inBboxLinked, $falaiseId);
     // Hors bbox, mais lié à la falaise : doit quand même apparaître
     $outsideBboxLinked = $this->createFixtureArret('PHPUnit Outside Bbox Linked', 10.0, 10.0);
-    self::dbExec("INSERT INTO acces_pieton_falaise (arret_id, falaise_id, contrib, contrib_mail)
-                  VALUES ($outsideBboxLinked, $falaiseId, 'phpunit', 'phpunit@example.org')");
+    $this->createFixtureAccesPied($outsideBboxLinked, $falaiseId);
     // Hors bbox, non lié : ne doit pas apparaître
     $this->createFixtureArret('PHPUnit Outside Bbox Unlinked', -10.0, -10.0);
 
@@ -54,8 +52,7 @@ final class FetchBusArretsTest extends ApiTestCase
   {
     $falaiseId = $this->createFixtureFalaise();
     $linked = $this->createFixtureArret('PHPUnit Linked Only');
-    self::dbExec("INSERT INTO acces_pieton_falaise (arret_id, falaise_id, contrib, contrib_mail)
-                  VALUES ($linked, $falaiseId, 'phpunit', 'phpunit@example.org')");
+    $this->createFixtureAccesPied($linked, $falaiseId);
     $this->createFixtureArret('PHPUnit Not Linked');
 
     $res = $this->httpGet("/api/fetch_arrets.php?falaise_id=$falaiseId");

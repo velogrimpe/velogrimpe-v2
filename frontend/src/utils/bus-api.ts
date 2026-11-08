@@ -20,6 +20,8 @@ export interface BusStopPayload {
   osm_id: string | null
   osm_data: string | null
   falaise_ids: number[]
+  /** Détails facultatifs des accès à pied, par falaise : { description, km, dplus, dmoins } (chaînes du formulaire). */
+  falaises_acces?: Record<string, Record<string, string>>
   /** Issu de AjoutBus.vue getLignes() : { id, key, nom, description, lien } */
   lignes: unknown[]
   /** Issu de AjoutBus.vue getLiaisons() : { id, arret_2_id, ligne_key, description } */

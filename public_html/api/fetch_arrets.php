@@ -53,7 +53,7 @@ if ($bbox) {
             (baf.falaise_id IS NOT NULL) AS linked,
             GROUP_CONCAT(DISTINCT li.nom ORDER BY li.nom SEPARATOR ', ') AS lignes
      FROM arrets a
-     LEFT JOIN acces_pieton_falaise baf ON baf.arret_id = a.id AND baf.falaise_id = ?
+     LEFT JOIN acces_falaise baf ON baf.arret_id = a.id AND baf.falaise_id = ? AND baf.type = 'pied'
      LEFT JOIN bus_liaisons l ON (l.arret_1_id = a.id OR l.arret_2_id = a.id)
      LEFT JOIN bus_lignes li ON li.id = l.ligne_id
      WHERE ((ST_Y(a.loc) BETWEEN ? AND ? AND ST_X(a.loc) BETWEEN ? AND ?)
@@ -69,7 +69,7 @@ if ($bbox) {
             1 AS linked,
             GROUP_CONCAT(DISTINCT li.nom ORDER BY li.nom SEPARATOR ', ') AS lignes
      FROM arrets a
-     JOIN acces_pieton_falaise baf ON baf.arret_id = a.id AND baf.falaise_id = ?
+     JOIN acces_falaise baf ON baf.arret_id = a.id AND baf.falaise_id = ? AND baf.type = 'pied'
      LEFT JOIN bus_liaisons l ON (l.arret_1_id = a.id OR l.arret_2_id = a.id)
      LEFT JOIN bus_lignes li ON li.id = l.ligne_id
      WHERE 1 = 1 $typeFilterSql

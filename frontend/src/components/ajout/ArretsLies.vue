@@ -28,6 +28,12 @@ const props = withDefaults(
     /** Libellés propres au formulaire hôte (par défaut : ceux d'une ligne). */
     titre?: string;
     vide?: string;
+    /**
+     * Champs facultatifs de l'accès à pied de chaque arrêt lié (description, km, D+, D-,
+     * trace GPX), en champs natifs du formulaire hôte : `acces_pieton[<id>][description|km|dplus|dmoins]`
+     * et `acces_gpx_<id>` (cf. api/add_falaise.php). Repliés par défaut.
+     */
+    accesDetails?: boolean;
   }>(),
   {
     arrets: () => [],
@@ -35,6 +41,7 @@ const props = withDefaults(
     nouveaux: () => [],
     titre: "Arrêts desservis par cette ligne",
     vide: "Aucun arrêt lié pour l'instant. Cliquez un arrêt sur la carte, ou ajoutez-le ci-dessous.",
+    accesDetails: false,
   },
 );
 
@@ -122,7 +129,7 @@ function onSelect(item: FormAutocompleteItem | null) {
       <li
         v-for="arret in linked"
         :key="arret.id"
-        class="flex items-center gap-2 py-1 pl-2 pr-1 rounded-lg border border-base-200 bg-base-100"
+        class="flex flex-wrap items-center gap-2 py-1 pl-2 pr-1 rounded-lg border border-base-200 bg-base-100"
       >
         <Icon name="map-pin" class="w-4 h-4 text-primary shrink-0" />
         <button
@@ -142,6 +149,55 @@ function onSelect(item: FormAutocompleteItem | null) {
         >
           <Icon name="close" class="w-4 h-4" />
         </button>
+        <details v-if="accesDetails" class="basis-full pb-1 pr-1" :data-testid="`acces-details-${arret.id}`">
+          <summary class="text-xs cursor-pointer text-primary">
+            Détails de l'accès à pied (optionnel)
+          </summary>
+          <div class="flex flex-col gap-2 mt-2">
+            <textarea
+              :name="`acces_pieton[${arret.id}][description]`"
+              rows="2"
+              class="textarea textarea-sm leading-5 w-full"
+              placeholder="Description : durée, sentier balisé ou non, passages délicats…"
+            ></textarea>
+            <div class="flex flex-wrap gap-2">
+              <input
+                type="number"
+                :name="`acces_pieton[${arret.id}][km]`"
+                step="0.1"
+                min="0"
+                placeholder="km"
+                aria-label="Distance (km)"
+                class="input input-sm w-24"
+              />
+              <input
+                type="number"
+                :name="`acces_pieton[${arret.id}][dplus]`"
+                min="0"
+                placeholder="D+ (m)"
+                aria-label="D+ (m)"
+                class="input input-sm w-24"
+              />
+              <input
+                type="number"
+                :name="`acces_pieton[${arret.id}][dmoins]`"
+                min="0"
+                placeholder="D- (m)"
+                aria-label="D- (m)"
+                class="input input-sm w-24"
+              />
+            </div>
+            <label class="text-xs flex flex-col gap-1">
+              Trace GPS (optionnel, au format GPX)
+              <input
+                type="file"
+                :name="`acces_gpx_${arret.id}`"
+                accept=".gpx"
+                class="file-input file-input-sm file-input-primary"
+              />
+            </label>
+          </div>
+        </details>
       </li>
     </ul>
 

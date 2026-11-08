@@ -3,22 +3,19 @@
 require_once __DIR__ . '/ApiTestCase.php';
 
 /**
- * Lot 8 : un itinéraire `velo` masqué (velo_public = -1, cf.
- * sql_migrations/4_apieduniquement_vers_acces_pieton.sql) ne doit apparaître
- * dans aucune liste publique ni d'édition, et le champ `velo_apieduniquement`
- * n'est plus exposé par les API.
+ * Lot 8 : un accès vélo masqué (public = -1) ne doit apparaître dans aucune
+ * liste publique ni d'édition, et le champ `velo_apieduniquement` n'est plus
+ * exposé par les API (Lot 8quater : colonne supprimée, type `pied` à la place).
  */
 final class VeloMasqueTest extends ApiTestCase
 {
   private function creerVelo(int $arretId, int $falaiseId, int $public): int
   {
-    $id = self::dbInsert(
-      "INSERT INTO velo (arret_id, falaise_id, velo_depart, velo_arrivee, velo_km, velo_dplus, velo_dmoins, velo_descr,
-        velo_variante, velo_varianteformate, velo_apieduniquement, velo_public, velo_contrib)
-       VALUES ($arretId, $falaiseId, 'phpunit-depart', 'phpunit-arrivee', 3, 20, 20, '', '', '', 0, $public, 'phpunit')"
-    );
-    $this->cleanupOnTearDown("DELETE FROM velo WHERE velo_id = $id");
-    return $id;
+    // Variante distincte : (arrêt, falaise, type, variante) est unique.
+    return $this->createFixtureAcces($arretId, $falaiseId, [
+      'type' => 'velo', 'km' => 3, 'dplus' => 20, 'dmoins' => 20, 'public' => $public,
+      'variante' => 'v' . bin2hex(random_bytes(3)),
+    ]);
   }
 
   public function testItineraireMasqueAbsentDeLaPageFalaise(): void

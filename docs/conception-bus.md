@@ -190,6 +190,10 @@ Les itinéraires dans la table velo marqués apieduniquement devront être migr�
 
 Permettre de filtrer sur le critère "accessible" à pied en se basant non plus sur velo_apieduniquement mais sur la table acces_pieton_falaise
 
+#### Évolution : une seule table d'accès (Lot 8quater)
+
+Les tables `velo` et `acces_pieton_falaise` ont ensuite été fusionnées en `acces_falaise` (colonne `type` : `velo` ou `pied`). Les accès à pied de cette étape sont les lignes `type = 'pied'` ; « accessible à pied » devient `type = 'pied'` ou `km <= 5` (calculé, plus de colonne `velo_apiedpossible`). Voir `docs/plan-implementation-arrets.md`, Lot 8quater.
+
 ### Etape 8 : Cleaning anciennes entités / tables liées aux bus
 
 bus_lignes et bus_liaisons deviennent obsolètes. On ne supprime pas ces tables (les données restent en base indéfiniment) : on arrête simplement de les lire/écrire depuis le code applicatif une fois lignes_transport en production.

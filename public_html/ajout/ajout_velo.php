@@ -46,6 +46,8 @@ $arretPreset = $arrets[$arret_id] ?? null;
 
 // Read the admin search parameter
 $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
+// ?mode=pied : ouvre le formulaire sur l'accès à pied (lien « Détailler l'accès »)
+$mode_pied = ($_GET['mode'] ?? '') === 'pied';
 
 ?>
 <!DOCTYPE html>
@@ -141,12 +143,12 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
       <!-- Type d'accès : discrimine les champs affichés et l'écriture côté serveur -->
       <div class="flex flex-col md:flex-row gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-xs">
         <label class="flex items-center gap-2 cursor-pointer">
-          <input class="radio radio-primary" type="radio" name="mode" value="velo" checked>
+          <input class="radio radio-primary" type="radio" name="mode" value="velo" <?= $mode_pied ? '' : 'checked' ?>>
           <b>Itinéraire à vélo</b> <span class="text-sm">(avec trace GPS)</span>
         </label>
         <label class="flex items-center gap-2 cursor-pointer">
-          <input class="radio radio-primary" type="radio" name="mode" value="pied">
-          <b>Accès à pied uniquement</b> <span class="text-sm">(depuis l'arrêt, sans vélo)</span>
+          <input class="radio radio-primary" type="radio" name="mode" value="pied" <?= $mode_pied ? 'checked' : '' ?>>
+          <b>Accès à pied</b> <span class="text-sm">(depuis l'arrêt, sans vélo ; trace GPS facultative)</span>
         </label>
       </div>
       <!-- Partie Départ / Arrivées -->
@@ -271,25 +273,7 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
         <textarea type="text" class="textarea textarea-sm leading-6" id="velo_openrunner" rows="3"
           name="velo_openrunner"></textarea>
       </label>
-      <!-- Partie Piéton : seul « vélo faisable à pied » reste ici ; le « à pied uniquement » est le mode `pied` -->
-      <div class="relative flex items-center">
-        <hr class="my-0 grow border-[#2e8b57]" />
-        <div class="flex items-center justify-center">
-          <span class="px-2 text-primary italic bg-unset rounded-full">Accessibilité Piéton</span>
-        </div>
-        <hr class="my-0 grow border-[#2e8b57]" />
-      </div>
-      <div class="flex flex-col gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-xs">
-        <label class="form-control grow" for="velo_apiedpossible">
-          <div class="flex items-center gap-4">
-            <input class="checkbox-primary checkbox" type="checkbox" id="velo_apiedpossible"
-              name="velo_apiedpossible">
-            <b class="">Itinéraire conçu pour le vélo, mais faisable à pied ?</b>
-          </div>
-          <i class=""> Cocher si l'itinéraire peut se faire à vélo, mais est suffisamment court pour se faire aussi à
-            pied (&lt; 1h). </i>
-        </label>
-      </div>
+      <!-- « Faisable à pied » n'est plus saisi : un accès de 5 km ou moins l'est d'office (acces_a_pied_possible). -->
       </div>
       </div>
       <!-- Accès à pied uniquement -->
@@ -308,6 +292,34 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
             <textarea class="textarea textarea-sm leading-6" id="description" name="description" rows="5" disabled></textarea>
             <i> Durée, sentier balisé ou non, dénivelé, passages délicats…</i>
           </label>
+          <div class="flex flex-col md:flex-row gap-4">
+            <label class="form-control w-full md:w-1/3" for="pied_km">
+              <b>Distance (km) <span class="text-accent opacity-50">(optionnel)</span> :</b>
+              <input class="input input-primary input-sm" type="number" id="pied_km" name="velo_km" placeholder="1.5"
+                step="0.1" min="0" disabled>
+            </label>
+            <label class="form-control w-full md:w-1/3" for="pied_dplus">
+              <b>D+ (m) <span class="text-accent opacity-50">(optionnel)</span> :</b>
+              <input class="input input-primary input-sm" type="number" id="pied_dplus" name="velo_dplus"
+                placeholder="120" min="0" disabled>
+            </label>
+            <label class="form-control w-full md:w-1/3" for="pied_dmoins">
+              <b>D- (m) <span class="text-accent opacity-50">(optionnel)</span> :</b>
+              <input class="input input-primary input-sm" type="number" id="pied_dmoins" name="velo_dmoins"
+                placeholder="20" min="0" disabled>
+            </label>
+          </div>
+          <label class="form-control" for="pied_gpx_file">
+            <b>Trace GPS <span class="text-accent opacity-50">(optionnel)</span> :</b>
+            <input class="file-input file-input-primary file-input-sm" type="file" id="pied_gpx_file" name="gpx_file"
+              accept=".gpx" disabled>
+            <i class="text-red-400">Au format GPX ! Si l'accès existe déjà, seules les informations manquantes sont ajoutées.</i>
+          </label>
+          <div class="not-prose">
+            <i class="text-sm">Vérifiez que l'arrêt (départ), la falaise (arrivée) et la trace GPX sont cohérents. Les
+              éventuels points/marqueurs du GPX (début, fin…) seront automatiquement retirés à l'enregistrement.</i>
+            <div id="pied-map" class="mt-2 rounded-lg border border-base-300 z-0" style="height: 400px;"></div>
+          </div>
         </div>
       </div>
       </div>
@@ -354,20 +366,22 @@ $admin = ($_GET['admin'] ?? false) == $config["admin_token"];
 <script>
   // Bascule vélo / à pied : les champs de la section masquée sont désactivés
   // (pas de `required` bloquant, rien d'envoyé au serveur).
-  document.querySelectorAll('input[name=mode]').forEach((radio) => {
-    radio.addEventListener('change', () => {
-      const pied = document.querySelector('input[name=mode]:checked').value === 'pied';
-      [['section-velo', !pied], ['section-pied', pied]].forEach(([id, visible]) => {
-        const section = document.getElementById(id);
-        section.classList.toggle('hidden', !visible);
-        section.querySelectorAll('input, textarea, select').forEach((el) => { el.disabled = !visible; });
-      });
+  function appliquerMode() {
+    const pied = document.querySelector('input[name=mode]:checked').value === 'pied';
+    [['section-velo', !pied], ['section-pied', pied]].forEach(([id, visible]) => {
+      const section = document.getElementById(id);
+      section.classList.toggle('hidden', !visible);
+      section.querySelectorAll('input, textarea, select').forEach((el) => { el.disabled = !visible; });
     });
-  });
+  }
+  document.querySelectorAll('input[name=mode]').forEach((radio) => radio.addEventListener('change', appliquerMode));
+  appliquerMode(); // état initial (?mode=pied)
 </script>
 <script type="module">
   import { initVeloFormMap } from '/js/components/map/velo-form-map.js';
   initVeloFormMap({ mapElId: 'velo-map', gpxInputId: 'gpx_file' });
+  // Mode à pied : même carte de vérification, avec la trace GPX facultative de cette section
+  initVeloFormMap({ mapElId: 'pied-map', gpxInputId: 'pied_gpx_file' });
 </script>
 
 </html>

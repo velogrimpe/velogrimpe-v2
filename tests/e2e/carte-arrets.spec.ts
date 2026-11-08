@@ -25,7 +25,7 @@ type Carte = { url: string; ready: string; setZoom: string; zoomPoint: number; z
 
 const cartes: Record<string, Carte> = {
   leaflet: {
-    url: '/carte.php',
+    url: '/carte_leaflet.php',
     zoomGarePoint: 8, // gares : point de z=8 à z<9, icône ensuite
     zoomPoint: 10, // point doré de z=9 à z<11, icône ensuite
     ready: '#map.leaflet-container',
@@ -134,6 +134,18 @@ for (const [nom, carte] of Object.entries(cartes)) {
       await zoomSur(page, carte, BUS_TOPO_PIETON, carte.zoomPoint + 1)
       expect(await classeMarqueur(page, BUS_TOPO_PIETON)).toContain('vg-arret-icon')
       expect(await couleurFond(page, BUS_TOPO_PIETON)).toBe('gold')
+    })
+
+    test('une falaise à accès piéton seul est du topo ; sans aucun accès, elle est hors topo', async ({ page }) => {
+      // 50 : accès à pied seulement ; 41 : aucun accès décrit (jeu de données local)
+      const types = await page.evaluate(() => {
+        const t = (id: number) => falaises.find((f: any) => String(f.falaise_id) === String(id))
+        return { piedSeul: t(50), sansAcces: t(41) }
+      })
+      expect(types.piedSeul.access).toHaveLength(0)
+      expect(types.piedSeul.pieton.length).toBeGreaterThan(0)
+      expect(types.piedSeul.type).toBe('falaise')
+      expect(types.sansAcces.type).toBe('falaise_hors_topo')
     })
 
     test('gares du topo : rien, puis point, puis icône', async ({ page }) => {

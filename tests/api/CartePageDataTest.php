@@ -92,7 +92,7 @@ final class CartePageDataTest extends ApiTestCase
     $itineraires = self::extractJsValue($res['raw'], 'const itineraires = ');
     $this->assertNotEmpty($itineraires);
     foreach ($itineraires as $it) {
-      $this->assertArrayNotHasKey('velo_apieduniquement', $it, "Lot 8 : ces accès sont dans acces_pieton_falaise");
+      $this->assertArrayNotHasKey('velo_apieduniquement', $it, "Lot 8 : ces accès sont de type pied dans acces_falaise");
     }
   }
 }

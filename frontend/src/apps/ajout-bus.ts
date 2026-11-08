@@ -85,6 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
           h(FalaisesLiees, {
             falaises: window.busFalaises ?? [],
             linkedIds: linkedIds.value,
+            accesDetails: true,
             onLink: (id: number) => {
               window.busSetFalaiseLinked?.(id, true)
               // Cadrage sur l'ensemble arrêt + falaises liées, pas sur la seule ajoutée.
@@ -186,6 +187,15 @@ document.addEventListener('DOMContentLoaded', () => {
       .map((s) => parseInt(s.trim(), 10))
       .filter((n) => !isNaN(n))
 
+    // Détails facultatifs des accès à pied (description, km, D+, D-), par falaise liée
+    const falaisesAcces: Record<string, Record<string, string>> = {}
+    for (const id of falaiseIds) {
+      const champ = (nom: string) =>
+        (document.querySelector(`[name="acces_pieton[${id}][${nom}]"]`) as HTMLInputElement | HTMLTextAreaElement | null)?.value.trim() ?? ''
+      const d = { description: champ('description'), km: champ('km'), dplus: champ('dplus'), dmoins: champ('dmoins') }
+      if (Object.values(d).some((v) => v !== '')) falaisesAcces[String(id)] = d
+    }
+
     const descInput = document.querySelector(
       '.vue-richtext input[name="description"]',
     ) as HTMLInputElement | null
@@ -209,6 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
       osm_id: val('arret_osm_id') || null,
       osm_data: osmDataRaw || null,
       falaise_ids: falaiseIds,
+      falaises_acces: falaisesAcces,
       lignes: vm.getLignes(),
       liaisons: vm.getLiaisons(),
       nom_prenom: val('nom_prenom'),

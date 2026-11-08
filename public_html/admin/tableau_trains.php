@@ -17,14 +17,14 @@ DISTINCT
   GROUP_CONCAT(DISTINCT evgf.ville_id SEPARATOR ',') AS excluded_falaise_gare_ville_ids,
   MAX(COALESCE(t.train_tgv, 0)) AS has_tgv
   FROM falaises f
-  LEFT JOIN velo ON velo.falaise_id = f.falaise_id
+  LEFT JOIN acces_falaise velo ON velo.falaise_id = f.falaise_id AND velo.type = 'velo'
   LEFT JOIN arrets a ON a.id = velo.arret_id AND a.deleted = 0
   LEFT JOIN train t ON t.arret_id = a.id
   LEFT JOIN villes v ON v.ville_id = t.ville_id
   LEFT JOIN exclusions_villes_gares evg ON evg.gare_id = a.id
   LEFT JOIN exclusions_villes_falaises evf ON evf.falaise_id = f.falaise_id
   LEFT JOIN exclusions_villes_gares_falaises evgf ON evgf.falaise_id = f.falaise_id AND evgf.gare_id = a.id
-  WHERE velo.velo_id IS NOT NULL
+  WHERE velo.acces_id IS NOT NULL
   GROUP BY f.falaise_id, a.id
   ORDER BY f.falaise_id DESC, a.nom ASC;
 ")->fetch_all(MYSQLI_ASSOC);

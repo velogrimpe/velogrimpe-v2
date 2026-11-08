@@ -37,6 +37,9 @@ $osm_data = isset($input['osm_data']) && $input['osm_data'] !== null && $input['
   ? (is_string($input['osm_data']) ? $input['osm_data'] : json_encode($input['osm_data']))
   : null;
 $falaise_ids = is_array($input['falaise_ids'] ?? null) ? array_map('intval', $input['falaise_ids']) : [];
+// Détails facultatifs des accès à pied, par falaise : { "<falaise_id>": { description, km, dplus, dmoins } }.
+// Appliqués aux falaises liées ; un accès déjà renseigné n'est jamais écrasé (champs vides seulement).
+$falaises_acces = is_array($input['falaises_acces'] ?? null) ? $input['falaises_acces'] : [];
 $lignes = is_array($input['lignes'] ?? null) ? $input['lignes'] : [];
 $liaisons = is_array($input['liaisons'] ?? null) ? $input['liaisons'] : [];
 
@@ -290,30 +293,21 @@ try {
 
   // --- 4. Liens falaises (remplacement du set) ---
   // Ancien set (pour le log)
-  $oldFalaiseIds = [];
-  $sel = $mysqli->prepare("SELECT falaise_id FROM acces_pieton_falaise WHERE arret_id = ? ORDER BY falaise_id");
-  $sel->bind_param("i", $arret_id);
-  $sel->execute();
-  $r = $sel->get_result();
-  while ($row = $r->fetch_assoc()) {
-    $oldFalaiseIds[] = (int) $row['falaise_id'];
-  }
-  $sel->close();
+  require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/velo_lib.php';
+  $oldFalaiseIds = acces_pied_falaise_ids($mysqli, $arret_id);
 
-  $stmt = $mysqli->prepare("DELETE FROM acces_pieton_falaise WHERE arret_id = ?");
-  $stmt->bind_param("i", $arret_id);
-  $stmt->execute();
-  $stmt->close();
-  $newFalaiseIds = array_values(array_unique($falaise_ids));
-  if (!empty($newFalaiseIds)) {
-    $stmt = $mysqli->prepare(
-      "INSERT INTO acces_pieton_falaise (arret_id, falaise_id, contrib, contrib_mail) VALUES (?, ?, ?, ?)"
-    );
-    foreach ($newFalaiseIds as $fid) {
-      $stmt->bind_param("iiss", $arret_id, $fid, $nom_prenom, $email);
-      $stmt->execute();
+  // Différence plutôt que « tout supprimer puis réinsérer » : un accès à pied
+  // peut porter km, D+ et description (Lot 8quater), à ne pas perdre au passage.
+  $newFalaiseIds = array_values(array_unique(array_map('intval', $falaise_ids)));
+  foreach (array_diff($oldFalaiseIds, $newFalaiseIds) as $fid) {
+    acces_pied_delier($mysqli, $arret_id, $fid);
+  }
+  foreach ($newFalaiseIds as $fid) {
+    $details = is_array($falaises_acces[$fid] ?? null) ? acces_lire_details($falaises_acces[$fid]) : [];
+    if (in_array($fid, $oldFalaiseIds, true) && !$details) {
+      continue; // déjà lié, rien à compléter
     }
-    $stmt->close();
+    acces_pied_lier($mysqli, $arret_id, $fid, $nom_prenom, $email, $details);
   }
   // Log uniquement si le set a changé
   sort($oldFalaiseIds);
@@ -322,7 +316,7 @@ try {
   if ($oldFalaiseIds !== $sortedNew) {
     $logEntries[] = [
       'type' => empty($oldFalaiseIds) ? 'insert' : 'update',
-      'collection' => 'acces_pieton_falaise',
+      'collection' => 'acces_falaise',
       'id' => $arret_id,
       'new' => ['falaise_ids' => implode(',', $sortedNew)],
       'old' => ['falaise_ids' => implode(',', $oldFalaiseIds)],
@@ -384,7 +378,7 @@ function busHumanizeValues($mysqli, string $collection, array $values): array
     }
     return $out;
   }
-  if ($collection === 'acces_pieton_falaise') {
+  if ($collection === 'acces_falaise' || $collection === 'acces_pieton_falaise') {
     $out = [];
     if (array_key_exists('falaise_ids', $values)) {
       $ids = array_filter(array_map('trim', explode(',', (string) $values['falaise_ids'])), 'strlen');
@@ -439,6 +433,7 @@ function renderBusChanges(?string $changesJson): string
 $collectionLabels = [
   'bus_lignes' => 'Ligne',
   'bus_liaisons' => 'Liaison',
+  'acces_falaise' => 'Falaises liées',
   'acces_pieton_falaise' => 'Falaises liées',
 ];
 

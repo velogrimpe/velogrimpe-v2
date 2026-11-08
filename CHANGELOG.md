@@ -4,6 +4,41 @@ Tous les changements notables de ce projet sont documentés dans ce fichier.
 
 Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 2026-11-08
+
+### Changed
+
+- **Fusion des tables `velo` et `acces_pieton_falaise` en `acces_falaise`** (Lot 8quater, `sql_migrations/6_acces_falaise.sql`) : une ligne par accès arrêt → falaise, avec un `type` (`velo` ou `pied`), `km` / `dplus` / `dmoins` facultatifs y compris à pied, et le contributeur séparé en `contrib` / `contrib_mail`. Les `velo_id` sont conservés (`acces_id`, ils composent le nom des fichiers GPX). Les six itinéraires « à pied uniquement » redeviennent des accès `pied` publics. Clés étrangères vers `arrets` et `falaises` sans cascade.
+- « Faisable à pied » n'est plus une case à cocher ni une colonne : un accès `pied`, ou de 5 km ou moins, l'est d'office. Sur les données de dev, 22 itinéraires deviennent « à pied possible » et 1 ne l'est plus.
+- `api/add_velo.php` accepte `type` (`velo` | `pied`) en plus de `mode`. Une variante déjà présente entre le même arrêt et la même falaise est refusée.
+- `api/add_arret.php` met à jour les falaises liées par différence au lieu de tout supprimer puis recréer : un accès à pied garde sa description, ses km et son dénivelé.
+
+### Added
+
+- **Un accès à pied peut porter une description, une distance, des dénivelés (D+ / D-) et une trace GPX**, comme un itinéraire vélo (même nommage `{acces_id}_{arrêt}_{falaise}_.gpx`).
+  - Formulaire d'ajout d'accès, mode « à pied » : champs facultatifs, GPX facultatif et carte de vérification. `?mode=pied&arret_id=&falaise_id=` ouvre le formulaire sur un accès précis ; si l'accès existe déjà, seuls les champs encore vides sont complétés, jamais d'écrasement.
+  - Autres points de création, mêmes détails : formulaire de falaise (par arrêt lié : description, km, D+, D-, GPX), formulaire d'arrêt (par falaise liée, sans GPX : JSON), clic « Lier cet arrêt » de l'éditeur de la fiche falaise (JSON, ou multipart avec GPX) ; `api/add_falaise.php`, `api/add_arret.php` (`falaises_acces`), `api/link_arret_falaise.php` les acceptent.
+  - Fiche falaise : bloc de l'accès à pied en deux parties (« De l'arrêt à la falaise » : distance, dénivelés, description, trace ; « Arrêt » : lignes) et trace dessinée sur la carte. Cartes globales : la trace est dessinée quand l'accès en a une. Tableau : distance et dénivelés sous la mention d'accès à pied.
+
+### Changed (cartes et fiche falaise)
+
+- Une falaise est « du topo » dès qu'un accès, vélo ou à pied, est décrit : cartes globales (MapLibre et Leaflet) et avertissement « Falaise non reliée au réseau » de la fiche falaise, qui n'apparaît plus que sans aucun accès. Bouton : « Proposer un accès vélo / à pied ».
+- Icône des falaises hors topo à 70 % d'opacité.
+- Carte Leaflet : le trait droit arrêt → falaise des accès à pied est retiré (déjà le cas sur MapLibre).
+
+### Removed
+
+- Case « Itinéraire conçu pour le vélo, mais faisable à pied ? » du formulaire d'ajout d'accès.
+
+### Changed (open data)
+
+- `itineraires-velo.geojson` et le bilan de `export_open_data.php` : la clé `velo_id` devient `acces_id` (même valeur). Changement visible pour d'éventuels consommateurs externes.
+
+### Fixed
+
+- `admin/index.php` : tri des itinéraires à valider par une colonne `g.gare_nom` qui n'existait plus.
+- Tests de `falaise.php` (`FalaisePageDataTest`, `AddVeloTest`) en échec depuis la réduction des champs de `$itineraires` : réécrits sur des sources qui existent.
+
 ## 2026-10-12
 
 ### Security

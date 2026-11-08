@@ -20,11 +20,11 @@ $highlight = $_GET['h'] ?? '';
 
 <head>
   <meta charset="UTF-8" />
-  <title>Vélogrimpe.fr — MapLibre</title>
+  <title>Vélogrimpe.fr</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <!-- Meta tags for SEO and Social Networks -->
-  <meta name="robots" content="noindex, nofollow">
-  <link rel="canonical" href="https://velogrimpe.fr/" />
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://velogrimpe.fr/carte.php" />
   <link rel="alternate" type="application/rss+xml" title="Nouveautes Velogrimpe (falaises et itineraires)"
     href="/feed/nouveautes.xml">
   <meta name="description"
@@ -33,7 +33,7 @@ $highlight = $_GET['h'] ?? '';
   <meta property="og:title" content="Velogrimpe.fr - Carte des falaises accessibles en vélo et train">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Velogrimpe.fr">
-  <meta property="og:url" content="https://velogrimpe.fr/">
+  <meta property="og:url" content="https://velogrimpe.fr/carte.php">
   <meta property="og:image" content="https://velogrimpe.fr/images/mw/velogrimpe-social-60.webp">
   <meta property="og:description"
     content="Escalade en mobilité douce à vélo et en train. Découvrez les accès aux falaises, les topos et les informations pratiques pour une sortie vélo-grimpe.">
@@ -330,6 +330,8 @@ $highlight = $_GET['h'] ?? '';
   const iconSize = 30;
   const defaultMarkerSize = iconSize;
   const itinerairesColors = ["indianRed", "tomato", "teal", "paleVioletRed", "mediumSlateBlue", "lightSalmon", "fireBrick", "crimson", "purple", "hotPink", "mediumOrchid"];
+  // Trace GPX d'un accès à pied : trait gris-bleu (celui de l'ancien trait droit), tooltip = distance si connue.
+  const piedGpxOpts = (acces) => ({ lineColor: "#334155", tipClass: "pieton", tipText: acces.km != null ? `${acces.km} km` : null });
   const halo = "[text-shadow:-1px_-1px_0_#fff,1px_-1px_0_#fff,-1px_1px_0_#fff,1px_1px_0_#fff,0_1px_0_#fff,0_-1px_0_#fff,1px_0_0_#fff,-1px_0_0_#fff]";
 
   const falaiseIconUrl = (closed, bloc) =>
@@ -474,7 +476,7 @@ $highlight = $_GET['h'] ?? '';
     if (highlightedFalaiseIds.includes(f.falaise_id)) f.highlighted = true;
     // `type` calculé en amont (au lieu d'attendre renderFalaises) : sinon
     // info_update() compte 0 si le Vue info-ready arrive avant map.on('load').
-    const pieton = accesPieton.filter(p => p.falaise_id === f.falaise_id).map(p => ({ arret: arretsBase.find(a => a.arret_id === p.arret_id) })).filter(p => p.arret);
+    const pieton = accesPieton.filter(p => p.falaise_id === f.falaise_id).map(p => ({ arret: arretsBase.find(a => a.arret_id === p.arret_id), acces: p })).filter(p => p.arret);
     // Accès pris en compte par les filtres : itinéraires vélo + accès à pied depuis un
     // arrêt (sans temps vélo) quand cet arrêt n'a pas déjà un itinéraire vers la falaise.
     const accessFiltre = [
@@ -487,7 +489,7 @@ $highlight = $_GET['h'] ?? '';
           villes: (p.arret.villes || []).map(v => ({ ...v, tempsTrainVelo: v.temps, tempsTotal: v.temps + (f.maa || 0) })),
         })),
     ];
-    return { ...f, access, pieton, accessFiltre, type: access.length > 0 ? "falaise" : "falaise_hors_topo" };
+    return { ...f, access, pieton, accessFiltre, type: access.length > 0 || pieton.length > 0 ? "falaise" : "falaise_hors_topo" };
   });
   const arrets = arretsBase.map(g => {
     const access = itineraires.filter(i => i.arret_id === g.arret_id).map(it => {
@@ -495,7 +497,9 @@ $highlight = $_GET['h'] ?? '';
       return { ...it, falaise };
     }).sort((a, b) => a.tempsVelo - b.tempsVelo);
     const pieton = accesPieton.filter(p => p.arret_id === g.arret_id).map(p => falaisesBase.find(f => f.falaise_id === p.falaise_id)).filter(Boolean);
-    return { ...g, access, pieton, type: access.length > 0 || pieton.length > 0 ? "arret" : "arret_hors_topo" };
+    // Accès à pied avec leur éventuelle trace GPX (piedAcces) ; `pieton` ne garde que les falaises.
+    const piedAcces = accesPieton.filter(p => p.arret_id === g.arret_id);
+    return { ...g, access, pieton, piedAcces, type: access.length > 0 || pieton.length > 0 ? "arret" : "arret_hors_topo" };
   });
 
   // ============================================================
@@ -709,14 +713,16 @@ $highlight = $_GET['h'] ?? '';
     return [];
   }
 
-  async function renderGpx(it, color) {
+  // opts : lineColor (couleur CSS du trait, défaut `color`), tipClass (classe vg-color-*, défaut `color`),
+  // tipText (texte du tooltip ; null = pas de tooltip ; défaut = temps vélo estimé).
+  async function renderGpx(it, color, opts = {}) {
     const id = `gpx-${it.velo_id}-${Math.random().toString(36).slice(2, 7)}`;
     if (map.getSource(id)) { try { map.removeLayer(id); map.removeSource(id); } catch (e) { } }
     map.addSource(id, { type: "geojson", data: "gpx:///public/gpx/" + gpx_path(it) });
     map.addLayer({
       id, type: "line", source: id,
       layout: { "line-cap": "round", "line-join": "round" },
-      paint: { "line-color": color, "line-width": 5 },
+      paint: { "line-color": opts.lineColor || color, "line-width": 5 },
     });
     map.on("mouseenter", id, () => { map.getCanvas().style.cursor = "pointer"; map.setPaintProperty(id, "line-width", 10); try { map.moveLayer(id); } catch (e) { } });
     map.on("mouseleave", id, () => { map.getCanvas().style.cursor = ""; map.setPaintProperty(id, "line-width", 5); });
@@ -734,13 +740,14 @@ $highlight = $_GET['h'] ?? '';
     // Track id without marker so teardown can clean up even if tooltip is skipped
     const entry = { id, marker: null };
     itinerairesLines.push(entry);
-    if (!coords.length) return entry;
+    const tipText = opts.tipText !== undefined ? opts.tipText : format_time(calculate_time(it));
+    if (!coords.length || tipText === null) return entry;
 
     const mid = coords[Math.floor(coords.length / 2)];
     const tipEl = document.createElement("div");
-    tipEl.className = `vg-velo-tooltip vg-color-${color}`;
+    tipEl.className = `vg-velo-tooltip vg-color-${opts.tipClass || color}`;
     tipEl.style.pointerEvents = "none";
-    tipEl.innerHTML = format_time(calculate_time(it));
+    tipEl.innerHTML = tipText;
     entry.marker = new maplibregl.Marker({ element: tipEl }).setLngLat(mid).addTo(map);
     return entry;
   }
@@ -828,7 +835,8 @@ $highlight = $_GET['h'] ?? '';
                 });
               }
             });
-            falaise.pieton.forEach(({ arret }) => {
+            falaise.pieton.forEach(({ arret, acces }) => {
+              if (acces.has_gpx) renderGpx(acces, "pieton", piedGpxOpts(acces));
               const station = arrets.find(a => a.arret_id === arret.arret_id);
               if (station && station.marker) {
                 attachTooltip(station.marker, escapeHtml(station.arret_nom), {
@@ -894,7 +902,7 @@ $highlight = $_GET['h'] ?? '';
     const size = 20;
     const init = () => {
       const el = buildFalaiseEl(falaise, size);
-      el.style.opacity = 0.75;
+      el.style.opacity = 0.7; // icône des falaises hors topo : 70 %
       const marker = new maplibregl.Marker({ element: el, anchor: "bottom" })
         .setLngLat(lngLat(falaise.falaise_latlng))
         .addTo(map);
@@ -906,7 +914,7 @@ $highlight = $_GET['h'] ?? '';
       falaise.labelMarker = labelMarker;
 
       const popupHtml = `<div class="flex flex-col gap-1">`
-        + `<div class="text-slate-400"><span class="uppercase">hors topo</span> (aucun accès 🚲 décrit)</div>`
+        + `<div class="text-slate-400"><span class="uppercase">hors topo</span> (aucun accès décrit)</div>`
         + `<div class="text-sm font-bold">${escapeHtml(falaise.falaise_nom)}</div>`
         + (falaise.falaise_fermee ? `<div class="text-error">${escapeHtml(falaise.falaise_fermee).replace(/\n/g, "<br>")}</div>` : "")
         + `<div class="flex gap-2 w-full justify-end">`
@@ -1001,6 +1009,12 @@ $highlight = $_GET['h'] ?? '';
             });
           }
         });
+        // Accès à pied qui ont une trace GPX (sans trace : rien n'est dessiné)
+        arret.piedAcces.forEach((acces) => {
+          if (!acces.has_gpx) return;
+          if (falaises.find(f => f.falaise_id === acces.falaise_id)?.filteredOut) return;
+          renderGpx(acces, "pieton", piedGpxOpts(acces));
+        });
       }, 760);
       attachTooltip(marker, escapeHtml(arret.arret_nom), { direction: "top", permanent: true });
     });
@@ -1017,7 +1031,8 @@ $highlight = $_GET['h'] ?? '';
     const zoom = map.getZoom();
     falaises.forEach((falaise) => {
       if (!falaise.falaise_latlng) return;
-      if (falaise.access.length === 0) {
+      // Du topo dès qu'un accès est décrit, vélo ou à pied.
+      if (falaise.access.length === 0 && falaise.pieton.length === 0) {
         falaise.type = "falaise_hors_topo";
         if (zoom < 11 || falaise.filteredOut) {
           setFalaiseHTMarker(falaise, "hidden");

@@ -17,12 +17,12 @@ $falaises_ht = array_values(array_filter(
   $falaises,
   fn($falaise) => $falaise['falaise_public'] === "3"
 ));
-$velos_a_valider = $mysqli->query("SELECT v.velo_id, v.arret_id AS gare_id, v.falaise_id, v.velo_variante, a.nom AS gare_nom, f.falaise_nom
-  FROM velo v
+$velos_a_valider = $mysqli->query("SELECT v.acces_id AS velo_id, v.arret_id AS gare_id, v.falaise_id, v.variante AS velo_variante, a.nom AS gare_nom, f.falaise_nom
+  FROM acces_falaise v
   LEFT JOIN arrets a ON a.id = v.arret_id
   LEFT JOIN falaises f ON f.falaise_id = v.falaise_id
-  WHERE v.velo_public = 2
-  ORDER BY f.falaise_nom, g.gare_nom, v.velo_variante")->fetch_all(MYSQLI_ASSOC);
+  WHERE v.type = 'velo' AND v.public = 2
+  ORDER BY f.falaise_nom, a.nom, v.variante")->fetch_all(MYSQLI_ASSOC);
 $nb_velos_a_valider = count($velos_a_valider);
 
 $arrets = $mysqli->query("SELECT a.id, a.nom

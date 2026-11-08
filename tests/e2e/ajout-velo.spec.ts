@@ -51,7 +51,7 @@ test.describe("Formulaire d'ajout d'accès", () => {
     await expect(lien).toHaveAttribute('href', /\/ajout\/ajout_arret\.php/)
   })
 
-  test("le mode « à pied » masque le GPX et les indicateurs, et demande une description", async ({ page }) => {
+  test("le mode « à pied » masque le GPX et les indicateurs du mode vélo, et demande une description", async ({ page }) => {
     await page.goto('/ajout/ajout_velo.php')
     // Mode vélo par défaut : GPX et indicateurs visibles.
     await expect(page.locator('input[name=mode][value=velo]')).toBeChecked()
@@ -60,7 +60,7 @@ test.describe("Formulaire d'ajout d'accès", () => {
 
     await page.locator('input[name=mode][value=pied]').check()
 
-    await expect(page.locator('#gpx_file')).toBeHidden()
+    await expect(page.locator('#gpx_file')).toBeHidden() // GPX obligatoire du mode vélo
     await expect(page.locator('#velo_km')).toBeHidden()
     await expect(page.locator('#velo-map')).toBeHidden()
     await expect(page.locator('#description')).toBeVisible()
@@ -71,5 +71,34 @@ test.describe("Formulaire d'ajout d'accès", () => {
     await page.locator('input[name=mode][value=velo]').check()
     await expect(page.locator('#gpx_file')).toBeVisible()
     await expect(page.locator('#gpx_file')).toBeEnabled()
+  })
+
+  test("le mode « à pied » propose km, D+, D-, un GPX facultatif et sa carte", async ({ page }) => {
+    await page.goto('/ajout/ajout_velo.php')
+    // Mode vélo : les champs de la section à pied sont masqués et désactivés (rien d'envoyé en double)
+    await expect(page.locator('#pied_km')).toBeDisabled()
+    await expect(page.locator('#pied_gpx_file')).toBeDisabled()
+
+    await page.locator('input[name=mode][value=pied]').check()
+
+    for (const id of ['#pied_km', '#pied_dplus', '#pied_dmoins', '#pied_gpx_file']) {
+      await expect(page.locator(id)).toBeVisible()
+      await expect(page.locator(id)).toBeEnabled()
+    }
+    // Facultatifs : pas de `required` (le GPX vélo, lui, reste obligatoire)
+    await expect(page.locator('#pied_gpx_file')).not.toHaveAttribute('required', /.*/)
+    await expect(page.locator('#pied-map')).toBeVisible()
+    // Mêmes noms de champs que la section vélo : le serveur lit velo_km / velo_dplus / velo_dmoins / gpx_file
+    await expect(page.locator('#pied_km')).toHaveAttribute('name', 'velo_km')
+    await expect(page.locator('#pied_gpx_file')).toHaveAttribute('name', 'gpx_file')
+  })
+
+  test("?mode=pied ouvre le formulaire directement sur l'accès à pied", async ({ page }) => {
+    await page.goto('/ajout/ajout_velo.php?mode=pied')
+    await expect(page.locator('input[name=mode][value=pied]')).toBeChecked()
+    await expect(page.locator('#section-pied')).toBeVisible()
+    await expect(page.locator('#section-velo')).toBeHidden()
+    await expect(page.locator('#pied_km')).toBeEnabled()
+    await expect(page.locator('#gpx_file')).toBeDisabled()
   })
 })

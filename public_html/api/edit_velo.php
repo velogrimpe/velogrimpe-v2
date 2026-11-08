@@ -43,13 +43,17 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 }
 
 // Itinéraire existant
-$stmt = $mysqli->prepare("SELECT v.velo_id, v.arret_id AS gare_id, v.falaise_id, v.velo_depart, v.velo_arrivee, v.velo_varianteformate,
-    v.velo_variante, v.velo_km, v.velo_dplus, v.velo_dmoins, v.velo_descr, v.velo_openrunner, v.velo_public,
+// Alias : le reste du fichier garde les noms de clés d'avant le Lot 8quater.
+// Seuls les accès vélo (avec trace GPX) sont modifiables ici.
+$stmt = $mysqli->prepare("SELECT v.acces_id AS velo_id, v.arret_id AS gare_id, v.falaise_id, v.depart_slug AS velo_depart,
+    v.arrivee_slug AS velo_arrivee, v.variante_formate AS velo_varianteformate,
+    v.variante AS velo_variante, v.km AS velo_km, v.dplus AS velo_dplus, v.dmoins AS velo_dmoins,
+    v.description AS velo_descr, v.lien_openrunner AS velo_openrunner, v.public AS velo_public,
     a.nom AS gare_nom, f.falaise_nom
-  FROM velo v
+  FROM acces_falaise v
   LEFT JOIN arrets a ON a.id = v.arret_id
   LEFT JOIN falaises f ON f.falaise_id = v.falaise_id
-  WHERE v.velo_id = ?");
+  WHERE v.acces_id = ? AND v.type = 'velo'");
 $stmt->bind_param("i", $velo_id);
 $stmt->execute();
 $old = $stmt->get_result()->fetch_assoc();
@@ -102,11 +106,11 @@ if ($mode === 'suggestion') {
   }
 
   // Trace du dépôt de la suggestion (sans modification de la ligne velo).
-  logChanges($nom_prenom, $email, 'suggestion', 'velo', $velo_id, $old['falaise_id'], [
-    "velo_descr" => $velo_descr,
+  logChanges($nom_prenom, $email, 'suggestion', 'acces_falaise', $velo_id, $old['falaise_id'], [
+    "description" => $velo_descr,
     "gpx_file" => $dom !== null ? 'nouveau GPX proposé (envoyé par mail)' : 'inchangé',
   ], [
-    "velo_descr" => $old['velo_descr'],
+    "description" => $old['velo_descr'],
     "gpx_file" => 'inchangé',
   ]);
 
@@ -177,10 +181,10 @@ if ($dom !== null) {
   }
 }
 
-$stmt = $mysqli->prepare("UPDATE velo
-  SET velo_km = ?, velo_dplus = ?, velo_dmoins = ?, velo_descr = ?, velo_openrunner = ?, velo_public = ?,
+$stmt = $mysqli->prepare("UPDATE acces_falaise
+  SET km = ?, dplus = ?, dmoins = ?, description = ?, lien_openrunner = ?, public = ?,
       date_modification = CURRENT_TIMESTAMP
-  WHERE velo_id = ?");
+  WHERE acces_id = ?");
 if (!$stmt) {
   die("Erreur lors de la mise à jour : " . $mysqli->error);
 }
@@ -206,21 +210,21 @@ if ($dom !== null) {
 
 // Journal des modifications. velo_km est un FLOAT : on journalise sa
 // représentation courte ("3.8") plutôt que le flottant brut.
-logChanges($nom_prenom, $email, 'update', 'velo', $velo_id, $old['falaise_id'], [
-  "velo_km" => (string) $velo_km,
-  "velo_dplus" => $velo_dplus,
-  "velo_dmoins" => $velo_dmoins,
-  "velo_descr" => $velo_descr,
-  "velo_openrunner" => $velo_openrunner,
-  "velo_public" => $velo_public,
+logChanges($nom_prenom, $email, 'update', 'acces_falaise', $velo_id, $old['falaise_id'], [
+  "km" => (string) $velo_km,
+  "dplus" => $velo_dplus,
+  "dmoins" => $velo_dmoins,
+  "description" => $velo_descr,
+  "lien_openrunner" => $velo_openrunner,
+  "public" => $velo_public,
   "gpx_file" => $gpx_statut,
 ], [
-  "velo_km" => (string) (float) $old['velo_km'],
-  "velo_dplus" => $old['velo_dplus'],
-  "velo_dmoins" => $old['velo_dmoins'],
-  "velo_descr" => $old['velo_descr'],
-  "velo_openrunner" => (string) ($old['velo_openrunner'] ?? ''),
-  "velo_public" => intval($old['velo_public']),
+  "km" => (string) (float) $old['velo_km'],
+  "dplus" => $old['velo_dplus'],
+  "dmoins" => $old['velo_dmoins'],
+  "description" => $old['velo_descr'],
+  "lien_openrunner" => (string) ($old['velo_openrunner'] ?? ''),
+  "public" => intval($old['velo_public']),
   // Doit rester la valeur « pas de changement » de $gpx_statut, au caractère
   // près, sinon chaque édition journalise un faux changement de GPX.
   "gpx_file" => 'inchangée',
