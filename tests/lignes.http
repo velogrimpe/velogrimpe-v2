@@ -40,3 +40,6 @@ Authorization: Bearer {{admin_token}}
 Content-Type: application/json
 
 { "ligne_id": 1 }
+
+### Toutes les lignes avec géométrie (carte de la page admin/arrets_lignes.php)
+GET {{host}}/api/fetch_lignes.php?geometry=1
