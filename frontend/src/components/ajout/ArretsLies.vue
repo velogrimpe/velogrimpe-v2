@@ -13,6 +13,7 @@ import FormAutocomplete, {
   type FormAutocompleteItem,
 } from "@/components/shared/FormAutocomplete.vue";
 import Icon from "@/components/shared/Icon.vue";
+import AccesPiedFields from "@/components/ajout/AccesPiedFields.vue";
 
 interface ArretItem extends FormAutocompleteItem {
   id: number;
@@ -153,50 +154,7 @@ function onSelect(item: FormAutocompleteItem | null) {
           <summary class="text-xs cursor-pointer text-primary">
             Détails de l'accès à pied (optionnel)
           </summary>
-          <div class="flex flex-col gap-2 mt-2">
-            <textarea
-              :name="`acces_pieton[${arret.id}][description]`"
-              rows="2"
-              class="textarea textarea-sm leading-5 w-full"
-              placeholder="Description : durée, sentier balisé ou non, passages délicats…"
-            ></textarea>
-            <div class="flex flex-wrap gap-2">
-              <input
-                type="number"
-                :name="`acces_pieton[${arret.id}][km]`"
-                step="0.1"
-                min="0"
-                placeholder="km"
-                aria-label="Distance (km)"
-                class="input input-sm w-24"
-              />
-              <input
-                type="number"
-                :name="`acces_pieton[${arret.id}][dplus]`"
-                min="0"
-                placeholder="D+ (m)"
-                aria-label="D+ (m)"
-                class="input input-sm w-24"
-              />
-              <input
-                type="number"
-                :name="`acces_pieton[${arret.id}][dmoins]`"
-                min="0"
-                placeholder="D- (m)"
-                aria-label="D- (m)"
-                class="input input-sm w-24"
-              />
-            </div>
-            <label class="text-xs flex flex-col gap-1">
-              Trace GPS (optionnel, au format GPX)
-              <input
-                type="file"
-                :name="`acces_gpx_${arret.id}`"
-                accept=".gpx"
-                class="file-input file-input-sm file-input-primary"
-              />
-            </label>
-          </div>
+          <AccesPiedFields :id="arret.id" />
         </details>
       </li>
     </ul>

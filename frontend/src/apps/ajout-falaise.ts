@@ -8,6 +8,7 @@ import MultiSelect, {
 import RoseDesVents from "@/components/shared/RoseDesVents.vue";
 import RichTextField from "@/components/shared/RichTextField.vue";
 import ArretsLies from "@/components/ajout/ArretsLies.vue";
+import AccesVeloMini from "@/components/ajout/AccesVeloMini.vue";
 
 // Helper to create search icon slot
 const searchIconSlot = () => ({
@@ -343,9 +344,84 @@ document.addEventListener("DOMContentLoaded", () => {
   // Mount rich text editors (TipTap) on the textarea-replacement mount points
   mountRichTextFields();
 
-  // Accès à pied depuis des arrêts (création uniquement)
+  // Accès à vélo, puis accès sans vélo, depuis des arrêts (création uniquement)
+  mountAccesVelo();
   mountArretsPietons();
 });
+
+/**
+ * Carte commune aux accès (#map-arrets-wrap, js/components/map/arrets-lies-map.js) : visible dès que
+ * « Ajouter un accès à vélo » OU « accessible sans vélo » est coché. Événements :
+ *   - `velogrimpe:arrets-pietons-toggle` { visible } : affichage de la carte (recalcul de taille) ;
+ *   - `velogrimpe:arrets-pietons-active` { active } : « accessible sans vélo » coché, donc arrêts cliquables.
+ */
+const accesActifs = { velo: false, pied: false };
+let carteAccesVisible = false;
+function setAccesActif(kind: "velo" | "pied", actif: boolean) {
+  accesActifs[kind] = actif;
+  const visible = accesActifs.velo || accesActifs.pied;
+  document
+    .getElementById("map-arrets-wrap")
+    ?.classList.toggle("hidden", !visible);
+  document.dispatchEvent(
+    new CustomEvent("velogrimpe:arrets-pietons-active", {
+      detail: { active: accesActifs.pied },
+    }),
+  );
+  if (visible !== carteAccesVisible) {
+    carteAccesVisible = visible;
+    document.dispatchEvent(
+      new CustomEvent("velogrimpe:arrets-pietons-toggle", {
+        detail: { visible },
+      }),
+    );
+  }
+}
+
+/**
+ * « Ajouter un accès à vélo » : case à cocher + mini-formulaire (arrêt de départ, distance, D+, D-, trace GPX,
+ * variante, description). Les champs sont natifs du formulaire (`acces_velo[...]`, `acces_velo_gpx`) et
+ * désactivés tant que la case est décochée.
+ */
+function mountAccesVelo() {
+  const mountEl = document.getElementById("vue-acces-velo");
+  const check = document.getElementById(
+    "acces_velo_check",
+  ) as HTMLInputElement | null;
+  if (!mountEl || !check) return;
+
+  let arrets: Array<{ id: number; nom: string }> = [];
+  try {
+    arrets = JSON.parse(mountEl.dataset.arrets || "[]");
+  } catch (e) {
+    console.error("[velogrimpe] Failed to parse arrets data:", e);
+  }
+
+  const enabled = ref(false);
+  const sync = () => {
+    enabled.value = check.checked;
+    mountEl.classList.toggle("hidden", !check.checked);
+    setAccesActif("velo", check.checked);
+  };
+  check.addEventListener("change", sync);
+
+  createApp({
+    setup: () => () => h(AccesVeloMini, { arrets, enabled: enabled.value }),
+  }).mount(mountEl);
+
+  // Une falaise existante sélectionnée passe en édition : section masquée et décochée
+  (window as unknown as Record<string, unknown>).setAccesVeloVisible = (
+    visible: boolean,
+  ) => {
+    document
+      .getElementById("acces-velo-section")
+      ?.classList.toggle("hidden", !visible);
+    if (!visible) {
+      check.checked = false;
+      sync();
+    }
+  };
+}
 
 /**
  * « Accessible à pied depuis un arrêt » : case à cocher + liste d'arrêts liés.
@@ -369,12 +445,9 @@ function mountArretsPietons() {
     console.error("[velogrimpe] Failed to parse arrets data:", e);
   }
 
-  const mapWrap = document.getElementById("map-arrets-wrap");
   const linkedIds = ref<number[]>([]);
-  let wasChecked = false;
   const sync = () => {
     mountEl.classList.toggle("hidden", !check.checked);
-    mapWrap?.classList.toggle("hidden", !check.checked);
     hidden.value =
       check.checked && linkedIds.value.length
         ? JSON.stringify(linkedIds.value)
@@ -385,14 +458,7 @@ function mountArretsPietons() {
         detail: { ids: [...linkedIds.value] },
       }),
     );
-    if (check.checked !== wasChecked) {
-      wasChecked = check.checked;
-      document.dispatchEvent(
-        new CustomEvent("velogrimpe:arrets-pietons-toggle", {
-          detail: { visible: check.checked },
-        }),
-      );
-    }
+    setAccesActif("pied", check.checked);
   };
   watch(linkedIds, sync);
   check.addEventListener("change", sync);
@@ -434,6 +500,7 @@ function mountArretsPietons() {
     document
       .getElementById("acces-pietons-section")
       ?.classList.toggle("hidden", !visible);
+    (window as unknown as { setAccesVeloVisible?: (v: boolean) => void }).setAccesVeloVisible?.(visible);
     if (!visible) {
       check.checked = false;
       linkedIds.value = [];

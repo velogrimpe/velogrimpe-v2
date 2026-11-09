@@ -13,6 +13,28 @@ import FormAutocomplete, {
   type FormAutocompleteItem,
 } from "@/components/shared/FormAutocomplete.vue";
 import Icon from "@/components/shared/Icon.vue";
+import AccesPiedFields from "@/components/ajout/AccesPiedFields.vue";
+
+export interface AccesExistant {
+  type: "velo" | "pied";
+  variante: string;
+  km: number | null;
+  dplus: number | null;
+  dmoins: number | null;
+  public: number;
+}
+
+const libelleAcces = (a: AccesExistant) => {
+  const nom = a.variante || (a.type === "velo" ? "Itinéraire à vélo" : "Accès sans vélo");
+  const chiffres = [
+    a.km != null ? `${a.km} km` : null,
+    a.dplus != null ? `${a.dplus} D+` : null,
+    a.dmoins != null ? `${a.dmoins} D-` : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
+  return `${a.type === "velo" ? "🚲" : "🚶"} ${nom}${chiffres ? ` (${chiffres})` : ""}${a.public === 2 ? " — à valider" : ""}`;
+};
 
 interface FalaiseItem extends FormAutocompleteItem {
   id: number;
@@ -25,12 +47,14 @@ const props = withDefaults(
     linkedIds?: number[];
     /**
      * Champs facultatifs de l'accès à pied de chaque falaise liée (description, km, D+, D-) :
-     * `acces_pieton[<id>][description|km|dplus|dmoins]`, lus au submit par ajout-bus.ts
-     * (`falaises_acces`). Pas de GPX ici (envoi JSON) : à ajouter ensuite depuis la fiche falaise.
+     * `acces_pieton[<id>][description|km|dplus|dmoins]` et trace GPX `acces_gpx_<id>`, lus au submit par
+     * ajout-bus.ts (`falaises_acces` + fichiers, envoyés en multipart).
      */
     accesDetails?: boolean;
+    /** Accès déjà décrits de l'arrêt (édition), par falaise : indiqués dans le détail de chaque falaise liée. */
+    accesExistants?: Record<string, AccesExistant[]>;
   }>(),
-  { falaises: () => [], linkedIds: () => [], accesDetails: false },
+  { falaises: () => [], linkedIds: () => [], accesDetails: false, accesExistants: () => ({}) },
 );
 
 const emit = defineEmits<{
@@ -122,45 +146,25 @@ function onSelect(item: FormAutocompleteItem | null) {
         <details v-if="accesDetails" class="basis-full pb-1 pr-1" :data-testid="`acces-details-${falaise.id}`">
           <summary class="text-xs cursor-pointer text-primary">
             Détails de l'accès à pied (optionnel)
+            <span v-if="accesExistants[String(falaise.id)]?.length" class="opacity-70">
+              — {{ accesExistants[String(falaise.id)].length }} accès déjà décrit(s)
+            </span>
           </summary>
-          <div class="flex flex-col gap-2 mt-2">
-            <textarea
-              :name="`acces_pieton[${falaise.id}][description]`"
-              rows="2"
-              class="textarea textarea-sm leading-5 w-full"
-              placeholder="Description : durée, sentier balisé ou non, passages délicats…"
-            ></textarea>
-            <div class="flex flex-wrap gap-2">
-              <input
-                type="number"
-                :name="`acces_pieton[${falaise.id}][km]`"
-                step="0.1"
-                min="0"
-                placeholder="km"
-                aria-label="Distance (km)"
-                class="input input-sm w-24"
-              />
-              <input
-                type="number"
-                :name="`acces_pieton[${falaise.id}][dplus]`"
-                min="0"
-                placeholder="D+ (m)"
-                aria-label="D+ (m)"
-                class="input input-sm w-24"
-              />
-              <input
-                type="number"
-                :name="`acces_pieton[${falaise.id}][dmoins]`"
-                min="0"
-                placeholder="D- (m)"
-                aria-label="D- (m)"
-                class="input input-sm w-24"
-              />
-            </div>
-            <p class="text-xs text-slate-500 my-0">
-              Une trace GPS peut être ajoutée ensuite depuis la fiche de la falaise.
-            </p>
+          <div
+            v-if="accesExistants[String(falaise.id)]?.length"
+            class="text-xs mt-2"
+            :data-testid="`acces-existants-${falaise.id}`"
+          >
+            <div class="font-semibold">Accès déjà décrits :</div>
+            <ul class="list-none pl-0 my-0">
+              <li v-for="(a, i) in accesExistants[String(falaise.id)]" :key="i">{{ libelleAcces(a) }}</li>
+            </ul>
+            <i class="opacity-70">
+              Sans nom de variante, l'accès sans vélo existant est complété (champs vides seulement) ; avec un nom
+              de variante, un accès supplémentaire est créé.
+            </i>
           </div>
+          <AccesPiedFields :id="falaise.id" />
         </details>
       </li>
     </ul>

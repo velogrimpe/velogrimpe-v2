@@ -134,7 +134,7 @@ $mode_pied = ($_GET['mode'] ?? '') === 'pied';
         (version admin)</span>
     </h1>
     <div class="rounded-lg bg-base-300 p-4 my-6 border border-base-300 shadow-xs text-base-content">
-      <b>Vous vous apprêtez à décrire un accès Arrêt &rarr; Falaise, à vélo ou à pied.</b><br>
+      <b>Vous vous apprêtez à décrire un accès Arrêt (Gare, arrêt de bus) &rarr; Falaise, à vélo ou à pied.</b><br>
       <i>Les champs obligatoires sont en noir, les optionnels en gris.</i>
     </div>
     <form method="POST" action="/api/add_velo.php" enctype="multipart/form-data" class="flex flex-col gap-4">
@@ -144,11 +144,11 @@ $mode_pied = ($_GET['mode'] ?? '') === 'pied';
       <div class="flex flex-col md:flex-row gap-4 bg-base-100 p-4 rounded-lg border border-base-200 shadow-xs">
         <label class="flex items-center gap-2 cursor-pointer">
           <input class="radio radio-primary" type="radio" name="mode" value="velo" <?= $mode_pied ? '' : 'checked' ?>>
-          <b>Itinéraire à vélo</b> <span class="text-sm">(avec trace GPS)</span>
+          <b>Itinéraire à vélo</b> <span class="text-sm"></span>
         </label>
         <label class="flex items-center gap-2 cursor-pointer">
           <input class="radio radio-primary" type="radio" name="mode" value="pied" <?= $mode_pied ? 'checked' : '' ?>>
-          <b>Accès à pied</b> <span class="text-sm">(depuis l'arrêt, sans vélo ; trace GPS facultative)</span>
+          <b>Accès sans vélo</b> <span class="text-sm">(depuis un arrêt de bus/tram, sans vélo)</span>
         </label>
       </div>
       <!-- Partie Départ / Arrivées -->
@@ -178,12 +178,31 @@ $mode_pied = ($_GET['mode'] ?? '') === 'pied';
           <input tabindex="-1" class="input input-disabled input-xs w-1/4" type="text" id="falaise_id"
             name="falaise_id" required readonly />
         </div>
+        <!-- Un accès du MÊME type existe déjà (cf. api/verify_velo_dup.php) : le texte suit le mode choisi -->
         <div id="itineraireExistsAlert" class="hidden bg-red-200 border border-red-900 text-red-900 p-2 rounded-lg">
           <svg class="w-4 h-4 mb-1 fill-none stroke-current inline-block">
             <use href="#error-warning-fill"></use>
-          </svg> Un itinéraire vélo existe déjà entre cet arrêt et cette falaise. Vérifiez que vous ne faites pas de
-          doublon.
+          </svg>
+          <span data-alert-type="velo">Un itinéraire à vélo existe déjà entre cet arrêt et cette falaise. Vérifiez que
+            vous ne faites pas de doublon ; s'il s'agit d'une autre option, donnez-lui un nom de variante.</span>
+          <span data-alert-type="pied" class="hidden">Un accès sans vélo existe déjà entre cet arrêt et cette falaise.
+            Vous pouvez le compléter : seules les informations qui lui manquent (description, distance, dénivelés,
+            trace GPS) seront ajoutées. S'il s'agit d'une autre option, donnez-lui un nom de variante.</span>
         </div>
+        <!-- Variante (les deux modes) : sous l'avertissement de doublon, pour pouvoir la renseigner une fois
+             l'alerte affichée. Un accès de même type et de même variante = doublon (cf. api/verify_velo_dup.php). -->
+        <label class="form-control" for="velo_variante">
+          <b class="">Nom de la variante <span class="text-accent opacity-50">(optionnel)</span> :</b>
+          <input class="input input-sm" type="text" id="velo_variante" name="velo_variante" maxlength="100"
+            oninput="formatVariante()">
+          <i class=""> Dans le cas où il existe plusieurs accès de même type reliant un même arrêt à une même falaise,
+            donner un nom aux différentes possibilités. Ex : "Option par le Nord" et "Option par le Sud".</i>
+        </label>
+        <label class="form-control" for="velo_varianteformate" style="display: none;">
+          <b class="">Nom de la variante (formatée) <span class="text-accent opacity-50">(optionnel)</span> :</b>
+          <input class="input input-sm" type="text" id="velo_varianteformate" name="velo_varianteformate"
+            readonly style="display: none;">
+        </label>
       </div>
       <div id="section-velo">
 <div class="flex flex-col gap-4">
@@ -237,18 +256,6 @@ $mode_pied = ($_GET['mode'] ?? '') === 'pied';
             l'enregistrement.</i>
           <div id="velo-map" class="mt-2 rounded-lg border border-base-300 z-0" style="height: 400px;"></div>
         </div>
-        <label class="form-control" for="velo_variante">
-          <b class="">Nom de la variante <span class="text-accent opacity-50">(optionnel)</span> :</b>
-          <input class="input input-sm" type="text" id="velo_variante" name="velo_variante"
-            oninput="formatVariante()">
-          <i class=""> Dans le cas où il existe plusieurs itinéraires reliant une même gare à une même falaise, donner
-            un nom aux différentes possibilités. Ex : "Option par le Nord" et "Option par le Sud".</i>
-        </label>
-        <label class="form-control" for="velo_varianteformate" style="display: none;">
-          <b class="">Nom de la variante (formatée) <span class="text-accent opacity-50">(optionnel)</span> :</b>
-          <input class="input input-sm" type="text" id="velo_varianteformate" name="velo_varianteformate"
-            readonly style="display: none;">
-        </label>
       </div>
       <!-- Partie Remarques -->
       <div class="relative flex items-center">

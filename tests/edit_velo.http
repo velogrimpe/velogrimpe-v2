@@ -1,5 +1,6 @@
 ### edit_velo.php — soumission du formulaire d'édition d'itinéraire vélo (multipart/form-data)
-### ATTENTION : un envoi valide modifie réellement la ligne `acces_falaise` (type `velo`) et, si un GPX est fourni,
+### Fonctionne aussi pour un accès sans vélo (type `pied`) : km / D+ / D- facultatifs, Openrunner ignoré, GPX ajoutable.
+### ATTENTION : un envoi valide modifie réellement la ligne `acces_falaise` (type `velo` ou `pied`) et, si un GPX est fourni,
 ### REMPLACE le fichier dans public/gpx/ (l'ancien est archivé dans public/gpx-historique/).
 ### À n'exécuter que sur un environnement de test.
 ###

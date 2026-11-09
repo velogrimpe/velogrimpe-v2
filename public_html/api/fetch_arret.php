@@ -58,6 +58,28 @@ while ($row = $res->fetch_assoc()) {
 }
 $stmt->close();
 
+// --- Accès déjà décrits (vélo / sans vélo) de cet arrêt vers les falaises : le formulaire d'arrêt les indique ---
+$acces = [];
+$stmt = $mysqli->prepare(
+  "SELECT falaise_id, acces_id, type, variante, km, dplus, dmoins, public
+   FROM acces_falaise WHERE arret_id = ? AND public >= 0 ORDER BY falaise_id, type DESC, variante, acces_id"
+);
+$stmt->bind_param("i", $arret_id);
+$stmt->execute();
+foreach ($stmt->get_result()->fetch_all(MYSQLI_ASSOC) as $ac) {
+  $acces[] = [
+    "falaise_id" => (int) $ac["falaise_id"],
+    "acces_id" => (int) $ac["acces_id"],
+    "type" => $ac["type"],
+    "variante" => $ac["variante"],
+    "km" => $ac["km"] !== null ? (float) $ac["km"] : null,
+    "dplus" => $ac["dplus"] !== null ? (int) $ac["dplus"] : null,
+    "dmoins" => $ac["dmoins"] !== null ? (int) $ac["dmoins"] : null,
+    "public" => (int) $ac["public"],
+  ];
+}
+$stmt->close();
+
 // --- Liaisons (non orientées : arret_1_id OU arret_2_id = arret courant) ---
 $liaisons = [];
 $ligne_ids = [];
@@ -111,6 +133,7 @@ if (!empty($ligne_ids)) {
 echo json_encode([
   "arret" => $arret,
   "falaise_ids" => $falaise_ids,
+  "acces" => $acces,
   "lignes" => $lignes,
   "liaisons" => $liaisons,
 ]);

@@ -59,7 +59,7 @@ test.describe('Falaises liées à un arrêt de bus', () => {
     const cible = falaises[0]
 
     await page.locator(SECTION).getByRole('button', { name: 'Lier une falaise' }).click()
-    await page.locator(`${SECTION} input[type=text]`).fill(cible.nom.slice(0, 4))
+    await page.locator(`${SECTION} input[type=text]:not([name$="[variante]"])`).fill(cible.nom.slice(0, 4))
     await page.locator(`${SECTION} .autocomplete-list li`).filter({ hasText: cible.nom }).first().click()
 
     expect(await nomsAffiches(page)).toEqual([cible.nom])
@@ -106,7 +106,7 @@ test.describe('Falaises liées à un arrêt de bus', () => {
     await page.evaluate((id) => (window as any).busSetFalaiseLinked(id, true), proche.id)
 
     await page.locator(SECTION).getByRole('button', { name: 'Lier une falaise' }).click()
-    await page.locator(`${SECTION} input[type=text]`).fill(lointaine.nom.slice(0, 4))
+    await page.locator(`${SECTION} input[type=text]:not([name$="[variante]"])`).fill(lointaine.nom.slice(0, 4))
     await page.locator(`${SECTION} .autocomplete-list li`).filter({ hasText: lointaine.nom }).first().click()
     await expect(page.locator(`${SECTION} li`)).toHaveCount(2)
 
@@ -157,5 +157,18 @@ test.describe('Falaises liées à un arrêt de bus', () => {
     await page.locator('button[type=submit]').click()
 
     await expect.poll(() => payload?.falaise_ids).toEqual([falaises[0].id, falaises[2].id])
+  })
+
+  test("en édition d'un arrêt, chaque falaise liée indique ses accès déjà décrits et propose d'en ajouter avec une variante", async ({ page }) => {
+    // Tenay-Hauteville (arrêt 12) : accès sans vélo (« Option à pied depuis la gare ») vers Hostiaz (falaise 25)
+    await page.goto('/ajout/ajout_arret.php?arret_id=12')
+    const existants = page.getByTestId('acces-existants-25')
+    await expect(page.getByTestId('acces-details-25')).toBeVisible()
+    await page.getByTestId('acces-details-25').locator('summary').click()
+    await expect(existants).toContainText('Option à pied depuis la gare')
+    await expect(existants).toContainText('3.3 km, 450 D+, 90 D-')
+    // Variante : un accès supplémentaire ; sans variante, l'existant est complété
+    await expect(page.locator('input[name="acces_pieton[25][variante]"]')).toBeVisible()
+    await expect(existants).toContainText(/Sans nom de variante/)
   })
 })

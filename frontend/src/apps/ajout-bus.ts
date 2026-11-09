@@ -1,8 +1,9 @@
 import { createApp, h, ref, type Ref } from 'vue'
 import AjoutBus from '@/components/ajout/AjoutBus.vue'
-import FalaisesLiees from '@/components/ajout/FalaisesLiees.vue'
+import FalaisesLiees, { type AccesExistant } from '@/components/ajout/FalaisesLiees.vue'
 import RichTextField from '@/components/shared/RichTextField.vue'
 import { postBusStop } from '@/utils/bus-api'
+import { lireAccesPied } from '@/utils/acces-pied'
 
 interface FalaiseItem {
   id: number
@@ -64,6 +65,9 @@ document.addEventListener('DOMContentLoaded', () => {
     hydrate: (d: unknown) => Promise<void>
   }
 
+  // Accès déjà décrits de l'arrêt (édition), par falaise : renseignés au chargement de l'arrêt (prefill)
+  const accesExistants = ref<Record<string, AccesExistant[]>>({})
+
   // --- Liste des falaises liées (alternative à la carte) ---
   const falaisesMountEl = document.getElementById('vue-falaises-liees')
   if (falaisesMountEl) {
@@ -86,6 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
             falaises: window.busFalaises ?? [],
             linkedIds: linkedIds.value,
             accesDetails: true,
+            accesExistants: accesExistants.value,
             onLink: (id: number) => {
               window.busSetFalaiseLinked?.(id, true)
               // Cadrage sur l'ensemble arrêt + falaises liées, pas sur la seule ajoutée.
@@ -167,6 +172,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const setLinked = (window as unknown as Record<string, (ids: number[]) => void>)
           .busSetLinkedFalaises
         if (setLinked && Array.isArray(data.falaise_ids)) setLinked(data.falaise_ids)
+        // Accès déjà décrits, regroupés par falaise (affichés dans le détail de chaque falaise liée)
+        const parFalaise: Record<string, AccesExistant[]> = {}
+        for (const a of (data.acces ?? []) as Array<AccesExistant & { falaise_id: number }>) {
+          ;(parFalaise[String(a.falaise_id)] ??= []).push(a)
+        }
+        accesExistants.value = parFalaise
         // Liaisons / lignes
         vm.hydrate({ lignes: data.lignes || [], liaisons: data.liaisons || [] })
       })
@@ -187,13 +198,13 @@ document.addEventListener('DOMContentLoaded', () => {
       .map((s) => parseInt(s.trim(), 10))
       .filter((n) => !isNaN(n))
 
-    // Détails facultatifs des accès à pied (description, km, D+, D-), par falaise liée
+    // Détails facultatifs des accès à pied (description, km, D+, D-) et traces GPX, par falaise liée
     const falaisesAcces: Record<string, Record<string, string>> = {}
+    const gpxParFalaise: Record<string, File> = {}
     for (const id of falaiseIds) {
-      const champ = (nom: string) =>
-        (document.querySelector(`[name="acces_pieton[${id}][${nom}]"]`) as HTMLInputElement | HTMLTextAreaElement | null)?.value.trim() ?? ''
-      const d = { description: champ('description'), km: champ('km'), dplus: champ('dplus'), dmoins: champ('dmoins') }
-      if (Object.values(d).some((v) => v !== '')) falaisesAcces[String(id)] = d
+      const { details, gpx } = lireAccesPied(document, id)
+      if (details) falaisesAcces[String(id)] = { ...details }
+      if (gpx) gpxParFalaise[String(id)] = gpx
     }
 
     const descInput = document.querySelector(
@@ -230,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement | null
     if (submitBtn) submitBtn.disabled = true
 
-    const result = await postBusStop(payload)
+    const result = await postBusStop(payload, gpxParFalaise)
     if (!result.success) {
       alert('Erreur : ' + (result.error || result.status))
       if (submitBtn) submitBtn.disabled = false

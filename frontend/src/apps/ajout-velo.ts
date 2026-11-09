@@ -36,26 +36,43 @@ document.addEventListener('DOMContentLoaded', () => {
     console.error('[velogrimpe] Failed to parse ajout-velo data:', e)
   }
 
-  // Helper to verify if itinerary exists
-  const verifierExistenceItineraire = (arretId: string | number, falaiseId: string | number) => {
+  // Avertit si un accès du MÊME type (vélo / sans vélo) existe déjà entre l'arrêt et la falaise
+  // choisis : lit l'état courant du formulaire, donc rejoué à chaque changement d'arrêt, de falaise
+  // ou de mode.
+  const verifierExistenceItineraire = () => {
+    const alert = document.getElementById('itineraireExistsAlert')
+    if (!alert) return
+    const arretId = (document.getElementById('arret_id') as HTMLInputElement | null)?.value
+    const falaiseId = (document.getElementById('falaise_id') as HTMLInputElement | null)?.value
+    const type =
+      (document.querySelector('input[name=mode]:checked') as HTMLInputElement | null)?.value === 'pied'
+        ? 'pied'
+        : 'velo'
     if (!arretId || !falaiseId) {
-      const alert = document.getElementById('itineraireExistsAlert')
-      if (alert) alert.classList.add('hidden')
+      alert.classList.add('hidden')
       return
     }
-    fetch(`/api/verify_velo_dup.php?arret_id=${arretId}&falaise_id=${falaiseId}`)
+    const variante = (document.getElementById('velo_variante') as HTMLInputElement | null)?.value.trim() ?? ''
+    fetch(
+      `/api/verify_velo_dup.php?arret_id=${arretId}&falaise_id=${falaiseId}&type=${type}&variante=${encodeURIComponent(variante)}`,
+    )
       .then((response) => response.json())
       .then((exists) => {
-        const alert = document.getElementById('itineraireExistsAlert')
-        if (alert) {
-          if (exists) {
-            alert.classList.remove('hidden')
-          } else {
-            alert.classList.add('hidden')
-          }
-        }
+        alert.querySelectorAll<HTMLElement>('[data-alert-type]').forEach((el) => {
+          el.classList.toggle('hidden', el.dataset.alertType !== type)
+        })
+        alert.classList.toggle('hidden', !exists)
       })
   }
+  document.querySelectorAll('input[name=mode]').forEach((radio) =>
+    radio.addEventListener('change', verifierExistenceItineraire),
+  )
+  // Une variante différente d'un accès existant n'est pas un doublon : l'avertissement suit la saisie
+  let varianteTimer: ReturnType<typeof setTimeout> | undefined
+  document.getElementById('velo_variante')?.addEventListener('input', () => {
+    clearTimeout(varianteTimer)
+    varianteTimer = setTimeout(verifierExistenceItineraire, 300)
+  })
 
   // Create Vue app
   const app = createApp({
@@ -78,6 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (arretIdEl) arretIdEl.value = String(preset.id)
             if (veloDepartEl) veloDepartEl.value = preset.nomformate
             emitMapEvent('gare', gareMapDetail(preset))
+            verifierExistenceItineraire()
           }, 0)
         }
       }
@@ -95,6 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (falaiseIdEl) falaiseIdEl.value = String(preset.id)
             if (veloArriveeEl) veloArriveeEl.value = preset.nomformate
             emitMapEvent('falaise', falaiseMapDetail(preset))
+            verifierExistenceItineraire()
           }, 0)
         }
       }
@@ -103,17 +122,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const gareItem = item as ArretItem | null
         const arretIdEl = document.getElementById('arret_id') as HTMLInputElement
         const veloDepartEl = document.getElementById('velo_depart') as HTMLInputElement
-        const falaiseIdEl = document.getElementById('falaise_id') as HTMLInputElement
 
         if (gareItem) {
           if (arretIdEl) arretIdEl.value = String(gareItem.id)
           if (veloDepartEl) veloDepartEl.value = gareItem.nomformate || ''
-          verifierExistenceItineraire(gareItem.id, falaiseIdEl?.value || '')
+          verifierExistenceItineraire()
           emitMapEvent('gare', gareMapDetail(gareItem))
         } else {
           if (arretIdEl) arretIdEl.value = ''
           if (veloDepartEl) veloDepartEl.value = ''
           emitMapEvent('gare', null)
+          verifierExistenceItineraire()
         }
       }
 
@@ -121,17 +140,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const falaiseItem = item as FalaiseItem | null
         const falaiseIdEl = document.getElementById('falaise_id') as HTMLInputElement
         const veloArriveeEl = document.getElementById('velo_arrivee') as HTMLInputElement
-        const arretIdEl = document.getElementById('arret_id') as HTMLInputElement
 
         if (falaiseItem) {
           if (falaiseIdEl) falaiseIdEl.value = String(falaiseItem.id)
           if (veloArriveeEl) veloArriveeEl.value = falaiseItem.nomformate || ''
-          verifierExistenceItineraire(arretIdEl?.value || '', falaiseItem.id)
+          verifierExistenceItineraire()
           emitMapEvent('falaise', falaiseMapDetail(falaiseItem))
         } else {
           if (falaiseIdEl) falaiseIdEl.value = ''
           if (veloArriveeEl) veloArriveeEl.value = ''
           emitMapEvent('falaise', null)
+          verifierExistenceItineraire()
         }
       }
 

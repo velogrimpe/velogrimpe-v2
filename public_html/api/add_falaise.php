@@ -179,6 +179,40 @@ $arrets_pietons = [];
 $arrets_pietons_noms = [];
 $arrets_pietons_details = [];
 $arrets_pietons_gpx = [];
+// Accès à vélo à la création (mini-formulaire « Ajouter un accès à vélo ») : champs
+// `acces_velo[arret_id|km|dplus|dmoins|variante|description]` et trace GPX `acces_velo_gpx`.
+// Tout est obligatoire sauf variante et description ; validé avant l'INSERT de la falaise.
+$acces_velo = null;
+$acces_velo_arret = null;
+$acces_velo_dom = null;
+if (!$isEdition && is_array($_POST['acces_velo'] ?? null)
+  && (($_POST['acces_velo']['actif'] ?? '') === '1' || trim((string) ($_POST['acces_velo']['arret_id'] ?? '')) !== '')) {
+  require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/velo_lib.php';
+  $src = $_POST['acces_velo'];
+  $acces_velo_arret = velo_trouver_arret($mysqli, (int) $src['arret_id']);
+  if ($acces_velo_arret === null) {
+    respondError("Arrêt de départ introuvable pour l'accès à vélo (choisissez-le dans la liste). Rien n'a été enregistré.");
+  }
+  foreach (['km' => 'la distance', 'dplus' => 'le D+', 'dmoins' => 'le D-'] as $champ => $libelle) {
+    if (!is_numeric($src[$champ] ?? null) || $src[$champ] < 0) {
+      respondError("Accès à vélo : $libelle est obligatoire (nombre positif). Rien n'a été enregistré.");
+    }
+  }
+  $acces_velo_dom = velo_charger_gpx_upload('acces_velo_gpx');
+  if ($acces_velo_dom === null) {
+    respondError("Accès à vélo : la trace GPX est obligatoire. Rien n'a été enregistré.");
+  }
+  $acces_velo = [
+    'km' => (float) $src['km'], 'dplus' => (int) $src['dplus'], 'dmoins' => (int) $src['dmoins'],
+    'variante' => trim((string) ($src['variante'] ?? '')), 'description' => trim((string) ($src['description'] ?? '')),
+  ];
+  // Les segments du nom du fichier GPX sont validés, pas reformatés (cf. velo_verifier_slugs)
+  velo_verifier_slugs([
+    'velo_depart' => $acces_velo_arret['slug'],
+    'velo_arrivee' => $falaise_nomformate,
+    'velo_varianteformate' => acces_formater_variante($acces_velo['variante']),
+  ]);
+}
 if (!$isEdition && trim($_POST['arrets_pietons'] ?? '') !== '') {
   $decoded = json_decode($_POST['arrets_pietons'], true);
   if (!is_array($decoded) || !array_is_list($decoded)) {
@@ -212,13 +246,14 @@ if (!$isEdition && trim($_POST['arrets_pietons'] ?? '') !== '') {
     $arrets_pietons_details[$arretId] = acces_lire_details(is_array($src) ? $src : []);
     $arrets_pietons_gpx[$arretId] = velo_charger_gpx_upload("acces_gpx_$arretId");
   }
-  if (array_filter($arrets_pietons_gpx)) {
-    try {
-      vg_data_prepare(VELO_GPX_DIR);
-    } catch (VgDataException $e) {
-      error_log('[add_falaise] ' . $e->getMessage());
-      respondError("Le dossier des traces GPX est indisponible, la falaise n'a pas été enregistrée. Merci de réessayer plus tard.", 500);
-    }
+}
+// Dossier des traces GPX prêt avant la moindre écriture, si un GPX (accès à vélo ou à pied) est fourni
+if ($acces_velo_dom !== null || array_filter($arrets_pietons_gpx)) {
+  try {
+    vg_data_prepare(VELO_GPX_DIR);
+  } catch (VgDataException $e) {
+    error_log('[add_falaise] ' . $e->getMessage());
+    respondError("Le dossier des traces GPX est indisponible, la falaise n'a pas été enregistrée. Merci de réessayer plus tard.", 500);
   }
 }
 
@@ -437,6 +472,13 @@ $res = $stmt->execute();
 $falaise_id = $mysqli->insert_id;
 $stmt->close();
 
+$acces_velo_cree = null;
+if ($res && $acces_velo !== null) {
+  $acces_velo_cree = acces_velo_creer(
+    $mysqli, $acces_velo_arret, (int) $falaise_id, $falaise_nomformate, $acces_velo,
+    $acces_velo_dom, $nom_prenom, $email, $admin ? 1 : 2
+  );
+}
 if ($res && $arrets_pietons) {
   require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/velo_lib.php';
   foreach ($arrets_pietons as $arretId) {
@@ -571,6 +613,19 @@ $changes_json = logChanges(
   $newFalaise,
   $oldFalaise
 );
+if ($acces_velo_cree) {
+  logChanges($nom_prenom, $email, 'insert', 'acces_falaise', $acces_velo_cree['acces_id'], $falaise_id, [
+    'Type' => 'velo',
+    'Arrêt' => $acces_velo_arret['nom'],
+    'Falaise' => $falaise_nom,
+    'km' => (string) $acces_velo['km'],
+    'D+' => (string) $acces_velo['dplus'],
+    'D-' => (string) $acces_velo['dmoins'],
+    'Variante' => $acces_velo['variante'],
+    'Description' => $acces_velo['description'],
+    'Trace GPX' => $acces_velo_cree['gpx'],
+  ]);
+}
 foreach ($arrets_pietons_noms as $arretId => $arretNom) {
   logChanges($nom_prenom, $email, 'insert', 'acces_falaise', $arretId, $falaise_id, [
     'Arrêt' => $arretNom,
@@ -594,6 +649,13 @@ $html = "<html><body>";
 $html .= "<h1>La falaise de " . htmlspecialchars($falaise_nom) . " a été " . ($isEdition ? "modifiée" : "ajoutée") . " par " . htmlspecialchars($nom_prenom) . "</h1>";
 $html .= "<p>email : <a href='mailto:" . htmlspecialchars($email) . "'>" . htmlspecialchars($email) . "</a></p>";
 $html .= "<p><a href='https://velogrimpe.fr/falaise.php?falaise_id=$falaise_id'>Voir la falaise</a></p>";
+if ($acces_velo_cree) {
+  $html .= "<p>🚲 <b>Accès à vélo ajouté</b> depuis " . htmlspecialchars($acces_velo_arret['nom']) . " : "
+    . htmlspecialchars((string) $acces_velo['km']) . " km, " . (int) $acces_velo['dplus'] . " D+, " . (int) $acces_velo['dmoins'] . " D-"
+    . ($acces_velo['variante'] !== '' ? " (" . htmlspecialchars($acces_velo['variante']) . ")" : "")
+    . ($admin ? "" : " — <b>à valider</b> (lien d'édition admin : ajout/edit_velo.php)")
+    . ($acces_velo_cree['gpx'] === 'echec' ? "<br>⚠️ La trace GPX n'a pas pu être enregistrée." : "") . "</p>";
+}
 if ($message) {
   $html .= "<p>Message additionnel : " . htmlspecialchars(nl2br(trim($message))) . "</p>";
 }

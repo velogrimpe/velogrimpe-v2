@@ -102,6 +102,37 @@ while ($row = $res->fetch_assoc()) {
 }
 $stmt->close();
 
+// Accès (vélo ou sans vélo) déjà décrits entre chacun de ces arrêts et la falaise : l'éditeur de falaise les
+// liste dans le popup de l'arrêt et propose toujours d'en ajouter un autre (variante). Aucun contributeur.
+foreach ($arrets as &$a) {
+  $a["acces"] = [];
+}
+unset($a);
+if (!empty($idToIndex)) {
+  $ids = array_keys($idToIndex);
+  $placeholders = implode(',', array_fill(0, count($ids), '?'));
+  $stmt = $mysqli->prepare(
+    "SELECT arret_id, acces_id, type, variante, km, dplus, dmoins, public
+     FROM acces_falaise WHERE falaise_id = ? AND public >= 0 AND arret_id IN ($placeholders)
+     ORDER BY type DESC, variante, acces_id"
+  );
+  $params = array_merge([$falaise_id], $ids);
+  $stmt->bind_param('i' . str_repeat('i', count($ids)), ...$params);
+  $stmt->execute();
+  foreach ($stmt->get_result()->fetch_all(MYSQLI_ASSOC) as $ac) {
+    $arrets[$idToIndex[(int) $ac["arret_id"]]]["acces"][] = [
+      "acces_id" => (int) $ac["acces_id"],
+      "type" => $ac["type"],
+      "variante" => $ac["variante"],
+      "km" => $ac["km"] !== null ? (float) $ac["km"] : null,
+      "dplus" => $ac["dplus"] !== null ? (int) $ac["dplus"] : null,
+      "dmoins" => $ac["dmoins"] !== null ? (int) $ac["dmoins"] : null,
+      "public" => (int) $ac["public"],
+    ];
+  }
+  $stmt->close();
+}
+
 // Liaisons : pour chaque arrêt renvoyé, les arrêts reliés (avec coordonnées,
 // pour tracer les arcs). Les arêtes sont non orientées : on attache la liaison
 // au(x) endpoint(s) présent(s) dans le jeu de résultats.

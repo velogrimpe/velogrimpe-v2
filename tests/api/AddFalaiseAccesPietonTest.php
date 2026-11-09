@@ -187,4 +187,118 @@ final class AddFalaiseAccesPietonTest extends ApiTestCase
     $this->assertStringContainsString("n'est pas valide", $res['raw']);
     $this->assertNull($this->falaiseId($slug), 'aucune falaise sans ses accès : GPX validé avant l\'INSERT');
   }
+
+  // --- Accès à vélo à la création (mini-formulaire) ---------------------------
+
+  private function champsAccesVelo(int $arretId, array $extra = []): array
+  {
+    return array_merge([
+      'acces_velo[arret_id]' => (string) $arretId, 'acces_velo[km]' => '7.5', 'acces_velo[dplus]' => '300',
+      'acces_velo[dmoins]' => '120', 'acces_velo[variante]' => 'Par le Nord', 'acces_velo[description]' => 'Piste cyclable.',
+    ], $extra);
+  }
+
+  public function testAccesVeloCreeAvecLaFalaiseEtSaTraceGpx(): void
+  {
+    $a1 = $this->createFixtureArret('PHPUnit Gare vélo', 45.12, 6.23, ['ter']);
+    $slug = $this->slug();
+
+    $res = $this->httpPostMultipart('/api/add_falaise.php', $this->champsFalaise($slug, $this->champsAccesVelo($a1)),
+      ['acces_velo_gpx' => __DIR__ . '/../fixtures/velo-with-wpt.gpx']);
+
+    $this->assertSame(302, $res['status'], $res['raw']);
+    $falaiseId = $this->falaiseId($slug);
+    $r = self::dbQueryOne("SELECT acces_id, type, depart_slug, arrivee_slug, km, dplus, dmoins, variante, variante_formate, description, public FROM acces_falaise WHERE arret_id = $a1 AND falaise_id = $falaiseId");
+    $this->assertSame('velo', $r['type']);
+    $this->assertEquals(7.5, (float) $r['km']);
+    $this->assertSame('300', $r['dplus']);
+    $this->assertSame('120', $r['dmoins']);
+    $this->assertSame('Par le Nord', $r['variante']);
+    $this->assertSame('par-le-nord', $r['variante_formate'], 'slug de variante, comme formatVariante() du formulaire d\'ajout');
+    $this->assertSame($slug, $r['arrivee_slug']);
+    $this->assertSame('2', $r['public'], 'à valider (non admin)');
+    $path = dirname(__DIR__, 2) . "/public/gpx/{$r['acces_id']}_{$r['depart_slug']}_{$r['arrivee_slug']}_par-le-nord.gpx";
+    $this->cleanupCallbackOnTearDown(function () use ($path) { if (file_exists($path)) unlink($path); });
+    $this->assertFileExists($path);
+    $this->assertStringNotContainsString('<wpt', file_get_contents($path));
+    $this->assertNotNull(self::dbQueryOne("SELECT 1 AS x FROM edit_logs WHERE collection = 'acces_falaise' AND falaise_id = $falaiseId"));
+  }
+
+  public function testAccesVeloSansGpxRefuseToutLaCreation(): void
+  {
+    $a1 = $this->createFixtureArret('PHPUnit Gare vélo sans gpx', 45.12, 6.23, ['ter']);
+    $slug = $this->slug();
+
+    $res = $this->httpPostMultipart('/api/add_falaise.php', $this->champsFalaise($slug, $this->champsAccesVelo($a1)));
+
+    $this->assertSame(400, $res['status'], $res['raw']);
+    $this->assertStringContainsString('trace GPX est obligatoire', $res['raw']);
+    $this->assertNull($this->falaiseId($slug), 'aucune falaise créée sans l\'accès demandé');
+  }
+
+  public function testAccesVeloIndicateursObligatoiresEtArretValide(): void
+  {
+    $a1 = $this->createFixtureArret('PHPUnit Gare vélo indic', 45.12, 6.23, ['ter']);
+    $slug = $this->slug();
+    $gpx = ['acces_velo_gpx' => __DIR__ . '/../fixtures/velo-with-wpt.gpx'];
+
+    $sansKm = $this->httpPostMultipart('/api/add_falaise.php', $this->champsFalaise($slug, $this->champsAccesVelo($a1, ['acces_velo[km]' => ''])), $gpx);
+    $this->assertSame(400, $sansKm['status']);
+    $this->assertStringContainsString('distance est obligatoire', $sansKm['raw']);
+
+    $inconnu = $this->httpPostMultipart('/api/add_falaise.php', $this->champsFalaise($slug, $this->champsAccesVelo(99999999)), $gpx);
+    $this->assertSame(400, $inconnu['status']);
+    $this->assertStringContainsString('Arrêt de départ introuvable', $inconnu['raw']);
+
+    $this->assertNull($this->falaiseId($slug), 'rien n\'est créé en cas de refus');
+  }
+
+  public function testAccesVeloEtAccesSansVeloPeuventEtreCreesEnsemble(): void
+  {
+    $gare = $this->createFixtureArret('PHPUnit Gare combo', 45.12, 6.23, ['ter']);
+    $car = $this->createFixtureArret('PHPUnit Car combo', 45.13, 6.24, ['bus']);
+    $slug = $this->slug();
+
+    $res = $this->httpPostMultipart('/api/add_falaise.php', $this->champsFalaise($slug, $this->champsAccesVelo($gare) + [
+      'arrets_pietons' => json_encode([$car]),
+    ]), ['acces_velo_gpx' => __DIR__ . '/../fixtures/velo-with-wpt.gpx']);
+
+    $this->assertSame(302, $res['status'], $res['raw']);
+    $falaiseId = $this->falaiseId($slug);
+    $types = array_column(self::dbQuery("SELECT arret_id, type FROM acces_falaise WHERE falaise_id = $falaiseId"), 'type', 'arret_id');
+    $this->assertSame([$gare => 'velo', $car => 'pied'], $types);
+    $r = self::dbQueryOne("SELECT acces_id, depart_slug, arrivee_slug, variante_formate FROM acces_falaise WHERE arret_id = $gare AND falaise_id = $falaiseId");
+    $path = dirname(__DIR__, 2) . "/public/gpx/{$r['acces_id']}_{$r['depart_slug']}_{$r['arrivee_slug']}_{$r['variante_formate']}.gpx";
+    $this->cleanupCallbackOnTearDown(function () use ($path) { if (file_exists($path)) unlink($path); });
+  }
+
+  public function testEnEditionLeChampAccesVeloEstIgnore(): void
+  {
+    $falaiseId = $this->createFixtureFalaise();
+    $a1 = $this->createFixtureArret('PHPUnit Gare vélo édition', 45.12, 6.23, ['ter']);
+
+    $res = $this->httpPostMultipart('/api/add_falaise.php', $this->champsFalaise('phpunit-fixture', $this->champsAccesVelo($a1) + [
+      'falaise_id' => (string) $falaiseId,
+    ]), ['acces_velo_gpx' => __DIR__ . '/../fixtures/velo-with-wpt.gpx']);
+
+    $this->assertSame(302, $res['status'], $res['raw']);
+    $this->assertNull(self::dbQueryOne("SELECT 1 AS x FROM acces_falaise WHERE falaise_id = $falaiseId"), 'en édition, les accès se gèrent ailleurs');
+  }
+
+  public function testVarianteParArretALaCreation(): void
+  {
+    $a1 = $this->createFixtureArret('PHPUnit Arrêt variante', 45.12, 6.23, ['bus']);
+    $slug = $this->slug();
+
+    $res = $this->httpPostMultipart('/api/add_falaise.php', $this->champsFalaise($slug, [
+      'arrets_pietons' => json_encode([$a1]),
+      "acces_pieton[$a1][variante]" => 'Par le sentier',
+      "acces_pieton[$a1][km]" => '1.1',
+    ]));
+
+    $this->assertSame(302, $res['status'], $res['raw']);
+    $r = self::dbQueryOne("SELECT variante, variante_formate FROM acces_falaise WHERE arret_id = $a1 AND falaise_id = " . $this->falaiseId($slug));
+    $this->assertSame('Par le sentier', $r['variante']);
+    $this->assertSame('par-le-sentier', $r['variante_formate']);
+  }
 }

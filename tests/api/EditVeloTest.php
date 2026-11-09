@@ -130,4 +130,63 @@ final class EditVeloTest extends ApiTestCase
       'public' => $v['velo_public'],
     ]);
   }
+
+  // --- Accès sans vélo (type pied, Lot 8quater) -----------------------------
+
+  private function creerAccesPied(array $o = []): int
+  {
+    return $this->createFixtureAcces(self::WITNESS_GARE_ID, self::WITNESS_FALAISE_ID, $o + ['type' => 'pied', 'public' => 1]);
+  }
+
+  public function testAdminModifieUnAccesSansVeloSansIndicateursObligatoires(): void
+  {
+    $id = $this->creerAccesPied(['description' => 'Avant']);
+
+    // Aucun km / D+ / D- : facultatifs pour un accès sans vélo (obligatoires pour un itinéraire à vélo)
+    $res = $this->httpPostMultipart('/api/edit_velo.php', [
+      'admin' => (string) VG_TEST_CONFIG['admin_token'], 'velo_id' => (string) $id,
+      'velo_descr' => 'Après', 'nom_prenom' => 'PHPUnit Admin', 'email' => 'phpunit@example.org',
+    ]);
+
+    $this->assertSame(302, $res['status'], $res['raw']);
+    $row = self::dbQueryOne("SELECT type, description, km, dplus, dmoins, public FROM acces_falaise WHERE acces_id = $id");
+    $this->assertSame('pied', $row['type'], 'le type ne change pas');
+    $this->assertSame('Après', $row['description']);
+    $this->assertNull($row['km'], 'non renseigné : reste NULL (pas 0)');
+    $this->assertSame('1', $row['public']);
+  }
+
+  public function testAdminRenseigneKmDenivelesEtGpxSurUnAccesSansVelo(): void
+  {
+    $id = $this->creerAccesPied();
+    $res = $this->httpPostMultipart('/api/edit_velo.php', [
+      'admin' => (string) VG_TEST_CONFIG['admin_token'], 'velo_id' => (string) $id,
+      'velo_km' => '2.4', 'velo_dplus' => '110', 'velo_dmoins' => '30', 'velo_descr' => '',
+      'velo_openrunner' => 'https://exemple.test/ignore', // Openrunner : vélo seulement
+      'nom_prenom' => 'PHPUnit Admin', 'email' => 'phpunit@example.org',
+    ], ['gpx_file' => __DIR__ . '/../fixtures/velo-with-wpt.gpx']);
+
+    $this->assertSame(302, $res['status'], $res['raw']);
+    $row = self::dbQueryOne("SELECT depart_slug, arrivee_slug, km, dplus, dmoins, lien_openrunner FROM acces_falaise WHERE acces_id = $id");
+    $this->assertEquals(2.4, (float) $row['km']);
+    $this->assertSame('110', $row['dplus']);
+    $this->assertSame('30', $row['dmoins']);
+    $this->assertTrue(in_array($row['lien_openrunner'], [null, ''], true), 'pas d\'Openrunner sur un accès sans vélo');
+    $path = dirname(__DIR__, 2) . "/public/gpx/{$id}_{$row['depart_slug']}_{$row['arrivee_slug']}_.gpx";
+    $this->cleanupCallbackOnTearDown(function () use ($path) { if (file_exists($path)) unlink($path); });
+    $this->assertFileExists($path, 'GPX ajouté à un accès qui n\'en avait pas');
+  }
+
+  public function testContributeurNeModifiePasUnAccesSansVeloValide(): void
+  {
+    $id = $this->creerAccesPied(['description' => 'Texte validé']);
+    $res = $this->httpPostMultipart('/api/edit_velo.php', [
+      'admin' => '0', 'velo_id' => (string) $id, 'velo_descr' => 'Suggestion',
+      'nom_prenom' => 'PHPUnit', 'email' => 'phpunit@example.org',
+    ]);
+
+    $this->assertSame(302, $res['status'], $res['raw']);
+    $this->assertStringContainsString('type=suggestion', (string) $res['location']);
+    $this->assertSame('Texte validé', self::dbQueryOne("SELECT description FROM acces_falaise WHERE acces_id = $id")['description'], 'rien n\'est écrit : suggestion transmise aux admins');
+  }
 }

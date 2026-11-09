@@ -3,6 +3,9 @@
 ### Récupérer un arrêt existant (prefill édition)
 GET {{host}}/api/fetch_arret.php?arret_id=1
 
+### Avec des traces GPX d'accès à pied : multipart/form-data, charge JSON ci-dessous dans le champ `payload` et fichiers
+### `acces_gpx_<falaise_id>` (un GPX invalide => 400 JSON, rien n'est créé).
+
 ### Créer un arrêt de bus (avec une liaison vers l'arrêt 2 via une nouvelle ligne + falaise 39)
 POST {{host}}/api/add_arret.php
 Content-Type: application/json
@@ -127,6 +130,11 @@ Content-Type: application/gpx+xml
 
 < ./fixtures/velo-with-wpt.gpx
 ------vg--
+
+### Ajouter un ITINÉRAIRE À VÉLO depuis l'arrêt (éditeur de falaise) : `type=velo`, km / dplus / dmoins et `gpx_file`
+### obligatoires (multipart), `variante` facultative ; publié « à valider ». Même variante déjà présente => 409.
+### Pour un accès sans vélo, `variante` (clé présente, même vide) désigne cette variante exactement.
+### `action=unlink` + `acces_id` : supprime ce seul accès sans vélo (404 si ce n'est pas un accès sans vélo du couple).
 
 ### Délier l'arrêt 1 de la falaise 39
 POST {{host}}/api/link_arret_falaise.php

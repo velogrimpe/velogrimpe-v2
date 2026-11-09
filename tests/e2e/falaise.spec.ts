@@ -100,4 +100,14 @@ test.describe('Falaise page', () => {
       await expect(page.locator('#emailPromptEmail')).toHaveValue('jeanne@example.com')
     }
   })
+
+  test("le menu d'édition propose d'ajouter un accès vélo et un accès en bus / à pied (formulaire sur le mode pied)", async ({ page }) => {
+    await page.goto('/falaise.php?falaise_id=39')
+    const lien = page.getByTestId('ajouter-acces-pied')
+    await expect(lien).toHaveAttribute('href', /\/ajout\/ajout_velo\.php\?mode=pied&falaise_id=39/)
+    await expect(lien).toHaveText(/Ajouter un accès en bus \/ à pied/)
+    await lien.evaluate((a) => (a as HTMLAnchorElement).click())
+    await expect(page.locator('input[name=mode][value=pied]')).toBeChecked()
+    await expect(page.locator('#section-pied')).toBeVisible()
+  })
 })

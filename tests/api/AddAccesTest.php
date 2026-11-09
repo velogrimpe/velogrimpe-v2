@@ -338,4 +338,28 @@ final class AddAccesTest extends ApiTestCase
       'email' => 'phpunit@example.org',
     ];
   }
+
+  public function testAccesSansVeloAvecVarianteEtDeuxVariantesCoexistent(): void
+  {
+    $falaiseId = $this->createFixtureFalaise();
+    $arretId = $this->createFixtureArret('PHPUnit Variantes pied', 45.2, 5.2, ['bus']);
+
+    $this->postPied($arretId, $falaiseId, ['description' => 'Par la route']);
+    $res = $this->postPied($arretId, $falaiseId, ['velo_variante' => 'Par le sentier', 'description' => 'Par le bois', 'velo_km' => '1.2'], ['gpx_file' => self::GPX_FIXTURE]);
+
+    $this->assertSame(302, $res['status'], $res['raw']);
+    $rows = self::dbQuery("SELECT acces_id, variante, variante_formate, description FROM acces_falaise WHERE type = 'pied' AND arret_id = $arretId AND falaise_id = $falaiseId ORDER BY acces_id");
+    $this->assertCount(2, $rows, 'une variante nommée est un autre accès, pas un complément de l\'accès sans variante');
+    $this->assertSame('', $rows[0]['variante']);
+    $this->assertSame('Par le sentier', $rows[1]['variante']);
+    $this->assertSame('par-le-sentier', $rows[1]['variante_formate']);
+    $row = self::dbQueryOne("SELECT depart_slug, arrivee_slug FROM acces_falaise WHERE acces_id = {$rows[1]['acces_id']}");
+    $path = dirname(__DIR__, 2) . "/public/gpx/{$rows[1]['acces_id']}_{$row['depart_slug']}_{$row['arrivee_slug']}_par-le-sentier.gpx";
+    $this->cleanupCallbackOnTearDown(function () use ($path) { if (file_exists($path)) unlink($path); });
+    $this->assertFileExists($path, 'le nom du GPX porte le slug de la variante, comme pour un itinéraire vélo');
+
+    // Même variante rejouée sans rien de nouveau : refusé
+    $encore = $this->postPied($arretId, $falaiseId, ['velo_variante' => 'Par le sentier', 'description' => 'Autre', 'velo_km' => '9'], ['gpx_file' => self::GPX_FIXTURE]);
+    $this->assertStringContainsString('existe déjà', $encore['raw']);
+  }
 }

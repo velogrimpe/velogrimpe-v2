@@ -26,6 +26,8 @@ export interface FalaiseItem extends FormAutocompleteItem {
 
 /** Ligne renvoyée par /api/fetch_velos.php */
 export interface VeloItem {
+  /** `velo` : itinéraire à vélo ; `pied` : accès sans vélo (Lot 8quater) */
+  type: 'velo' | 'pied'
   velo_id: number
   arret_id: number
   falaise_id: number
@@ -40,7 +42,7 @@ export interface VeloItem {
   velo_openrunner: string
   velo_apiedpossible: number
   velo_public: number
-  arret: GareItem
+  arret: GareItem & { types?: string[] }
   gpx_url: string | null
 }
 
@@ -58,13 +60,15 @@ export const emitMapEvent = (kind: 'gare' | 'falaise' | 'gpx-url', detail: unkno
   document.dispatchEvent(new CustomEvent(`velogrimpe:velo-form:${kind}`, { detail }))
 }
 
-export const gareMapDetail = (g: GareItem | null) => (g ? { latlng: g.latlng, nom: g.nom } : null)
+/** `types` (ter/tgv/bus/tram/teleph) : la carte dessine l'icône de l'arrêt selon son type. */
+export const gareMapDetail = (g: (GareItem & { types?: string[] }) | null) =>
+  g ? { latlng: g.latlng, nom: g.nom, types: g.types ?? [] } : null
 
 export const falaiseMapDetail = (f: FalaiseItem | null) =>
   f ? { latlng: f.latlng, nom: f.nom, fermee: f.fermee, bloc: f.bloc } : null
 
 export const fetchVelosForFalaise = async (falaiseId: number): Promise<VeloItem[]> => {
-  const res = await fetch(`/api/fetch_velos.php?falaise_id=${falaiseId}`)
+  const res = await fetch(`/api/fetch_velos.php?falaise_id=${falaiseId}&types=all`)
   if (!res.ok) throw new Error(`fetch_velos: HTTP ${res.status}`)
   const data = (await res.json()) as { velos: VeloItem[] }
   return data.velos ?? []

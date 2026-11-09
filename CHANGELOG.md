@@ -20,6 +20,35 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
   - Autres points de création, mêmes détails : formulaire de falaise (par arrêt lié : description, km, D+, D-, GPX), formulaire d'arrêt (par falaise liée, sans GPX : JSON), clic « Lier cet arrêt » de l'éditeur de la fiche falaise (JSON, ou multipart avec GPX) ; `api/add_falaise.php`, `api/add_arret.php` (`falaises_acces`), `api/link_arret_falaise.php` les acceptent.
   - Fiche falaise : bloc de l'accès à pied en deux parties (« De l'arrêt à la falaise » : distance, dénivelés, description, trace ; « Arrêt » : lignes) et trace dessinée sur la carte. Cartes globales : la trace est dessinée quand l'accès en a une. Tableau : distance et dénivelés sous la mention d'accès à pied.
 
+### Added (accès : formulaires et fiche falaise)
+
+- **Formulaire d'ajout de falaise** : nouvelle section « Accès à la falaise » qui réunit, dans cet ordre, « Ajouter un accès à vélo » (nouveau : mini-formulaire arrêt de départ, distance, D+, D-, trace GPS obligatoires, variante et description facultatives, créé avec la falaise, `acces_velo[...]` dans `api/add_falaise.php`), « Cette falaise est accessible sans vélo » (ex « accessible à pied depuis un arrêt de transport en commun ») et le champ « Accès en bus ». Création uniquement : en modification, seul « Accès en bus » reste.
+- **Formulaire d'édition d'un accès** (`ajout/edit_velo.php`, `api/edit_velo.php`) : il modifie aussi les accès sans vélo (liste des accès mixte vélo / sans vélo ; indicateurs facultatifs, pas d'Openrunner, GPX ajoutable ; mêmes règles admin / suggestion que pour un itinéraire validé). `api/fetch_velos.php` accepte `types=velo|pied|all` et expose `type` et les types de l'arrêt.
+- Fiche falaise et cartes globales : l'infobulle d'une trace d'accès à pied affiche la **durée de marche** (norme DIN 33466 : 4 km/h, +300 m/h, −500 m/h) quand km, D+ et D- sont renseignés, sinon la distance, avec une petite icône de pas.
+- Fiche falaise : bouton « Ajouter un accès en bus / à pied » dans le menu d'édition.
+
+### Added (variantes, GPX partout, détails depuis l'éditeur)
+
+- **Variante pour un accès sans vélo** : comme pour un itinéraire à vélo, un même arrêt peut avoir plusieurs accès sans vélo vers une falaise (un par variante, nom du GPX compris). Le champ « Nom de la variante » du formulaire d'ajout d'accès est commun aux deux modes et placé sous la ligne arrêt / falaise : l'avertissement « existe déjà » tient compte de la variante saisie et disparaît dès qu'elle diffère (`api/verify_velo_dup.php?variante=`).
+- **Trace GPX dans le formulaire d'arrêt** (`api/add_arret.php`) : envoi en multipart (`payload` JSON + `acces_gpx_<falaise_id>`) quand une trace est jointe, JSON sinon. Tous les formulaires d'accès partagent les mêmes contrôles de GPX (`velo_lire_gpx_upload` : taille, XML, racine `<gpx>`, marqueurs retirés), toujours avant toute écriture ; les endpoints JSON répondent 400 avec le message.
+- **Éditeur de la fiche falaise** : « Lier cet arrêt à la falaise » déplie d'abord le détail de l'accès (description, distance, dénivelés, trace GPS) et le bouton devient « Envoyer » ; le dialogue « Ajouter cet arrêt » (import OSM) propose les mêmes champs, avec la trace GPX.
+- **Formulaire de falaise** : la carte est commune à l'accès à vélo et à l'accès sans vélo (départ de l'accès à vélo, aperçu de sa trace GPX, arrêts sans vélo) ; « Infos supplémentaires » remonte entre « Exposition » et « Marche d'approche ».
+
+- **Éditeur de la fiche falaise, popup d'un arrêt** (refonte) : il liste les accès déjà décrits (vélo / sans vélo, variante, chiffres, « à valider ») et propose TOUJOURS d'en ajouter un autre, via deux mini-formulaires repliables : « + Ajouter un accès sans vélo » et « + Ajouter un accès à vélo » (nom de variante, description, km, D+, D-, trace GPX ; à vélo, km, D+, D- et GPX obligatoires, publié « à valider »). Un seul formulaire ouvert à la fois. Le bouton « Délier » est remplacé par une corbeille à côté de chaque accès sans vélo (jamais à côté d'un itinéraire à vélo), avec confirmation : `action=unlink` accepte `acces_id` pour ne supprimer que cet accès (404 s'il n'est pas un accès sans vélo de ce couple). `api/link_arret_falaise.php` accepte `type=velo|pied` et `variante` (clé présente, même vide : cette variante exactement ; 409 si l'itinéraire à vélo existe déjà) ; `api/fetch_arrets.php` et `api/fetch_arret.php` exposent les accès existants (`acces`, sans contributeur).
+- **Éditeur de détails d'une falaise** : la carte affiche aussi la trace GPX des accès sans vélo, **en pointillé** (les itinéraires à vélo restent en trait plein).
+- **Nom de variante dans tous les mini-formulaires d'accès** : formulaire de falaise (par arrêt lié), formulaire d'arrêt (par falaise liée, qui indique maintenant les accès déjà décrits de l'arrêt édité), dialogue « Ajouter cet arrêt ». Sans variante, l'accès sans vélo existant du couple est complété ; avec un nom, un accès supplémentaire est créé.
+
+### Fixed
+
+- Éditeur de la fiche falaise : un lien « Détailler l'accès à pied » s'affichait comme un rectangle vide dans le popup d'un arrêt déjà relié (remplacé par la refonte ci-dessus).
+- Lier un arrêt déjà relié à la falaise par un accès sans vélo migré (variante nommée, ex. Hostiaz) créait un second accès sans variante : la liaison complète désormais l'accès existant.
+- Éditeur de falaise : le rafraîchissement des arrêts détruisait le popup ouvert (et la saisie en cours) après le recadrage automatique de la carte.
+
+### Changed (formulaire d'ajout d'accès)
+
+- L'avertissement « existe déjà » ne concerne plus que le type d'accès choisi (un accès à vélo n'empêche pas d'ajouter un accès sans vélo), son texte suit le mode, et il est aussi calculé quand l'arrêt et la falaise sont préremplis. `api/verify_velo_dup.php` prend `type`.
+- La carte de vérification dessine l'arrêt avec l'icône de son type (bus, tram… au lieu de l'icône de gare).
+
 ### Changed (cartes et fiche falaise)
 
 - Une falaise est « du topo » dès qu'un accès, vélo ou à pied, est décrit : cartes globales (MapLibre et Leaflet) et avertissement « Falaise non reliée au réseau » de la fiche falaise, qui n'apparaît plus que sans aucun accès. Bouton : « Proposer un accès vélo / à pied ».

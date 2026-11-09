@@ -3,7 +3,9 @@ import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import AjoutBus from '@/components/ajout/AjoutBus.vue'
 import RichTextField from '@/components/shared/RichTextField.vue'
 import type { FormAutocompleteItem } from '@/components/shared/FormAutocomplete.vue'
+import AccesPiedFields from '@/components/ajout/AccesPiedFields.vue'
 import { postBusStop } from '@/utils/bus-api'
+import { lireAccesPied } from '@/utils/acces-pied'
 
 interface ArretItem extends FormAutocompleteItem {
   id: number
@@ -139,6 +141,9 @@ async function submit() {
     return
   }
 
+  // Accès à pied vers la falaise liée : détails et trace GPX facultatifs (champs de AccesPiedFields)
+  const acces = falaiseId.value && dlg.value ? lireAccesPied(dlg.value, falaiseId.value) : { details: null, gpx: null }
+
   submitting.value = true
   const result = await postBusStop({
     admin: '0',
@@ -153,12 +158,13 @@ async function submit() {
     osm_id: osmId.value,
     osm_data: osmData.value,
     falaise_ids: falaiseId.value ? [falaiseId.value] : [],
+    falaises_acces: falaiseId.value && acces.details ? { [String(falaiseId.value)]: { ...acces.details } } : {},
     lignes: ajoutRef.value?.getLignes() ?? [],
     liaisons: ajoutRef.value?.getLiaisons() ?? [],
     nom_prenom: contribNom.value.trim(),
     email: contribEmail.value.trim(),
     message: message.value.trim(),
-  })
+  }, falaiseId.value && acces.gpx ? { [String(falaiseId.value)]: acces.gpx } : {})
   submitting.value = false
 
   if (!result.success) {
@@ -223,6 +229,14 @@ onBeforeUnmount(() => window.removeEventListener('velogrimpe:bus-dialog:open', o
           <span class="text-sm font-bold">Commentaire sur l'arrêt <i class="opacity-50 font-normal">(optionnel)</i></span>
           <RichTextField :key="'desc-' + instanceKey" name="bus_dialog_description" v-model="description" />
         </div>
+
+        <!-- ===== Accès à pied de l'arrêt à la falaise (si l'arrêt est ajouté depuis une falaise) ===== -->
+        <details v-if="falaiseId" :key="'acces-' + instanceKey" class="form-control" data-testid="bus-dialog-acces" open>
+          <summary class="text-sm font-bold cursor-pointer text-primary">
+            Accès à pied vers « {{ falaiseNom }} » <i class="opacity-50 font-normal">(optionnel)</i>
+          </summary>
+          <AccesPiedFields :id="falaiseId" />
+        </details>
 
         <!-- ===== Liaisons / Lignes (réutilise AjoutBus) ===== -->
         <AjoutBus

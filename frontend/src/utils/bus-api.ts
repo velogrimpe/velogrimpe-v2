@@ -42,13 +42,28 @@ export interface BusStopResult {
  * Envoie l'arrêt (création ou édition) à l'API.
  * Ne lève jamais : renvoie `{ success: false, error }` en cas d'échec réseau/HTTP.
  */
-export async function postBusStop(payload: BusStopPayload): Promise<BusStopResult> {
+export async function postBusStop(
+  payload: BusStopPayload,
+  /** Traces GPX d'accès à pied, par falaise liée : `{ [falaise_id]: File }` (envoi multipart). */
+  gpxParFalaise: Record<string, File> = {},
+): Promise<BusStopResult> {
   try {
-    const res = await fetch('/api/add_arret.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
+    const fichiers = Object.entries(gpxParFalaise)
+    let init: RequestInit
+    if (fichiers.length) {
+      // multipart : charge JSON dans `payload`, fichiers `acces_gpx_<falaise_id>` (cf. api/add_arret.php)
+      const fd = new FormData()
+      fd.append('payload', JSON.stringify(payload))
+      for (const [falaiseId, file] of fichiers) fd.append(`acces_gpx_${falaiseId}`, file)
+      init = { method: 'POST', body: fd }
+    } else {
+      init = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }
+    }
+    const res = await fetch('/api/add_arret.php', init)
     const result = (await res.json().catch(() => ({}))) as BusStopResult
     if (!res.ok || !result.success) {
       return { success: false, error: result.error, status: res.status }

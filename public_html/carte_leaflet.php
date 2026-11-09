@@ -51,7 +51,7 @@ $highlight = $_GET['h'] ?? '';
   <!-- Pageviews -->
   <script async defer src="/js/pv.js"></script>
   <!-- Shared utilities -->
-  <script src="/js/utils-global.js?v=2"></script>
+  <script src="/js/utils-global.js?v=3"></script>
   <!-- Velogrimpe Styles -->
   <link rel="stylesheet" href="/global.css" />
   <!-- Vue Component Styles -->
@@ -125,7 +125,8 @@ $highlight = $_GET['h'] ?? '';
   const arretColor = (types) => arretIconMod.arretIconColor(arretIconMod.arretTypeDominant(types));
   // Trace GPX d'un accès à pied (il n'y a plus de trait droit arrêt → falaise) :
   // trait gris-bleu, tooltip = distance si connue.
-  const piedGpxOpts = (acces) => ({ lineColor: "#334155", tipClass: "pieton", tipText: acces.km != null ? `${acces.km} km` : null });
+  // Tooltip : durée de marche si km, D+ et D- sont renseignés (sinon distance) + icône de pas
+  const piedGpxOpts = (acces) => ({ lineColor: "#334155", tipClass: "pieton", tipText: pied_tooltip_html({ km: acces.km, dplus: acces.dplus, dmoins: acces.dmoins }) });
 
   // format_time and calculate_time are loaded from /js/utils-global.js
 

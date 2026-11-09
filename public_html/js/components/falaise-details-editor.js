@@ -214,7 +214,8 @@ export function initFalaiseDetailsEditor(containerId) {
     busStops: L.layerGroup().addTo(map),
   };
 
-  // Read-only context: itinéraires vélos arrivant à cette falaise
+  // Read-only context: accès arrivant à cette falaise (trace GPX) : itinéraires à vélo en trait plein, accès
+  // sans vélo (type "pied") en pointillé
   const itineraires = JSON.parse(container.dataset.itineraires || "[]");
   itineraires.forEach((velo) => {
     new L.GPX("/public/gpx/" + gpx_path(velo), {
@@ -224,6 +225,7 @@ export function initFalaiseDetailsEditor(containerId) {
         weight: 2,
         color: "black",
         interactive: false,
+        ...(velo.type === "pied" ? { dashArray: "6 6", className: "vg-acces-pied-trace" } : {}),
       },
     })
       .on("loaded", (e) => {

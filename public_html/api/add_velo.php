@@ -33,6 +33,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   if ($mode === 'pied') {
     $description = trim($_POST['description'] ?? '');
+    // Variante : facultative, plusieurs accès sans vélo possibles entre un même arrêt et une même falaise
+    $variante = trim($_POST['velo_variante'] ?? '');
     // km / D+ / D- et GPX restent facultatifs sur un accès à pied.
     [$km, $dplus, $dmoins] = velo_lire_indicateurs($_POST);
     $dom = velo_charger_gpx_upload('gpx_file');
@@ -47,8 +49,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Un accès à pied existe déjà ? On ne le complète que s'il y a quelque chose à ajouter,
     // sans jamais écraser ce qui est renseigné (formulaire public).
-    $stmt = $mysqli->prepare("SELECT description, km, dplus, dmoins, acces_id, depart_slug, arrivee_slug, variante_formate FROM acces_falaise WHERE type = 'pied' AND variante = '' AND arret_id = ? AND falaise_id = ?");
-    $stmt->bind_param("ii", $arret_id, $falaise_id);
+    $stmt = $mysqli->prepare("SELECT description, km, dplus, dmoins, acces_id, depart_slug, arrivee_slug, variante_formate FROM acces_falaise WHERE type = 'pied' AND variante = ? AND arret_id = ? AND falaise_id = ?");
+    $stmt->bind_param("sii", $variante, $arret_id, $falaise_id);
     $stmt->execute();
     $existant = $stmt->get_result()->fetch_assoc();
     $stmt->close();
@@ -64,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $res = acces_pied_enregistrer($mysqli, $arret, $falaise, [
-      'description' => $description, 'km' => $km, 'dplus' => $dplus, 'dmoins' => $dmoins,
+      'description' => $description, 'km' => $km, 'dplus' => $dplus, 'dmoins' => $dmoins, 'variante' => $variante,
     ], $dom, $nom_prenom, $email);
     $acces_id = $res['acces_id'];
     $verbe = $res['cree'] ? 'ajouté' : 'complété';
@@ -74,6 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       'Type' => 'pied',
       'Arrêt' => $arret['nom'],
       'Falaise' => $falaise['falaise_nom'],
+      'Variante' => $variante,
       'Description' => $description,
       'km' => $km === null ? '' : (string) $km,
       'D+' => $dplus === null ? '' : (string) $dplus,

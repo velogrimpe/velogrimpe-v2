@@ -52,7 +52,8 @@ const show = (el: HTMLElement | null, visible: boolean) => {
 
 /** Libellé lisible et unique d'une variante dans la liste. */
 const varianteLabel = (velo: VeloItem, siblings: VeloItem[]) => {
-  const base = velo.velo_variante?.trim() || 'Itinéraire sans nom de variante'
+  if (velo.type === 'pied') return 'Accès sans vélo'
+  const base = velo.velo_variante?.trim() || 'Itinéraire à vélo sans nom de variante'
   const dup = siblings.filter((v) => (v.velo_variante?.trim() || '') === (velo.velo_variante?.trim() || ''))
   const statut = velo.velo_public === 1 ? '' : ' — à valider'
   return (dup.length > 1 ? `${base} (#${velo.velo_id})` : base) + statut
@@ -84,6 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const ajoutLinkEl = document.getElementById('velo-edit-ajout-link') as HTMLAnchorElement | null
   const submitEl = document.getElementById('velo-edit-submit')
   const submitDefaultLabel = submitEl?.textContent ?? ''
+  if (fieldsEl) fieldsEl.dataset.type = 'velo'
 
   // Reflète la sélection dans l'URL (partage / rechargement), en conservant les
   // autres paramètres (admin…).
@@ -140,6 +142,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // Itinéraire validé + contributeur : les indicateurs ne sont pas
         // modifiables (protection identique côté api/edit_velo.php).
         for (const id of ['velo_km', 'velo_dplus', 'velo_dmoins']) setDisabled(id, suggestion)
+        // Accès sans vélo : indicateurs facultatifs, pas d'Openrunner ; textes propres au type
+        // (attributs data-only-velo / data-only-pied, cf. le CSS de ajout/edit_velo.php).
+        const pied = v?.type === 'pied'
+        for (const id of ['velo_km', 'velo_dplus', 'velo_dmoins']) {
+          const el = input(id)
+          if (el) el.required = !pied
+        }
+        setDisabled('velo_openrunner', !isAdmin || pied)
+        if (fieldsEl) fieldsEl.dataset.type = pied ? 'pied' : 'velo'
         show(validatedNoticeEl, suggestion)
         if (submitEl) submitEl.textContent = suggestion ? 'Envoyer la suggestion aux administrateurs' : submitDefaultLabel
         if (downloadEl) {
@@ -189,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
           velos.value = fetched
         } catch (e) {
           console.error('[velogrimpe] fetch_velos failed:', e)
-          loadError.value = 'Impossible de charger les itinéraires de cette falaise.'
+          loadError.value = 'Impossible de charger les accès de cette falaise.'
           return
         } finally {
           loading.value = false
@@ -263,26 +274,26 @@ document.addEventListener('DOMContentLoaded', () => {
               ),
             ),
             field(
-              'Gare de départ :',
+              'Arrêt de départ :',
               select(
                 gares.value.map((g) => ({ value: String(g.id), label: g.nom })),
                 gare.value ? String(gare.value.id) : '',
                 gareDisabled.value,
-                loading.value ? 'Chargement…' : falaise.value ? 'Choisir une gare…' : 'Choisir d’abord une falaise',
+                loading.value ? 'Chargement…' : falaise.value ? 'Choisir un arrêt…' : 'Choisir d’abord une falaise',
                 onGareChange,
               ),
-              falaise.value && !loading.value && gares.value.length > 1 ? `${gares.value.length} gares desservent cette falaise` : undefined,
+              falaise.value && !loading.value && gares.value.length > 1 ? `${gares.value.length} arrêts desservent cette falaise` : undefined,
             ),
             field(
-              'Variante :',
+              'Accès :',
               select(
                 variantes.value.map((v) => ({ value: String(v.velo_id), label: varianteLabel(v, variantes.value) })),
                 velo.value ? String(velo.value.velo_id) : '',
                 varianteDisabled.value,
-                gare.value ? 'Choisir une variante…' : 'Choisir d’abord une gare',
+                gare.value ? 'Choisir un accès…' : 'Choisir d’abord un arrêt',
                 onVarianteChange,
               ),
-              gare.value && variantes.value.length > 1 ? `${variantes.value.length} variantes pour ce trajet` : undefined,
+              gare.value && variantes.value.length > 1 ? `${variantes.value.length} accès pour cet arrêt` : undefined,
             ),
           ]),
           loadError.value ? h('div', { class: 'text-error text-sm' }, loadError.value) : null,

@@ -192,4 +192,46 @@ final class AddBusTest extends ApiTestCase
     $this->assertSame('50', $a['dplus'], 'D+ existant conservé');
     $this->assertEquals(9.0, (float) $a['km'], 'le km, vide jusque-là, est complété');
   }
+
+  public function testArretCreeAvecTraceGpxDeLAccesAPiedEnMultipart(): void
+  {
+    $falaiseId = $this->createFixtureFalaise('PHPUnit Fixture Falaise GPX');
+    $payload = [
+      'admin' => '0', 'arret_id' => null, 'nom' => 'PHPUnit - Arrêt GPX', 'loc' => '43.8300,5.3900', 'description' => '',
+      'types' => ['bus'], 'osm_id' => null, 'osm_data' => null, 'falaise_ids' => [$falaiseId],
+      'falaises_acces' => [(string) $falaiseId => ['description' => 'Sentier', 'km' => 1.1, 'dplus' => 30, 'dmoins' => 5]],
+      'lignes' => [], 'liaisons' => [], 'nom_prenom' => 'Testeur', 'email' => 'test@example.org', 'message' => '',
+    ];
+
+    $res = $this->httpPostMultipart('/api/add_arret.php', ['payload' => json_encode($payload)],
+      ["acces_gpx_$falaiseId" => __DIR__ . '/../fixtures/velo-with-wpt.gpx']);
+
+    $this->assertSame(200, $res['status'], $res['raw']);
+    $arretId = (int) json_decode($res['raw'], true)['arret_id'];
+    $this->registerFixtureArret($arretId);
+    $acces = self::dbQueryOne("SELECT acces_id, depart_slug, arrivee_slug, description, km, dplus FROM acces_falaise WHERE arret_id = $arretId AND falaise_id = $falaiseId");
+    $this->assertSame('Sentier', $acces['description']);
+    $this->assertEquals(1.1, (float) $acces['km']);
+    $path = dirname(__DIR__, 2) . "/public/gpx/{$acces['acces_id']}_{$acces['depart_slug']}_{$acces['arrivee_slug']}_.gpx";
+    $this->cleanupCallbackOnTearDown(function () use ($path) { if (file_exists($path)) unlink($path); });
+    $this->assertFileExists($path);
+    $this->assertStringNotContainsString('<wpt', file_get_contents($path), 'mêmes contrôles que le formulaire d\'ajout d\'accès');
+  }
+
+  public function testGpxInvalideRefuseLArretSansRienEcrire(): void
+  {
+    $falaiseId = $this->createFixtureFalaise('PHPUnit Fixture Falaise GPX KO');
+    $payload = [
+      'admin' => '0', 'arret_id' => null, 'nom' => 'PHPUnit - Arrêt GPX invalide', 'loc' => '43.8300,5.3900', 'description' => '',
+      'types' => ['bus'], 'osm_id' => null, 'osm_data' => null, 'falaise_ids' => [$falaiseId],
+      'lignes' => [], 'liaisons' => [], 'nom_prenom' => 'Testeur', 'email' => 'test@example.org', 'message' => '',
+    ];
+
+    $res = $this->httpPostMultipart('/api/add_arret.php', ['payload' => json_encode($payload)],
+      ["acces_gpx_$falaiseId" => __DIR__ . '/../fixtures/not-a-gpx.xml']);
+
+    $this->assertSame(400, $res['status'], $res['raw']);
+    $this->assertStringContainsString("n'est pas valide", $res['raw']);
+    $this->assertNull(self::dbQueryOne("SELECT 1 AS x FROM arrets WHERE nom = 'PHPUnit - Arrêt GPX invalide'"), 'aucun arrêt créé');
+  }
 }

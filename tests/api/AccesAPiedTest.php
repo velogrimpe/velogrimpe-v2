@@ -70,4 +70,52 @@ final class AccesAPiedTest extends ApiTestCase
     $this->assertSame('1', (string) $it[$court]['velo_apiedpossible']);
     $this->assertSame('0', (string) $it[$long]['velo_apiedpossible']);
   }
+
+  public function testFetchVelosParTypeEtTypeDeChaqueLigne(): void
+  {
+    $falaiseId = $this->createFixtureFalaise();
+    $arretId = $this->createFixtureArret('PHPUnit Types', 45.1, 5.1, ['bus']);
+    $velo = $this->createFixtureAcces($arretId, $falaiseId, ['km' => 8]);
+    $pied = $this->createFixtureAccesPied($arretId, $falaiseId);
+
+    $defaut = array_column($this->httpGet("/api/fetch_velos.php?falaise_id=$falaiseId")['body']['velos'], 'type', 'velo_id');
+    $this->assertSame([$velo => 'velo'], $defaut, 'par défaut : accès vélo seulement (lecteurs historiques)');
+
+    $tous = $this->httpGet("/api/fetch_velos.php?falaise_id=$falaiseId&types=all")['body']['velos'];
+    $this->assertSame([$velo => 'velo', $pied => 'pied'], array_column($tous, 'type', 'velo_id'));
+    $this->assertSame(['bus'], $tous[0]['arret']['types'], 'types de l\'arrêt : icône de la carte du formulaire');
+
+    $this->assertSame([$pied => 'pied'], array_column($this->httpGet("/api/fetch_velos.php?falaise_id=$falaiseId&types=pied")['body']['velos'], 'type', 'velo_id'));
+  }
+
+  public function testAvertissementDeDoublonSeulementPourLeMemeType(): void
+  {
+    $falaiseId = $this->createFixtureFalaise();
+    $arretId = $this->createFixtureArret('PHPUnit Doublon', 45.1, 5.1, ['bus']);
+    $this->createFixtureAcces($arretId, $falaiseId, ['km' => 8]); // vélo seulement
+
+    $dup = fn(string $type) => $this->httpGet("/api/verify_velo_dup.php?arret_id=$arretId&falaise_id=$falaiseId&type=$type")['body'];
+    $this->assertTrue($dup('velo'), 'même type : doublon possible');
+    $this->assertFalse($dup('pied'), 'un accès vélo n\'empêche pas d\'ajouter un accès sans vélo');
+
+    $this->createFixtureAccesPied($arretId, $falaiseId);
+    $this->assertTrue($dup('pied'));
+    $this->assertSame(
+      true,
+      $this->httpGet("/api/verify_velo_dup.php?arret_id=$arretId&falaise_id=$falaiseId")['body'],
+      'sans type : vélo, comme avant'
+    );
+  }
+
+  public function testDoublonTientCompteDeLaVariante(): void
+  {
+    $falaiseId = $this->createFixtureFalaise();
+    $arretId = $this->createFixtureArret('PHPUnit Doublon variante', 45.1, 5.1, ['bus']);
+    $this->createFixtureAcces($arretId, $falaiseId, ['km' => 8, 'variante' => 'Nord']);
+
+    $dup = fn(string $v) => $this->httpGet("/api/verify_velo_dup.php?arret_id=$arretId&falaise_id=$falaiseId&type=velo&variante=" . urlencode($v))['body'];
+    $this->assertTrue($dup('Nord'), 'même variante : doublon');
+    $this->assertFalse($dup('Sud'), 'une autre variante n\'est pas un doublon : l\'avertissement disparaît');
+    $this->assertFalse($dup(''), 'ni l\'absence de variante');
+  }
 }

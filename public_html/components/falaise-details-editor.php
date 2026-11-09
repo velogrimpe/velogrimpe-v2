@@ -37,11 +37,11 @@ function render_falaise_details_editor(array $falaise, string $token, array $opt
   $itineraires = [];
   if (isset($mysqli) && !empty($falaise['falaise_id'])) {
     $stmtIt = $mysqli->prepare("
-      SELECT acces.acces_id AS velo_id, acces.depart_slug AS velo_depart, acces.arrivee_slug AS velo_arrivee,
+      SELECT acces.type, acces.acces_id AS velo_id, acces.depart_slug AS velo_depart, acces.arrivee_slug AS velo_arrivee,
              acces.variante_formate AS velo_varianteformate, acces.variante AS velo_variante, arrets.nom AS gare_nom
       FROM acces_falaise acces
       LEFT JOIN arrets ON acces.arret_id = arrets.id AND arrets.deleted = 0
-      WHERE acces.type = 'velo' AND acces.falaise_id = ?");
+      WHERE acces.falaise_id = ?"); // vélo ET sans vélo (dessinés en trait plein / pointillé par l'éditeur)
     if ($stmtIt) {
       $stmtIt->bind_param("i", $falaise['falaise_id']);
       $stmtIt->execute();

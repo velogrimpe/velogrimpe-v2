@@ -101,4 +101,74 @@ test.describe("Formulaire d'ajout d'accès", () => {
     await expect(page.locator('#pied_km')).toBeEnabled()
     await expect(page.locator('#gpx_file')).toBeDisabled()
   })
+
+  test("l'avertissement de doublon ne concerne que le type d'accès choisi, avec un texte adapté", async ({ page }) => {
+    // Hostiaz (falaise 25) depuis Tenay-Hauteville (arrêt 12) : un itinéraire à vélo (« Option à vélo depuis la gare »)
+    // ET un accès sans vélo (« Option à pied depuis la gare »)
+    await page.goto('/ajout/ajout_velo.php?arret_id=12&falaise_id=25')
+    const alerte = page.locator('#itineraireExistsAlert')
+    const variante = page.locator('#velo_variante')
+
+    await variante.fill('Option à vélo depuis la gare')
+    await expect(alerte).toBeVisible()
+    await expect(alerte.locator('[data-alert-type=velo]')).toBeVisible()
+    await expect(alerte.locator('[data-alert-type=velo]')).toContainText(/itinéraire à vélo existe déjà/)
+    await expect(alerte.locator('[data-alert-type=pied]')).toBeHidden()
+
+    // Même nom en mode sans vélo : pas de doublon (l'accès sans vélo porte un autre nom)
+    await page.locator('input[name=mode][value=pied]').check()
+    await expect(alerte).toBeHidden()
+
+    await variante.fill('Option à pied depuis la gare')
+    await expect(alerte).toBeVisible()
+    await expect(alerte.locator('[data-alert-type=pied]')).toContainText(/accès sans vélo existe déjà/)
+    await expect(alerte.locator('[data-alert-type=pied]')).toContainText(/compléter/)
+    await expect(alerte.locator('[data-alert-type=velo]')).toBeHidden()
+  })
+
+  test("un accès d'un autre type n'est pas signalé comme doublon", async ({ page }) => {
+    // Virieu le Grand (falaise 26) depuis l'arrêt 7 : un itinéraire à vélo seulement
+    await page.goto('/ajout/ajout_velo.php?arret_id=7&falaise_id=26')
+    await expect(page.locator('#itineraireExistsAlert')).toBeVisible()
+    await page.locator('input[name=mode][value=pied]').check()
+    await expect(page.locator('#itineraireExistsAlert')).toBeHidden()
+  })
+
+  test("la carte du mode sans vélo dessine l'arrêt avec l'icône de son type (bus, pas une gare)", async ({ page }) => {
+    // 6214 « La Balme - Pont du Rhône » : arrêt de bus
+    await page.goto('/ajout/ajout_velo.php?mode=pied&arret_id=6214')
+    const marqueur = page.locator('#pied-map .vg-arret-icon')
+    await expect(marqueur).toHaveCount(1)
+    // Fond de l'icône du type dominant (pas l'ancienne icône de gare)
+    await expect(page.locator('#pied-map .vg-arret-icon svg use')).toHaveAttribute('href', '#bus-stop')
+  })
+
+  test("la variante se renseigne dans les deux modes, sous la ligne arrêt / falaise, et lève l'avertissement de doublon", async ({ page }) => {
+    // Falaise 27 depuis l'arrêt 6 : un itinéraire à vélo sans variante
+    await page.goto('/ajout/ajout_velo.php?arret_id=6&falaise_id=27')
+    const alerte = page.locator('#itineraireExistsAlert')
+    const variante = page.locator('#velo_variante')
+    await expect(alerte).toBeVisible()
+
+    // Sous la ligne arrêt / falaise et son avertissement, pour pouvoir la saisir une fois l'alerte affichée
+    const y = async (l: ReturnType<typeof page.locator>) => (await l.boundingBox())!.y
+    expect(await y(variante)).toBeGreaterThan(await y(alerte))
+    await expect(variante).toBeVisible()
+    await expect(variante).toBeEnabled()
+
+    // Nommer la variante : ce n'est plus un doublon
+    await variante.fill('Option par le Nord')
+    await expect(alerte).toBeHidden()
+    await expect(page.locator('#velo_varianteformate')).toHaveValue('option-par-le-nord')
+    // Effacée : le doublon réapparaît
+    await variante.fill('')
+    await expect(alerte).toBeVisible()
+
+    // Même champ, toujours là, en mode sans vélo (pas de doublon : aucun accès sans vélo ici)
+    await page.locator('input[name=mode][value=pied]').check()
+    await expect(variante).toBeVisible()
+    await expect(variante).toBeEnabled()
+    await expect(variante).toHaveAttribute('name', 'velo_variante')
+    await expect(alerte).toBeHidden()
+  })
 })

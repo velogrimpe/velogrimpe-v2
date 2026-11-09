@@ -2,6 +2,9 @@
 ### Réponse : { falaise_id, velos: [{ velo_id, arret_id, velo_variante, velo_km, velo_dplus, velo_dmoins,
 ###             velo_apiedpossible (calculé : ≤ 5 km), arret: { id, nom, nomformate, latlng }, gpx_url|null, ... }] }
 
+### `types=all` : aussi les accès sans vélo (type `pied`) ; `types=pied` : eux seuls. Chaque ligne porte `type`,
+### et `arret.types` (gare, bus…) sert à l'icône des formulaires. Sans `types` : accès vélo seulement.
+
 ### Falaise avec plusieurs variantes pour la même gare (Ambérieu → Ambérieu-Salèze : Option Nord / Sud)
 GET http://localhost:4000/api/fetch_velos.php?falaise_id=7
 

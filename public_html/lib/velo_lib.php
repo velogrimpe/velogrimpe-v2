@@ -85,14 +85,14 @@ function velo_gpx_url(int $velo_id, string $velo_depart, string $velo_arrivee, s
 }
 
 /**
- * Charge et nettoie le GPX téléversé dans $_FILES[$champ].
+ * Charge et nettoie le GPX téléversé dans $_FILES[$champ] (mêmes contrôles pour TOUS les formulaires
+ * d'accès : ajout, édition, falaise, arrêt, éditeur de falaise).
  *
- * Retourne le DOMDocument nettoyé (waypoints <wpt> retirés, trace <trk> et
- * routes <rte> conservées), ou null si aucun fichier n'a été envoyé.
- * Termine la requête si le fichier est trop gros, n'est pas un XML valide ou
- * n'a pas <gpx> pour racine.
+ * Retourne le DOMDocument nettoyé (waypoints <wpt> retirés, trace <trk> et routes <rte> conservées), ou
+ * null si aucun fichier n'a été envoyé. Lève une InvalidArgumentException (message lisible) si le
+ * fichier est trop gros, n'est pas un XML valide ou n'a pas <gpx> pour racine.
  */
-function velo_charger_gpx_upload(string $champ = 'gpx_file'): ?DOMDocument
+function velo_lire_gpx_upload(string $champ = 'gpx_file'): ?DOMDocument
 {
   if (empty($_FILES[$champ]['tmp_name']) || !is_uploaded_file($_FILES[$champ]['tmp_name'])) {
     return null;
@@ -100,18 +100,18 @@ function velo_charger_gpx_upload(string $champ = 'gpx_file'): ?DOMDocument
   // La plus grosse trace en base fait 553 Ko : ce plafond borne la mémoire du
   // parseur XML sans gêner une contribution légitime.
   if ($_FILES[$champ]['size'] > GPX_TAILLE_MAX) {
-    die("Le fichier GPX dépasse la taille maximale de " . (GPX_TAILLE_MAX / 1024 / 1024) . " Mo.");
+    throw new InvalidArgumentException("Le fichier GPX dépasse la taille maximale de " . (GPX_TAILLE_MAX / 1024 / 1024) . " Mo.");
   }
 
   $dom = new DOMDocument();
   // LIBXML_NONET : interdit tout accès réseau pendant l'analyse.
   if (!@$dom->loadXML(file_get_contents($_FILES[$champ]['tmp_name']), LIBXML_NONET)) {
-    die("Le fichier GPX n'est pas un XML valide.");
+    throw new InvalidArgumentException("Le fichier GPX n'est pas un XML valide.");
   }
   $has_gpx_root = ($dom->getElementsByTagName('gpx')->length > 0)
     && ($dom->getElementsByTagName('gpx')->item(0)->getNodePath() === '/*');
   if (!$has_gpx_root) {
-    die("Le fichier GPX n'est pas valide.");
+    throw new InvalidArgumentException("Le fichier GPX n'est pas valide.");
   }
   // Nettoyage : retirer les waypoints <wpt> (marqueurs début/fin, points isolés).
   $wpts = $dom->getElementsByTagName('wpt');
@@ -120,6 +120,19 @@ function velo_charger_gpx_upload(string $champ = 'gpx_file'): ?DOMDocument
     $wpt->parentNode->removeChild($wpt);
   }
   return $dom;
+}
+
+/**
+ * Comme velo_lire_gpx_upload(), mais termine la requête par die() avec le message : pour les endpoints
+ * qui répondent à une soumission de formulaire classique (add_velo, edit_velo, add_falaise).
+ */
+function velo_charger_gpx_upload(string $champ = 'gpx_file'): ?DOMDocument
+{
+  try {
+    return velo_lire_gpx_upload($champ);
+  } catch (InvalidArgumentException $e) {
+    die($e->getMessage());
+  }
 }
 
 /**
@@ -156,7 +169,11 @@ function acces_a_pied_sql(string $alias = 'acces_falaise'): string
  *
  * $arret : ['id','nom','slug'] (cf. velo_trouver_arret), $falaise : ['falaise_id',
  * 'falaise_nom','falaise_nomformate'] (cf. velo_trouver_falaise).
- * $d : description (string), km (float|null), dplus (int|null), dmoins (int|null).
+ * $d : description (string), km (float|null), dplus (int|null), dmoins (int|null), variante (nom libre : plusieurs
+ * accès sans vélo possibles entre un même arrêt et une même falaise, un par variante). Clé `variante` ABSENTE
+ * (liaisons rapides : clic sur un arrêt, formulaires de falaise / d'arrêt) = « n'importe laquelle » : si un accès
+ * sans vélo existe déjà pour ce couple (ex. migré avec un nom de variante), c'est lui qui est complété, aucun
+ * doublon n'est créé. Clé présente, même vide (formulaire d'accès) = cette variante exactement.
  * $dom : GPX déjà nettoyé (velo_charger_gpx_upload) ou null. L'appelant a fait
  * vg_data_prepare(VELO_GPX_DIR) avant toute mutation s'il en fournit un.
  *
@@ -171,12 +188,18 @@ function acces_pied_enregistrer(mysqli $mysqli, array $arret, array $falaise, ar
   $km = $d['km'] ?? null;
   $dplus = $d['dplus'] ?? null;
   $dmoins = $d['dmoins'] ?? null;
+  $variante = trim((string) ($d['variante'] ?? ''));
+  $variante_formate = acces_formater_variante($variante);
+  $variante_precisee = isset($d['variante']); // false : on complète n'importe quel accès du couple
 
   $stmt = $mysqli->prepare(
     "SELECT acces_id, description, km, dplus, dmoins, depart_slug, arrivee_slug, variante_formate
-     FROM acces_falaise WHERE type = 'pied' AND variante = '' AND arret_id = ? AND falaise_id = ?"
+     FROM acces_falaise WHERE type = 'pied' AND arret_id = ? AND falaise_id = ?
+       AND (? = 0 OR variante = ?)
+     ORDER BY (variante = ?) DESC, acces_id LIMIT 1"
   );
-  $stmt->bind_param("ii", $arret_id, $falaise_id);
+  $precisee = $variante_precisee ? 1 : 0;
+  $stmt->bind_param("iiiss", $arret_id, $falaise_id, $precisee, $variante, $variante);
   $stmt->execute();
   $existant = $stmt->get_result()->fetch_assoc();
   $stmt->close();
@@ -186,10 +209,10 @@ function acces_pied_enregistrer(mysqli $mysqli, array $arret, array $falaise, ar
     $depart_slug = $arret['slug'];
     $arrivee_slug = $falaise['falaise_nomformate'];
     $stmt = $mysqli->prepare(
-      "INSERT INTO acces_falaise (type, arret_id, falaise_id, depart_slug, arrivee_slug, description, km, dplus, dmoins, public, contrib, contrib_mail)
-       VALUES ('pied', ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)"
+      "INSERT INTO acces_falaise (type, arret_id, falaise_id, depart_slug, arrivee_slug, description, km, dplus, dmoins, public, variante, variante_formate, contrib, contrib_mail)
+       VALUES ('pied', ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)"
     );
-    $stmt->bind_param("iisssdiiss", $arret_id, $falaise_id, $depart_slug, $arrivee_slug, $description, $km, $dplus, $dmoins, $contrib, $contrib_mail);
+    $stmt->bind_param("iisssdiissss", $arret_id, $falaise_id, $depart_slug, $arrivee_slug, $description, $km, $dplus, $dmoins, $variante, $variante_formate, $contrib, $contrib_mail);
     $stmt->execute();
     $acces_id = (int) $stmt->insert_id;
     $stmt->close();
@@ -201,7 +224,6 @@ function acces_pied_enregistrer(mysqli $mysqli, array $arret, array $falaise, ar
     }
     $depart_slug_gpx = $depart_slug;
     $arrivee_slug_gpx = $arrivee_slug;
-    $variante_formate = '';
   } else {
     $acces_id = (int) $existant['acces_id'];
     $cree = false;
@@ -265,7 +287,10 @@ function acces_pied_lier(mysqli $mysqli, int $arret_id, int $falaise_id, string 
  * formulaire ou objet JSON). Valeurs absentes, vides, négatives ou non
  * numériques : ignorées (null), comme velo_lire_indicateurs().
  *
- * @return array{description:string, km:?float, dplus:?int, dmoins:?int}
+ * `variante` n'est retournée que si elle est NON VIDE (liaisons rapides : champ vide = « n'importe laquelle »,
+ * cf. acces_pied_enregistrer).
+ *
+ * @return array{description:string, km:?float, dplus:?int, dmoins:?int, variante?:string}
  */
 function acces_lire_details(array $src): array
 {
@@ -273,21 +298,84 @@ function acces_lire_details(array $src): array
   $km = $nombre($src['km'] ?? null);
   $dplus = $nombre($src['dplus'] ?? null);
   $dmoins = $nombre($src['dmoins'] ?? null);
-  return [
+  $details = [
     'description' => trim((string) ($src['description'] ?? '')),
     'km' => $km === null ? null : (float) $km,
     'dplus' => $dplus === null ? null : (int) $dplus,
     'dmoins' => $dmoins === null ? null : (int) $dmoins,
   ];
+  $variante = trim((string) ($src['variante'] ?? ''));
+  if ($variante !== '') {
+    $details['variante'] = mb_substr($variante, 0, 100);
+  }
+  return $details;
 }
 
-/** Supprime l'accès `pied` entre un arrêt et une falaise (les accès vélo ne sont jamais touchés). */
-function acces_pied_delier(mysqli $mysqli, int $arret_id, int $falaise_id): void
+/**
+ * Slug d'un nom de variante, comme `formatVariante()` du formulaire d'ajout d'accès : minuscules,
+ * sans accents, [a-z0-9-] seulement, tirets simples. Sert de clé de nom de fichier GPX.
+ */
+function acces_formater_variante(string $variante): string
 {
-  $stmt = $mysqli->prepare("DELETE FROM acces_falaise WHERE type = 'pied' AND arret_id = ? AND falaise_id = ?");
-  $stmt->bind_param("ii", $arret_id, $falaise_id);
+  $s = mb_strtolower(trim($variante));
+  if (class_exists('Normalizer')) {
+    $s = preg_replace('/\p{Mn}/u', '', Normalizer::normalize($s, Normalizer::FORM_D));
+  } else {
+    $s = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $s);
+  }
+  $s = preg_replace('/[^a-z0-9\s-]/', '', $s);
+  $s = preg_replace('/\s+/', '-', $s);
+  $s = preg_replace('/-+/', '-', $s);
+  return substr(trim($s, '-'), 0, 100);
+}
+
+/**
+ * Crée un accès `velo` (itinéraire à vélo) vers une falaise qui vient d'être créée : km, D+, D- et
+ * trace GPX obligatoires (déjà validés par l'appelant, qui a fait vg_data_prepare(VELO_GPX_DIR)).
+ * $d : km (float), dplus (int), dmoins (int), description, variante (nom libre, facultatif).
+ *
+ * @return array{acces_id:int, gpx:string} gpx : 'ecrit' | 'echec' (la ligne existe, sans trace)
+ */
+function acces_velo_creer(mysqli $mysqli, array $arret, int $falaise_id, string $falaise_nomformate, array $d, DOMDocument $dom, string $contrib, string $contrib_mail, int $public): array
+{
+  $arret_id = (int) $arret['id'];
+  $depart_slug = $arret['slug'];
+  $km = (float) $d['km'];
+  $dplus = (int) $d['dplus'];
+  $dmoins = (int) $d['dmoins'];
+  $description = trim((string) ($d['description'] ?? ''));
+  $variante = trim((string) ($d['variante'] ?? ''));
+  $variante_formate = acces_formater_variante($variante);
+  $openrunner = '';
+
+  $stmt = $mysqli->prepare(
+    "INSERT INTO acces_falaise (type, arret_id, falaise_id, depart_slug, arrivee_slug, km, dplus, dmoins, description, public, variante, variante_formate, lien_openrunner, contrib, contrib_mail)
+     VALUES ('velo', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+  );
+  $stmt->bind_param("iissdiisisssss", $arret_id, $falaise_id, $depart_slug, $falaise_nomformate, $km, $dplus, $dmoins, $description, $public, $variante, $variante_formate, $openrunner, $contrib, $contrib_mail);
   $stmt->execute();
+  $acces_id = (int) $stmt->insert_id;
   $stmt->close();
+
+  $ok = $acces_id > 0 && $dom->save(velo_gpx_chemin($acces_id, $depart_slug, $falaise_nomformate, $variante_formate)) !== false;
+  if (!$ok) {
+    error_log("acces_velo_creer: échec de l'écriture du GPX pour acces_id=$acces_id");
+  }
+  return ['acces_id' => $acces_id, 'gpx' => $ok ? 'ecrit' : 'echec'];
+}
+
+/**
+ * Supprime les accès `pied` entre un arrêt et une falaise, ou le seul accès `$acces_id` si on le précise (les accès
+ * vélo ne sont jamais touchés). Retourne le nombre de lignes supprimées.
+ */
+function acces_pied_delier(mysqli $mysqli, int $arret_id, int $falaise_id, int $acces_id = 0): int
+{
+  $stmt = $mysqli->prepare("DELETE FROM acces_falaise WHERE type = 'pied' AND arret_id = ? AND falaise_id = ? AND (? = 0 OR acces_id = ?)");
+  $stmt->bind_param("iiii", $arret_id, $falaise_id, $acces_id, $acces_id);
+  $stmt->execute();
+  $n = $stmt->affected_rows;
+  $stmt->close();
+  return $n;
 }
 
 /** Ids des falaises reliées à un arrêt par un accès `pied`. */

@@ -7,8 +7,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
   die(json_encode(["error" => "Method not allowed"]));
 }
 
-// Payload JSON
-$input = json_decode(file_get_contents('php://input'), true);
+// Payload JSON, ou multipart/form-data quand des traces GPX d'accès à pied sont jointes : charge JSON dans
+// le champ `payload`, fichiers `acces_gpx_<falaise_id>`.
+$estMultipart = stripos($_SERVER['CONTENT_TYPE'] ?? '', 'multipart/form-data') === 0;
+$input = json_decode($estMultipart ? ($_POST['payload'] ?? '') : file_get_contents('php://input'), true);
 if (!is_array($input)) {
   http_response_code(400);
   die(json_encode(["error" => "Corps de requête JSON invalide"]));
@@ -48,6 +50,31 @@ $liaisons = is_array($input['liaisons'] ?? null) ? $input['liaisons'] : [];
 const VG_ARRET_TYPE_COLUMNS = ['ter' => 'ter', 'tgv' => 'tgv', 'bus' => 'bus', 'tram' => 'tram', 'telepherique' => 'teleph'];
 $typesInput = is_array($input['types'] ?? null) ? $input['types'] : [];
 $types = array_values(array_intersect($typesInput, array_keys(VG_ARRET_TYPE_COLUMNS)));
+
+// Traces GPX facultatives des accès à pied (une par falaise liée), lues et nettoyées ICI, avant toute
+// écriture, avec les mêmes contrôles que le formulaire d'ajout d'accès (taille, XML, racine <gpx>, <wpt> retirés).
+require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/velo_lib.php';
+$acces_gpx = [];
+foreach (array_unique($falaise_ids) as $fid) {
+  try {
+    $dom = velo_lire_gpx_upload("acces_gpx_$fid");
+  } catch (InvalidArgumentException $e) {
+    http_response_code(400);
+    die(json_encode(["error" => "Trace GPX de l'accès à pied (falaise #$fid) : " . $e->getMessage()]));
+  }
+  if ($dom !== null) {
+    $acces_gpx[$fid] = $dom;
+  }
+}
+if ($acces_gpx) {
+  try {
+    vg_data_prepare(VELO_GPX_DIR);
+  } catch (VgDataException $e) {
+    error_log('[add_arret] ' . $e->getMessage());
+    http_response_code(500);
+    die(json_encode(["error" => "Le dossier des traces GPX est indisponible, rien n'a été enregistré. Merci de réessayer plus tard."]));
+  }
+}
 
 // Validation
 if (empty($nom)) {
@@ -304,10 +331,10 @@ try {
   }
   foreach ($newFalaiseIds as $fid) {
     $details = is_array($falaises_acces[$fid] ?? null) ? acces_lire_details($falaises_acces[$fid]) : [];
-    if (in_array($fid, $oldFalaiseIds, true) && !$details) {
+    if (in_array($fid, $oldFalaiseIds, true) && !$details && !isset($acces_gpx[$fid])) {
       continue; // déjà lié, rien à compléter
     }
-    acces_pied_lier($mysqli, $arret_id, $fid, $nom_prenom, $email, $details);
+    acces_pied_lier($mysqli, $arret_id, $fid, $nom_prenom, $email, $details, $acces_gpx[$fid] ?? null);
   }
   // Log uniquement si le set a changé
   sort($oldFalaiseIds);

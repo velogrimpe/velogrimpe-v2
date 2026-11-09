@@ -105,4 +105,47 @@ final class FetchBusArretsTest extends ApiTestCase
     $row = self::dbQueryOne("SELECT id FROM arrets WHERE nom = '" . str_replace("'", "\\'", $nom) . "'");
     return $row ? (int) $row['id'] : null;
   }
+
+  public function testListeLesAccesExistantsDeLaFalaiseParArret(): void
+  {
+    $falaiseId = $this->createFixtureFalaise();
+    $autreFalaise = $this->createFixtureFalaise('PHPUnit Autre falaise');
+    $arretId = $this->createFixtureArret('PHPUnit Arrêt accès listés', 43.8280, 5.3840);
+    $sans = $this->createFixtureArret('PHPUnit Arrêt sans accès', 43.8290, 5.3850);
+    $this->createFixtureAcces($arretId, $falaiseId, ['type' => 'velo', 'km' => 8, 'dplus' => 200, 'dmoins' => 150, 'variante' => 'Nord', 'public' => 2]);
+    $this->createFixtureAcces($arretId, $falaiseId, ['type' => 'pied', 'km' => 1.2, 'variante' => '']);
+    $this->createFixtureAcces($arretId, $autreFalaise, ['type' => 'pied']); // autre falaise : jamais listé ici
+
+    $res = $this->httpGet("/api/fetch_arrets.php?falaise_id=$falaiseId&bbox=43.80,5.30,43.90,5.45");
+
+    $this->assertSame(200, $res['status']);
+    $parId = array_column($res['body']['arrets'], null, 'id');
+    $acces = $parId[$arretId]['acces'];
+    $this->assertCount(2, $acces, 'seuls les accès de CETTE falaise');
+    $this->assertSame(['pied', 'velo'], array_column($acces, 'type'));
+    $velo = $acces[1];
+    $this->assertSame('Nord', $velo['variante']);
+    $this->assertEquals(8.0, $velo['km']);
+    $this->assertSame(2, $velo['public'], 'à valider');
+    $this->assertArrayNotHasKey('contrib_mail', $velo, 'aucun contributeur exposé');
+    $this->assertSame([], $parId[$sans]['acces']);
+  }
+
+  public function testFetchArretExposeSesAccesExistants(): void
+  {
+    $falaiseId = $this->createFixtureFalaise();
+    $arretId = $this->createFixtureArret('PHPUnit Arrêt fetch_arret acces');
+    $this->createFixtureAcces($arretId, $falaiseId, ['type' => 'pied', 'variante' => 'Sentier', 'km' => 1.5]);
+    $this->createFixtureAcces($arretId, $falaiseId, ['type' => 'velo', 'km' => 9, 'variante' => 'Route']);
+
+    $res = $this->httpGet("/api/fetch_arret.php?arret_id=$arretId");
+
+    $this->assertSame(200, $res['status']);
+    $this->assertSame([$falaiseId], $res['body']['falaise_ids'], 'falaise_ids : accès sans vélo seulement, comme avant');
+    $acces = $res['body']['acces'];
+    $this->assertSame(['pied', 'velo'], array_column($acces, 'type'));
+    $this->assertSame([$falaiseId, $falaiseId], array_column($acces, 'falaise_id'));
+    $this->assertSame('Sentier', $acces[0]['variante']);
+    $this->assertArrayNotHasKey('contrib_mail', $acces[0]);
+  }
 }

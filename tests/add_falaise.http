@@ -170,6 +170,9 @@ GET http://localhost:4000/bdd/images_falaises/140_saint-leger-du-ventoux_img1.we
 ### d'arrêts, création uniquement. Écrit des accès `pied` dans acces_falaise avec la falaise.
 ### Détails facultatifs par arrêt (champs du formulaire) : `acces_pieton[<arret_id>][description|km|dplus|dmoins]`
 ### et trace GPX `acces_gpx_<arret_id>` (multipart). Un GPX invalide refuse toute la création.
+###
+### Accès à VÉLO à la création : `acces_velo[arret_id|km|dplus|dmoins|variante|description]` + trace GPX
+### `acces_velo_gpx` (obligatoire, comme km / D+ / D- et l'arrêt) ; `acces_velo[actif]=1` sans arrêt => 400.
 ### ---------------------------------------------------------------------------
 
 ### Création avec deux arrêts liés (adapter les ids) => 200 JSON {"redirect": ...}

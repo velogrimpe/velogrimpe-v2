@@ -432,6 +432,8 @@ $stmtC->close();
                 parking...) </a>
               <a class="btn btn-primary btn-outline btn-sm py-1 h-fit"
                 href="/ajout/ajout_velo.php?falaise_id=<?= $falaise_id ?>">Ajouter un accès vélo </a>
+              <a class="btn btn-primary btn-outline btn-sm py-1 h-fit" data-testid="ajouter-acces-pied"
+                href="/ajout/ajout_velo.php?mode=pied&falaise_id=<?= $falaise_id ?>">Ajouter un accès en bus / à pied </a>
               <!-- <a class="hidden btn btn-primary btn-outline btn-sm py-1 h-fit"
                 href="/edition/commentaire_velo.php?falaise_id=<?= $falaise_id ?>">Modifier un accès vélo </a> -->
               <!-- <a class="hidden btn btn-primary btn-outline btn-sm py-1 h-fit"
@@ -1372,6 +1374,7 @@ $stmtC->close();
     import BusStop from "/js/components/map/bus-stop.js";
     import { showLigne } from "/js/components/map/ligne-view.js";
     import FalaiseVoisine from "/js/components/map/falaise-voisine.js";
+    import { pied_tooltip_html } from "/js/components/utils/times.js";
     import Gare from "/js/components/map/gare.js";
     import { campingLayer, giteLayer, trainlinesLayer, tgvLayer, biodivLayer, garesLayer } from "/js/components/map/load-vector-tiles.js";
 
@@ -1401,15 +1404,17 @@ $stmtC->close();
     // --- Ajout de la falaise et itinéraires vélos ---
     const falaiseObject = new Falaise(map, falaise, { visibility: { to: 12 } });
     const veloObjects = itineraires.map((velo, index) => new Velo(map, velo, { index }));
-    // Traces GPX des accès à pied (facultatives) : trait gris-bleu, distance en tooltip si connue
+    // Traces GPX des accès à pied (facultatives) : trait gris-bleu, durée de marche ou distance en tooltip
     accesPietons.filter(a => a.gpx_url).forEach(a => {
       new L.GPX(a.gpx_url, {
         async: true,
         markers: { startIcon: null, endIcon: null },
         polyline_options: { weight: 5, color: "#334155" },
       }).on("loaded", (e) => {
-        if (a.km !== null) {
-          e.target.bindTooltip(`${a.km} km`, { className: "vg-velo-tooltip vg-color-pieton", permanent: true, direction: "center" });
+        // Durée de marche (km, D+ et D- renseignés) ou distance, + icône de pas ; rien si aucune donnée
+        const tip = pied_tooltip_html({ km: a.km, dplus: a.dplus, dmoins: a.dmoins });
+        if (tip !== null) {
+          e.target.bindTooltip(tip, { className: "vg-velo-tooltip vg-color-pieton", permanent: true, direction: "center" });
         }
         e.target.on("click", (ev) => L.DomEvent.stopPropagation(ev));
       }).addTo(map);
