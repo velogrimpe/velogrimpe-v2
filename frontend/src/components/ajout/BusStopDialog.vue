@@ -1,30 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
-import AjoutBus from '@/components/ajout/AjoutBus.vue'
 import RichTextField from '@/components/shared/RichTextField.vue'
-import type { FormAutocompleteItem } from '@/components/shared/FormAutocomplete.vue'
 import AccesPiedFields from '@/components/ajout/AccesPiedFields.vue'
 import { postBusStop } from '@/utils/bus-api'
 import { lireAccesPied } from '@/utils/acces-pied'
-
-interface ArretItem extends FormAutocompleteItem {
-  id: number
-  nom: string
-}
-interface LigneItem extends FormAutocompleteItem {
-  id: number
-  nom: string
-  description?: string
-  lien?: string
-}
-
-const props = withDefaults(
-  defineProps<{
-    arrets?: ArretItem[]
-    lignes?: LigneItem[]
-  }>(),
-  { arrets: () => [], lignes: () => [] },
-)
 
 interface OpenDetail {
   nom?: string
@@ -48,13 +27,8 @@ const ARRET_TYPES: { value: string; label: string }[] = [
 ]
 
 const dlg = ref<HTMLDialogElement | null>(null)
-const ajoutRef = ref<{
-  getLignes: () => unknown[]
-  getLiaisons: () => unknown[]
-} | null>(null)
 
-// Clé d'instance : incrémentée à chaque ouverture pour réinitialiser
-// AjoutBus (liaisons/lignes) et le champ RichText.
+// Clé d'instance : incrémentée à chaque ouverture pour réinitialiser le champ RichText.
 const instanceKey = ref(0)
 const submitting = ref(false)
 
@@ -159,8 +133,6 @@ async function submit() {
     osm_data: osmData.value,
     falaise_ids: falaiseId.value ? [falaiseId.value] : [],
     falaises_acces: falaiseId.value && acces.details ? { [String(falaiseId.value)]: { ...acces.details } } : {},
-    lignes: ajoutRef.value?.getLignes() ?? [],
-    liaisons: ajoutRef.value?.getLiaisons() ?? [],
     nom_prenom: contribNom.value.trim(),
     email: contribEmail.value.trim(),
     message: message.value.trim(),
@@ -237,15 +209,6 @@ onBeforeUnmount(() => window.removeEventListener('velogrimpe:bus-dialog:open', o
           </summary>
           <AccesPiedFields :id="falaiseId" />
         </details>
-
-        <!-- ===== Liaisons / Lignes (réutilise AjoutBus) ===== -->
-        <AjoutBus
-          :key="instanceKey"
-          ref="ajoutRef"
-          :arrets="props.arrets"
-          :lignes="props.lignes"
-          :exclude-arret-id="null"
-        />
 
         <!-- ===== Contributeur ===== -->
         <div class="relative flex items-center mt-2">

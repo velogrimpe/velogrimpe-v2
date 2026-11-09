@@ -31,15 +31,6 @@ while ($row = $res->fetch_assoc()) {
   ];
 }
 
-// Arrêts de bus existants (pour l'autocomplete des liaisons bus_liaisons,
-// cf. AjoutBus.vue — bus_lignes/bus_liaisons restent bus-spécifiques jusqu'au
-// Lot 7, docs/conception-bus.md Étape 6)
-$arrets = [];
-$res = $mysqli->query("SELECT id, nom FROM arrets WHERE bus = 1 ORDER BY nom");
-while ($row = $res->fetch_assoc()) {
-  $arrets[] = ["id" => (int) $row["id"], "nom" => $row["nom"]];
-}
-
 // Tous les arrêts multimodaux (pour le sélecteur admin « modifier un arrêt
 // existant » : les gares deviennent éditables via ce formulaire, Lot 3)
 $tousArrets = [];
@@ -62,20 +53,6 @@ while ($row = $res->fetch_assoc()) {
     "types" => arret_types($row),
     "lat" => (float) $row["lat"],
     "lng" => (float) $row["lng"],
-  ];
-}
-
-// Lignes de bus existantes (pour l'autocomplete des lignes)
-$lignes = [];
-$res = $mysqli->query(
-  "SELECT id, nom, description, lien FROM bus_lignes ORDER BY nom",
-);
-while ($row = $res->fetch_assoc()) {
-  $lignes[] = [
-    "id" => (int) $row["id"],
-    "nom" => $row["nom"],
-    "description" => $row["description"],
-    "lien" => $row["lien"],
   ];
 }
 ?>
@@ -266,20 +243,8 @@ while ($row = $res->fetch_assoc()) {
         </details>
       </div>
 
-      <!-- ===== Sections Liaisons + Lignes (Vue) ===== -->
-      <div id="vue-ajout-bus" data-arrets="<?= htmlspecialchars(
-        json_encode($arrets),
-        ENT_QUOTES,
-        "UTF-8",
-      ) ?>"
-        data-lignes="<?= htmlspecialchars(
-          json_encode($lignes),
-          ENT_QUOTES,
-          "UTF-8",
-        ) ?>" <?php if (
-  $arret_id
-): ?>data-preset-arret-id="<?= (int) $arret_id ?>" <?php endif; ?>>
-      </div>
+      <!-- Porteur de l'id de l'arrêt édité, lu par ajout-bus.ts -->
+      <div id="vue-ajout-bus" <?php if ($arret_id): ?>data-preset-arret-id="<?= (int) $arret_id ?>" <?php endif; ?>></div>
 
       <!-- ===== Section contributeur ===== -->
       <div class="relative flex items-center">

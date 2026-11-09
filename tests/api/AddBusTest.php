@@ -3,7 +3,7 @@
 require_once __DIR__ . '/ApiTestCase.php';
 
 /**
- * api/add_arret.php (création + édition d'un arrêt, avec lignes/liaisons/falaises
+ * api/add_arret.php (création + édition d'un arrêt, avec falaises
  * liées) et api/fetch_arret.php (lecture, utilisée ici pour vérifier ce qui a été
  * persisté). Basculé sur la table `arrets` multimodale au Lot 2 (même
  * contrat JSON qu'avant, cf. docs/plan-implementation-arrets.md).
@@ -29,10 +29,6 @@ final class AddBusTest extends ApiTestCase
 
   public function testCreatesArretWithFalaise(): void
   {
-    // lignes/liaisons volontairement absentes du payload : bus_lignes/
-    // bus_liaisons sont en cours de décommissionnement (cf.
-    // docs/conception-bus.md, Étape 8) — pas d'intérêt à maintenir leur
-    // couverture de test jusqu'à la bascule finale.
     $falaiseId = $this->createFixtureFalaise();
 
     $res = $this->httpPostJson('/api/add_arret.php', [
@@ -45,8 +41,6 @@ final class AddBusTest extends ApiTestCase
       'osm_id' => null,
       'osm_data' => null,
       'falaise_ids' => [$falaiseId],
-      'lignes' => [],
-      'liaisons' => [],
       'nom_prenom' => 'Testeur',
       'email' => 'test@example.org',
       'message' => '',
@@ -145,8 +139,6 @@ final class AddBusTest extends ApiTestCase
       'osm_id' => 'node/999',
       'osm_data' => ['highway' => 'bus_stop'],
       'falaise_ids' => [$falaiseB],
-      'lignes' => [],
-      'liaisons' => [],
       'nom_prenom' => 'Testeur',
       'email' => 'test@example.org',
       'message' => '',
@@ -178,7 +170,7 @@ final class AddBusTest extends ApiTestCase
         (string) $falaiseA => ['description' => 'Texte ignoré', 'km' => 9, 'dplus' => 999],
         (string) $falaiseB => ['description' => 'Chemin du bois', 'km' => 1.2, 'dplus' => 40, 'dmoins' => 10],
       ],
-      'lignes' => [], 'liaisons' => [], 'nom_prenom' => 'Testeur', 'email' => 'test@example.org', 'message' => '',
+      'nom_prenom' => 'Testeur', 'email' => 'test@example.org', 'message' => '',
     ]);
 
     $this->assertSame(200, $res['status'], $res['raw']);
@@ -200,7 +192,7 @@ final class AddBusTest extends ApiTestCase
       'admin' => '0', 'arret_id' => null, 'nom' => 'PHPUnit - Arrêt GPX', 'loc' => '43.8300,5.3900', 'description' => '',
       'types' => ['bus'], 'osm_id' => null, 'osm_data' => null, 'falaise_ids' => [$falaiseId],
       'falaises_acces' => [(string) $falaiseId => ['description' => 'Sentier', 'km' => 1.1, 'dplus' => 30, 'dmoins' => 5]],
-      'lignes' => [], 'liaisons' => [], 'nom_prenom' => 'Testeur', 'email' => 'test@example.org', 'message' => '',
+      'nom_prenom' => 'Testeur', 'email' => 'test@example.org', 'message' => '',
     ];
 
     $res = $this->httpPostMultipart('/api/add_arret.php', ['payload' => json_encode($payload)],
@@ -224,7 +216,7 @@ final class AddBusTest extends ApiTestCase
     $payload = [
       'admin' => '0', 'arret_id' => null, 'nom' => 'PHPUnit - Arrêt GPX invalide', 'loc' => '43.8300,5.3900', 'description' => '',
       'types' => ['bus'], 'osm_id' => null, 'osm_data' => null, 'falaise_ids' => [$falaiseId],
-      'lignes' => [], 'liaisons' => [], 'nom_prenom' => 'Testeur', 'email' => 'test@example.org', 'message' => '',
+      'nom_prenom' => 'Testeur', 'email' => 'test@example.org', 'message' => '',
     ];
 
     $res = $this->httpPostMultipart('/api/add_arret.php', ['payload' => json_encode($payload)],

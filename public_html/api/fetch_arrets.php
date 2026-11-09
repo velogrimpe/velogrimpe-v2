@@ -3,8 +3,7 @@
  * Liste des arrêts de bus pour l'éditeur de détails falaise.
  *
  * Renvoie les arrêts situés dans la bbox fournie + tous les arrêts liés à la
- * falaise (même hors bbox), avec leur statut de liaison et les lignes desservant
- * l'arrêt (pour l'info-bulle).
+ * falaise (même hors bbox), avec leur statut de liaison et leurs accès à la falaise.
  *
  * GET /api/fetch_arrets.php?falaise_id=39&bbox=43.80,5.30,43.90,5.45&types=bus,tram
  *   bbox = south,west,north,east (optionnel : sans bbox, seuls les arrêts liés
@@ -50,30 +49,23 @@ if ($bbox) {
   $sql =
     "SELECT a.id, a.nom, a.description, a.ter, a.tgv, a.bus, a.tram, a.teleph,
             ST_Y(a.loc) AS lat, ST_X(a.loc) AS lng,
-            (baf.falaise_id IS NOT NULL) AS linked,
-            GROUP_CONCAT(DISTINCT li.nom ORDER BY li.nom SEPARATOR ', ') AS lignes
+            EXISTS (SELECT 1 FROM acces_falaise baf
+                    WHERE baf.arret_id = a.id AND baf.falaise_id = ? AND baf.type = 'pied') AS linked
      FROM arrets a
-     LEFT JOIN acces_falaise baf ON baf.arret_id = a.id AND baf.falaise_id = ? AND baf.type = 'pied'
-     LEFT JOIN bus_liaisons l ON (l.arret_1_id = a.id OR l.arret_2_id = a.id)
-     LEFT JOIN bus_lignes li ON li.id = l.ligne_id
      WHERE ((ST_Y(a.loc) BETWEEN ? AND ? AND ST_X(a.loc) BETWEEN ? AND ?)
-        OR baf.falaise_id IS NOT NULL)
-       $typeFilterSql
-     GROUP BY a.id, a.nom, a.description, a.ter, a.tgv, a.bus, a.tram, a.teleph, lat, lng, linked";
+        OR EXISTS (SELECT 1 FROM acces_falaise baf2
+                   WHERE baf2.arret_id = a.id AND baf2.falaise_id = ? AND baf2.type = 'pied'))
+       $typeFilterSql";
   $stmt = $mysqli->prepare($sql);
-  $stmt->bind_param("idddd", $falaise_id, $south, $north, $west, $east);
+  $stmt->bind_param("iddddi", $falaise_id, $south, $north, $west, $east, $falaise_id);
 } else {
   $sql =
     "SELECT a.id, a.nom, a.description, a.ter, a.tgv, a.bus, a.tram, a.teleph,
             ST_Y(a.loc) AS lat, ST_X(a.loc) AS lng,
-            1 AS linked,
-            GROUP_CONCAT(DISTINCT li.nom ORDER BY li.nom SEPARATOR ', ') AS lignes
+            1 AS linked
      FROM arrets a
-     JOIN acces_falaise baf ON baf.arret_id = a.id AND baf.falaise_id = ? AND baf.type = 'pied'
-     LEFT JOIN bus_liaisons l ON (l.arret_1_id = a.id OR l.arret_2_id = a.id)
-     LEFT JOIN bus_lignes li ON li.id = l.ligne_id
-     WHERE 1 = 1 $typeFilterSql
-     GROUP BY a.id, a.nom, a.description, a.ter, a.tgv, a.bus, a.tram, a.teleph, lat, lng";
+     WHERE EXISTS (SELECT 1 FROM acces_falaise baf
+                   WHERE baf.arret_id = a.id AND baf.falaise_id = ? AND baf.type = 'pied') $typeFilterSql";
   $stmt = $mysqli->prepare($sql);
   $stmt->bind_param("i", $falaise_id);
 }
@@ -82,7 +74,7 @@ $stmt->execute();
 $res = $stmt->get_result();
 
 $arrets = [];
-$idToIndex = []; // arret_id => index dans $arrets (pour rattacher les liaisons)
+$idToIndex = []; // arret_id => index dans $arrets (pour rattacher les accès)
 while ($row = $res->fetch_assoc()) {
   $idToIndex[(int) $row["id"]] = count($arrets);
   $arrets[] = [
@@ -94,10 +86,6 @@ while ($row = $res->fetch_assoc()) {
     "lat" => (float) $row["lat"],
     "lng" => (float) $row["lng"],
     "linked" => (bool) $row["linked"],
-    "lignes" => $row["lignes"] !== null && $row["lignes"] !== ""
-      ? array_map('trim', explode(',', $row["lignes"]))
-      : [],
-    "liaisons" => [], // arrêts reliés (coords incluses) — rempli ci-dessous
   ];
 }
 $stmt->close();
@@ -129,58 +117,6 @@ if (!empty($idToIndex)) {
       "dmoins" => $ac["dmoins"] !== null ? (int) $ac["dmoins"] : null,
       "public" => (int) $ac["public"],
     ];
-  }
-  $stmt->close();
-}
-
-// Liaisons : pour chaque arrêt renvoyé, les arrêts reliés (avec coordonnées,
-// pour tracer les arcs). Les arêtes sont non orientées : on attache la liaison
-// au(x) endpoint(s) présent(s) dans le jeu de résultats.
-if (!empty($idToIndex)) {
-  $ids = array_keys($idToIndex);
-  $placeholders = implode(',', array_fill(0, count($ids), '?'));
-  $sql =
-    "SELECT l.arret_1_id, l.arret_2_id, l.description AS liaison_descr,
-            li.nom AS ligne_nom, li.description AS ligne_descr, li.lien AS ligne_lien,
-            a1.nom AS a1_nom, ST_Y(a1.loc) AS a1_lat, ST_X(a1.loc) AS a1_lng,
-            a2.nom AS a2_nom, ST_Y(a2.loc) AS a2_lat, ST_X(a2.loc) AS a2_lng
-     FROM bus_liaisons l
-     JOIN bus_lignes li ON li.id = l.ligne_id
-     JOIN arrets a1 ON a1.id = l.arret_1_id
-     JOIN arrets a2 ON a2.id = l.arret_2_id
-     WHERE l.arret_1_id IN ($placeholders) OR l.arret_2_id IN ($placeholders)";
-  $stmt = $mysqli->prepare($sql);
-  $params = array_merge($ids, $ids);
-  $stmt->bind_param(str_repeat('i', count($params)), ...$params);
-  $stmt->execute();
-  $r = $stmt->get_result();
-  while ($lr = $r->fetch_assoc()) {
-    $a1 = (int) $lr["arret_1_id"];
-    $a2 = (int) $lr["arret_2_id"];
-    if (isset($idToIndex[$a1])) {
-      $arrets[$idToIndex[$a1]]["liaisons"][] = [
-        "arret_id" => $a2,
-        "nom" => $lr["a2_nom"],
-        "lat" => (float) $lr["a2_lat"],
-        "lng" => (float) $lr["a2_lng"],
-        "ligne" => $lr["ligne_nom"],
-        "ligne_description" => $lr["ligne_descr"],
-        "ligne_lien" => $lr["ligne_lien"],
-        "description" => $lr["liaison_descr"],
-      ];
-    }
-    if (isset($idToIndex[$a2])) {
-      $arrets[$idToIndex[$a2]]["liaisons"][] = [
-        "arret_id" => $a1,
-        "nom" => $lr["a1_nom"],
-        "lat" => (float) $lr["a1_lat"],
-        "lng" => (float) $lr["a1_lng"],
-        "ligne" => $lr["ligne_nom"],
-        "ligne_description" => $lr["ligne_descr"],
-        "ligne_lien" => $lr["ligne_lien"],
-        "description" => $lr["liaison_descr"],
-      ];
-    }
   }
   $stmt->close();
 }

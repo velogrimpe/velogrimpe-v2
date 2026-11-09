@@ -41,15 +41,6 @@ abstract class ApiTestCase extends TestCase
   /** @var callable[] Nettoyages non-SQL (fichiers...), exécutés avant le nettoyage SQL dans tearDown(). */
   private array $cleanupCallbacks = [];
 
-  /**
-   * @var int[] Ids d'arrêts de test (fixtures ou créés via l'API), dans
-   * l'espace d'ids `arrets` (Lot 2). bus_liaisons référence `arrets` sans
-   * ON DELETE CASCADE (cf. migration 2) : on purge toutes leurs liaisons en
-   * un seul bloc avant les DELETE individuels, pour rester indifférent à
-   * l'ordre d'enregistrement des nettoyages entre plusieurs arrêts liés entre eux.
-   */
-  private array $fixtureArretIds = [];
-
   protected function tearDown(): void
   {
     foreach (array_reverse($this->cleanupCallbacks) as $fn) {
@@ -60,14 +51,6 @@ abstract class ApiTestCase extends TestCase
       }
     }
     $this->cleanupCallbacks = [];
-    if (!empty($this->fixtureArretIds)) {
-      $ids = implode(',', array_map('intval', $this->fixtureArretIds));
-      try {
-        self::dbExec("DELETE FROM bus_liaisons WHERE arret_1_id IN ($ids) OR arret_2_id IN ($ids)");
-      } catch (\Throwable $e) {
-        fwrite(STDERR, "[tearDown] purge liaisons failed: {$e->getMessage()}\n");
-      }
-    }
     foreach (array_reverse($this->cleanupSql) as $sql) {
       try {
         self::dbExec($sql);
@@ -76,7 +59,6 @@ abstract class ApiTestCase extends TestCase
       }
     }
     $this->cleanupSql = [];
-    $this->fixtureArretIds = [];
   }
 
   protected function cleanupOnTearDown(string $sql): void
@@ -90,10 +72,9 @@ abstract class ApiTestCase extends TestCase
     $this->cleanupCallbacks[] = $fn;
   }
 
-  /** Enregistre un arrêt (fixture ou créé via l'API) pour purge de ses liaisons + suppression en tearDown(). */
+  /** Enregistre un arrêt (fixture ou créé via l'API) pour suppression (+ de ses accès) en tearDown(). */
   protected function registerFixtureArret(int $id): void
   {
-    $this->fixtureArretIds[] = $id;
     $this->cleanupOnTearDown("DELETE FROM arrets WHERE id = $id");
     $this->cleanupOnTearDown("DELETE FROM acces_falaise WHERE arret_id = $id"); // pas de cascade (Lot 8quater)
   }
@@ -351,20 +332,6 @@ abstract class ApiTestCase extends TestCase
     );
     self::dbExec("UPDATE arrets SET $assignments WHERE id = $id");
     $this->registerFixtureArret($id);
-    return $id;
-  }
-
-  /** Crée une gare minimale de test (sans commune géocodée) et enregistre son nettoyage. */
-  protected function createFixtureGare(string $nom, float $lat, float $lng): int
-  {
-    $nomEsc = self::escape($nom);
-    $slugEsc = self::escape(strtolower(str_replace(' ', '-', $nom)));
-    $latlng = "$lat,$lng";
-    $id = self::dbInsert(
-      "INSERT INTO gares (gare_nom, gare_nomformate, gare_latlng, gare_tgv)
-       VALUES ('$nomEsc', '$slugEsc', '$latlng', 0)"
-    );
-    $this->cleanupOnTearDown("DELETE FROM gares WHERE gare_id = $id");
     return $id;
   }
 

@@ -4,6 +4,22 @@ Tous les changements notables de ce projet sont documentés dans ce fichier.
 
 Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 2026-11-09
+
+### Removed (Lot 9 — nettoyage des anciennes entités bus)
+
+- **Plus aucune lecture ni écriture de `bus_lignes` / `bus_liaisons`** dans le code (les tables et leurs données restent en base, pas de `DROP`). Retirés : les arcs jaunes de liaison entre arrêts sur la fiche falaise (le tracé des lignes `lignes_transport` reste), les sections « Lignes » et « Liaisons » du formulaire d'arrêt et du dialogue « Ajouter cet arrêt » de l'éditeur (`AjoutBus.vue`), `api/delete_bus_liaison.php`, et les champs `lignes` / `liaisons` de `add_arret.php`, `fetch_arrets.php` et `fetch_arret.php`.
+- **Open data** : les anciennes `lignes` / `liaisons` (tables `bus_*`) disparaissent de `arrets.geojson` et des `arrets_bus` des falaises. `lignes` y est désormais alimentée par `lignes_transport` (id, nom, numéro, opérateur, horaires, couleur, sans géométrie). Nouvel export `lignes.geojson` (tracés + `arret_ids`), repris dans `complet.geojson` (`vg_type` = `ligne`).
+
+### Changed (Lot 9 — migration des lecteurs de `gares` vers `arrets`)
+
+- `falaise.php`, `ajout_sortie.php`, `edit_sortie.php`, `admin/tableau_trains.php`, `admin/oblyk.php`, l'export open data et `backfill_gares_geocode.php` (qui renseigne désormais `code_insee` / `commune` / `cp` des arrêts) lisent `arrets` (`ter = 1 OR tgv = 1`, non supprimés) : plus aucun code ne lit la table `gares`. Mêmes 2965 gares, mêmes identifiants (`gare_id` = `arrets.id`).
+- **Open data** : la propriété `gare.departement` des itinéraires vélo (`falaises.geojson`, `itineraires-velo.geojson`) disparaît (le nom du département n'existe que dans l'ancienne table `gares`). `code_uic` vient désormais de la référence externe SNCF de l'arrêt, `commune` de `arrets.commune`.
+
+### Removed (migration 7)
+
+- `sql_migrations/7_drop_anciennes_tables_bus.sql` : suppression de `bus_liaisons`, `bus_arrets_falaise`, `bus_lignes`, `bus_arrets`, `acces_pieton_falaise` et `gares`. Irréversible, à jouer après sauvegarde ; contenu des lignes et liaisons de la base de dev archivé dans `docs/archive-bus-lignes-liaisons.md`.
+
 ## 2026-11-08
 
 ### Changed

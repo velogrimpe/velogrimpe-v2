@@ -89,7 +89,7 @@ final class AddVeloTest extends ApiTestCase
   {
     $created = $this->creerItineraireVelo();
     $row = self::dbQueryOne("SELECT variante FROM acces_falaise WHERE acces_id = {$created['veloId']}");
-    $gare = self::dbQueryOne('SELECT gare_nomformate FROM gares WHERE gare_id = ' . self::WITNESS_GARE_ID);
+    $gare = self::dbQueryOne('SELECT slug AS gare_nomformate FROM arrets WHERE id = ' . self::WITNESS_GARE_ID);
     $falaise = self::dbQueryOne('SELECT falaise_nomformate FROM falaises WHERE falaise_id = ' . self::WITNESS_FALAISE_ID);
 
     $res = $this->httpPostMultipart(
@@ -106,7 +106,7 @@ final class AddVeloTest extends ApiTestCase
 
   public function testSansFichierGpxEstRefuse(): void
   {
-    $gare = self::dbQueryOne('SELECT gare_nomformate FROM gares WHERE gare_id = ' . self::WITNESS_GARE_ID);
+    $gare = self::dbQueryOne('SELECT slug AS gare_nomformate FROM arrets WHERE id = ' . self::WITNESS_GARE_ID);
     $falaise = self::dbQueryOne('SELECT falaise_nomformate FROM falaises WHERE falaise_id = ' . self::WITNESS_FALAISE_ID);
     $varianteformate = 'phpunit-test-' . bin2hex(random_bytes(4));
 
@@ -131,7 +131,7 @@ final class AddVeloTest extends ApiTestCase
 
   private function assertUploadRefuse(string $fixture, string $messageAttendu): void
   {
-    $gare = self::dbQueryOne('SELECT gare_nomformate FROM gares WHERE gare_id = ' . self::WITNESS_GARE_ID);
+    $gare = self::dbQueryOne('SELECT slug AS gare_nomformate FROM arrets WHERE id = ' . self::WITNESS_GARE_ID);
     $falaise = self::dbQueryOne('SELECT falaise_nomformate FROM falaises WHERE falaise_id = ' . self::WITNESS_FALAISE_ID);
     $varianteformate = 'phpunit-test-' . bin2hex(random_bytes(4));
 
@@ -151,7 +151,7 @@ final class AddVeloTest extends ApiTestCase
   /** @return array{gpxPath:string, veloId:int} */
   private function creerItineraireVelo(array $champsSupplementaires = []): array
   {
-    $gare = self::dbQueryOne('SELECT gare_nomformate FROM gares WHERE gare_id = ' . self::WITNESS_GARE_ID);
+    $gare = self::dbQueryOne('SELECT slug AS gare_nomformate FROM arrets WHERE id = ' . self::WITNESS_GARE_ID);
     $this->assertNotNull($gare, 'gare témoin absente : la BDD locale a-t-elle changé ?');
     $falaise = self::dbQueryOne('SELECT falaise_nomformate FROM falaises WHERE falaise_id = ' . self::WITNESS_FALAISE_ID);
     $this->assertNotNull($falaise, 'falaise témoin absente : la BDD locale a-t-elle changé ?');

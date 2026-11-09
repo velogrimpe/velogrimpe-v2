@@ -54,26 +54,6 @@ function render_falaise_details_editor(array $falaise, string $token, array $opt
   }
   $itinerairesJson = htmlspecialchars(json_encode($itineraires), ENT_QUOTES, 'UTF-8');
 
-  // Arrêts + lignes existants pour le dialog d'ajout (autocomplete liaisons/lignes)
-  $busArrets = [];
-  $busLignes = [];
-  if (isset($mysqli)) {
-    $resA = $mysqli->query("SELECT id, nom FROM arrets WHERE bus = 1 ORDER BY nom");
-    while ($resA && $row = $resA->fetch_assoc()) {
-      $busArrets[] = ['id' => (int) $row['id'], 'nom' => $row['nom']];
-    }
-    $resL = $mysqli->query("SELECT id, nom, description, lien FROM bus_lignes ORDER BY nom");
-    while ($resL && $row = $resL->fetch_assoc()) {
-      $busLignes[] = [
-        'id' => (int) $row['id'],
-        'nom' => $row['nom'],
-        'description' => $row['description'],
-        'lien' => $row['lien'],
-      ];
-    }
-  }
-  $busArretsJson = htmlspecialchars(json_encode($busArrets), ENT_QUOTES, 'UTF-8');
-  $busLignesJson = htmlspecialchars(json_encode($busLignes), ENT_QUOTES, 'UTF-8');
   ?>
   <style>
     .vg-icon {
@@ -210,7 +190,7 @@ function render_falaise_details_editor(array $falaise, string $token, array $opt
       </div>
     </dialog>
     <!-- Point de montage du dialog Vue d'ajout d'arrêt de bus -->
-    <div id="vue-bus-stop-dialog" data-arrets="<?= $busArretsJson ?>" data-lignes="<?= $busLignesJson ?>"></div>
+    <div id="vue-bus-stop-dialog"></div>
   </div>
   <script src="/js/contrib-storage.js"></script>
   <!-- protomapsL global requis par load-vector-tiles.js (couche optionnelle lignes de train) -->

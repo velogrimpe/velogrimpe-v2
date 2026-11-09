@@ -1,5 +1,6 @@
 sql/
 PT_TH_OFFER_CARS_REGION_AIN_gtfs_20261002_610_OPENDATA.zip
+archive-bus-lignes-liaisons.md
 
 __pycache__/
 *.pyc

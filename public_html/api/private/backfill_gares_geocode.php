@@ -1,6 +1,6 @@
 <?php
 // GET /api/private/backfill_gares_geocode.php?admin=...[&limit=N]
-// Renseigne gare_com_insee/gare_com_nom/gare_com_cp pour les gares qui n'ont
+// Renseigne code_insee/commune/cp (table `arrets`) pour les arrêts qui n'ont
 // pas encore de commune connue, via l'API batch de géocodage inverse
 // data.gouv.fr (reverse/csv) : un seul appel HTTP pour tout le lot, plutôt
 // que N appels unitaires (cf. lib/altitude_lib.php + backfill_altitudes.php
@@ -36,7 +36,7 @@ $mysqli->set_charset('utf8mb4');
 // Limite optionnelle du nombre de gares traitées par run (0 ou absent = toutes).
 $limit = isset($_GET['limit']) ? max(0, (int) $_GET['limit']) : 0;
 
-$sql = "SELECT gare_id, gare_latlng FROM gares WHERE gare_com_insee IS NULL";
+$sql = "SELECT id AS gare_id, CONCAT(ST_Y(loc), ',', ST_X(loc)) AS gare_latlng FROM arrets WHERE code_insee IS NULL AND loc IS NOT NULL AND deleted = 0";
 if ($limit > 0) {
   $sql .= " LIMIT " . $limit;
 }
@@ -106,7 +106,7 @@ foreach (['gare_id', 'result_citycode', 'result_city', 'result_postcode'] as $re
 
 require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/edit_logs.php';
 $updateStmt = $mysqli->prepare(
-  "UPDATE gares SET gare_com_insee = ?, gare_com_nom = ?, gare_com_cp = ? WHERE gare_id = ?"
+  "UPDATE arrets SET code_insee = ?, commune = ?, cp = ? WHERE id = ?"
 );
 
 $traites = 0;
@@ -139,10 +139,10 @@ foreach ($lines as $line) {
     'admin',
     $contactMail,
     'update',
-    'gares',
+    'arrets',
     $gareId,
     $gareId,
-    ['gare_com_insee' => $citycode, 'gare_com_nom' => $city, 'gare_com_cp' => $postcode],
+    ['code_insee' => $citycode, 'commune' => $city, 'cp' => $postcode],
     []
   );
   $renseignes++;

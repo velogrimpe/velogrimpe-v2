@@ -59,7 +59,7 @@ fournit :
 
 - `httpGet()` / `httpPostJson()` / `httpPostMultipart()` — requêtes contre le conteneur (JSON ou formulaire multipart à l'ancienne, type `add_velo.php`)
 - `dbExec()` / `dbQuery()` / `dbQueryOne()` / `dbInsert()` — requêtes SQL via `docker exec`
-- `createFixtureFalaise()` / `createFixtureArret()` / `createFixtureGare()` — fixtures courantes, nettoyées automatiquement
+- `createFixtureFalaise()` / `createFixtureArret()` — fixtures courantes, nettoyées automatiquement
 - `createFixtureAcces()` / `createFixtureAccesPied()` — accès arrêt → falaise (`acces_falaise`, vélo ou pied). La table n'a pas de `ON DELETE CASCADE` : les fixtures falaise et arrêt purgent d'elles-mêmes les accès qui les référencent, y compris ceux créés via l'API pendant le test
 - `cleanupOnTearDown($sql)` / `cleanupCallbackOnTearDown($fn)` / `registerFixtureArret($id)` — nettoyage manuel (SQL ou autre, ex. fichier GPX) pour les cas non couverts par les helpers ci-dessus
 - `extractJsValue($html, $marker)` — extrait un JSON embarqué dans une réponse HTML après un marqueur (ex. `'const falaisesBase = '`), par appariement de profondeur plutôt que regex gourmande (robuste aux valeurs texte contenant `];`/`};`)
@@ -70,11 +70,7 @@ et accès vélo/pied (`add_velo.php` en modes `velo` et `pied`, `edit_velo.php`)
 pendant la migration vers la table `arrets` multimodale, et seront adaptés
 au fil de l'eau plutôt que réécrits.
 
-Volontairement non couverts : `delete_bus_liaison.php` et la création de
-lignes/liaisons dans `add_arret.php` (`bus_lignes`/`bus_liaisons` sont en cours
-de décommissionnement, cf. `docs/conception-bus.md` Étape 8 — pas d'intérêt
-à maintenir leur couverture de test jusqu'à la bascule finale), et
-`backfill_gares_geocode.php` (script d'admin ponctuel, pas de valeur ajoutée
+Volontairement non couvert : `backfill_gares_geocode.php` (script d'admin ponctuel, pas de valeur ajoutée
 à le tester automatiquement — cf. `tests/backfill_gares_geocode.http` pour
 un test manuel).
 

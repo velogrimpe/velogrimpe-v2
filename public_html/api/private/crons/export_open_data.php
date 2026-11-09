@@ -49,6 +49,7 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/paths.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/velo_lib.php'; // velo_gpx_rel()
 require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/schema.php';   // VG_BASE
 require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/arrets_lib.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/lignes_lib.php'; // LIGNE_SELECT, ligne_format()
 require_once $_SERVER['DOCUMENT_ROOT'] . '/database/velogrimpe.php';
 
 /** Dossier de données des exports, au sens de lib/paths.php. */
@@ -191,14 +192,13 @@ $veloResult = $mysqli->query("SELECT
   v.variante AS velo_variante,
   " . acces_a_pied_sql('v') . " AS velo_apiedpossible,
   a.nom AS gare_nom,
-  COALESCE(g.gare_commune, a.commune) AS gare_commune,
-  g.gare_departement,
+  a.commune AS gare_commune,
   CONCAT(ST_Y(a.loc), ',', ST_X(a.loc)) AS gare_latlng,
-  g.gare_codeuic,
+  re.ref AS gare_codeuic,
   a.tgv AS gare_tgv
   FROM acces_falaise v
   LEFT JOIN arrets a ON v.arret_id = a.id
-  LEFT JOIN gares g ON g.gare_id = a.id AND a.ter = 1
+  LEFT JOIN references_externes re ON re.arret_id = a.id AND re.source = 'sncf'
   WHERE v.type = 'velo' AND v.public >= 0
   ORDER BY v.falaise_id, v.km ASC")->fetch_all(MYSQLI_ASSOC);
 
@@ -239,7 +239,6 @@ foreach ($veloResult as $velo) {
     $gare = [
       'nom' => $velo['gare_nom'],
       'commune' => $velo['gare_commune'],
-      'departement' => $velo['gare_departement'],
       'code_uic' => $velo['gare_codeuic'] ?: null,
       'tgv' => (bool) $velo['gare_tgv'],
     ];
@@ -296,11 +295,9 @@ foreach ($liensResult as $lien) {
 }
 
 // Pre-load stops linked to crags by foot (acces_falaise type 'pied', cf. Lot 2 / 8quater —
-// anciennement bus_arrets_falaise/bus_arrets), with their lines and liaisons
-// (connections to other stops — bus_lignes/bus_liaisons, en cours de
-// décommissionnement, cf. conception-bus.md Étape 8). Grouped by falaise. A
-// stop can serve several crags: its entry (lines + liaisons) is built once
-// then reused.
+// anciennement bus_arrets_falaise/bus_arrets). Grouped by falaise. A stop can
+// serve several crags: its entry is built once then reused. Les lignes de transport
+// (lignes_transport) qui desservent l'arrêt y sont embarquées, sans géométrie (cf. lignes.geojson).
 $arretEntryById = [];
 $arretFalaises = []; // [ [falaise_id, arret_id], ... ]
 $arretRows = $mysqli->query("SELECT baf.falaise_id, a.id, a.nom, a.description, re.ref AS osm_id,
@@ -319,48 +316,41 @@ foreach ($arretRows as $r) {
       'description' => $r['description'],
       'osm_id' => $r['osm_id'] ?: null,
       'coordonnees' => [round((float) $r['lng'], 6), round((float) $r['lat'], 6)],
-      'lignes' => [],
-      'liaisons' => [],
-      '_ligneIds' => [],
     ];
   }
   $arretFalaises[] = [(int) $r['falaise_id'], $aid];
 }
-// Attach liaisons + distinct lines to each exported stop (edges are non-oriented :
-// chaque liaison est vue depuis chacun de ses deux arrêts).
-if (!empty($arretEntryById)) {
-  $liaisonRows = $mysqli->query("SELECT l.arret_1_id, l.arret_2_id, l.description AS liaison_descr,
-      li.id AS ligne_id, li.nom AS ligne_nom, li.description AS ligne_descr, li.lien AS ligne_lien,
-      a1.nom AS arret_1_nom, a2.nom AS arret_2_nom
-    FROM bus_liaisons l
-    JOIN bus_lignes li ON li.id = l.ligne_id
-    JOIN arrets a1 ON a1.id = l.arret_1_id
-    JOIN arrets a2 ON a2.id = l.arret_2_id")->fetch_all(MYSQLI_ASSOC);
-  foreach ($liaisonRows as $lr) {
-    $endpoints = [
-      [(int) $lr['arret_1_id'], $lr['arret_2_nom']],
-      [(int) $lr['arret_2_id'], $lr['arret_1_nom']],
-    ];
-    foreach ($endpoints as [$selfId, $otherNom]) {
-      if (!isset($arretEntryById[$selfId])) {
-        continue;
-      }
-      $arretEntryById[$selfId]['liaisons'][] = [
-        'arret_relie' => $otherNom,
-        'ligne' => $lr['ligne_nom'],
-        'description' => $lr['liaison_descr'],
-      ];
-      $arretEntryById[$selfId]['_ligneIds'][(int) $lr['ligne_id']] = [
-        'nom' => $lr['ligne_nom'],
-        'description' => $lr['ligne_descr'],
-        'lien' => $lr['ligne_lien'] ?: null,
-      ];
-    }
+
+// Lignes de transport (BTT / bus : lignes_transport, Lot 7) : leurs arrêts desservis, puis un
+// export dédié avec la géométrie (lignes.geojson). Les anciennes lignes/liaisons bus_* ne sont plus exportées.
+$lignesParArret = [];  // arret_id => [ligne (sans géométrie), ... ]
+$lignesGeojson = [
+  'type' => 'FeatureCollection',
+  'license' => 'CC BY-SA 4.0 et ODbL 1.0',
+  'license_note' => 'Le contenu éditorial (descriptions, remarques) est sous CC BY-SA 4.0 ; la base de données (faits : coordonnées, distances, dénivelés, gares) est sous ODbL 1.0. Attribution : © velogrimpe.fr et contributeurs.',
+  'license_url_cc' => 'https://creativecommons.org/licenses/by-sa/4.0/',
+  'license_url_odbl' => 'https://opendatacommons.org/licenses/odbl/1-0/',
+  'attribution' => '© velogrimpe.fr et contributeurs',
+  'features' => [],
+];
+$arretIdsParLigne = [];
+foreach ($mysqli->query("SELECT ligne_id, arret_id FROM arrets_lignes_transport ORDER BY ligne_id, arret_id")->fetch_all(MYSQLI_ASSOC) as $r) {
+  $arretIdsParLigne[(int) $r['ligne_id']][] = (int) $r['arret_id'];
+}
+foreach ($mysqli->query(LIGNE_SELECT . " ORDER BY id")->fetch_all(MYSQLI_ASSOC) as $row) {
+  $ligne = ligne_format($row, false);
+  $arretIds = $arretIdsParLigne[$ligne['id']] ?? [];
+  foreach ($arretIds as $aid) {
+    $lignesParArret[$aid][] = $ligne;
   }
-  foreach ($arretEntryById as $aid => $entry) {
-    $arretEntryById[$aid]['lignes'] = array_values($entry['_ligneIds']);
-    unset($arretEntryById[$aid]['_ligneIds']);
-  }
+  $lignesGeojson['features'][] = [
+    'type' => 'Feature',
+    'properties' => $ligne + ['arret_ids' => $arretIds, 'attribution' => $ATTRIBUTION],
+    'geometry' => $row['geojson'] !== null ? json_decode($row['geojson'], true) : null,
+  ];
+}
+foreach ($arretEntryById as $aid => $entry) {
+  $arretEntryById[$aid]['lignes'] = $lignesParArret[$aid] ?? [];
 }
 $arretsByFalaise = [];
 foreach ($arretFalaises as [$fid, $aid]) {
@@ -475,15 +465,12 @@ foreach ($falaises as $falaise) {
 
 // Arrêts multimodaux (référentiel complet hors arrêts supprimés) : un point
 // par arrêt (gare TER/TGV, bus, tram, téléphérique — cf. `arrets_lib.php`),
-// avec commune/code INSEE/CP, codes d'identification (SNCF, OSM) et, pour les
-// arrêts de bus desservis par une ligne, leurs lignes/liaisons (mêmes données
-// que la propriété `arrets_bus` des falaises ci-dessus, cf. Lot 2 —
-// remplace l'ancien export `gares.geojson`, limité aux gares).
+// avec commune/code INSEE/CP, codes d'identification (SNCF, OSM)
+// (cf. Lot 2 — remplace l'ancien export `gares.geojson`, limité aux gares).
 //
-// Remarque : `gares.gare_departement` (nom du département, ex. "AIN") n'a pas
-// d'équivalent dans `arrets` (seuls commune/code_insee/cp ont été copiés au
-// Lot 1) — absent de ce nouvel export, à réintroduire séparément si besoin
-// (nécessiterait une table de correspondance code_insee -> département).
+// Remarque : le nom du département (ex. "AIN", ancienne `gares.gare_departement`) n'existe plus
+// (la table `gares` est supprimée) : ni ici ni dans `gare.departement` des itinéraires vélo. À
+// réintroduire au besoin via une table code_insee -> département.
 $arretsGeojson = [
   'type' => 'FeatureCollection',
   'license' => 'CC BY-SA 4.0 et ODbL 1.0',
@@ -509,8 +496,7 @@ foreach ($arretsResult as $row) {
   $props['attribution'] = $ATTRIBUTION;
   $props['code_sncf'] = $refsByArret[$aid]['sncf'] ?? null;
   $props['code_osm'] = $refsByArret[$aid]['osm'] ?? null;
-  $props['lignes'] = $arretEntryById[$aid]['lignes'] ?? [];
-  $props['liaisons'] = $arretEntryById[$aid]['liaisons'] ?? [];
+  $props['lignes'] = $lignesParArret[$aid] ?? [];
   $arretsGeojson['features'][] = [
     'type' => 'Feature',
     'properties' => $props,
@@ -537,6 +523,10 @@ file_put_contents($itineraires_export, json_encode($itinerairesGeojson, JSON_PRE
 $arrets_export = vg_data_path(OPEN_DATA_DIR . '/arrets.geojson');
 file_put_contents($arrets_export, json_encode($arretsGeojson, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
+// Save the transport lines collection (géométrie + arrêts desservis)
+$lignes_export = vg_data_path(OPEN_DATA_DIR . '/lignes.geojson');
+file_put_contents($lignes_export, json_encode($lignesGeojson, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
 // Export complet : fusionne les collections en une seule, en taguant
 // chaque feature d'un `vg_type` pour pouvoir les re-filtrer (les géométries sont
 // mélangées : Point pour les falaises, LineString pour les itinéraires, types
@@ -555,6 +545,7 @@ $sources = [
   'falaise' => $geojson['features'],
   'itineraire_velo' => $itinerairesGeojson['features'],
   'arret' => $arretsGeojson['features'],
+  'ligne' => $lignesGeojson['features'],
   'detail' => $detailsGeojson['features'],
 ];
 foreach ($sources as $vgType => $features) {
@@ -576,6 +567,7 @@ echo json_encode([
   'itineraires_velo_sans_gpx' => count($gpxSansTrace),
   'itineraires_velo_sans_gpx_details' => $gpxSansTrace,
   'arrets' => count($arretsGeojson['features']),
+  'lignes' => count($lignesGeojson['features']),
   'details' => count($detailsGeojson['features']),
   'complet' => count($completGeojson['features']),
 ]);

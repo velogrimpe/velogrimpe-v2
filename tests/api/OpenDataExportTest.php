@@ -51,4 +51,30 @@ final class OpenDataExportTest extends ApiTestCase
     $velos = self::dbQueryOne("SELECT COUNT(*) AS n FROM acces_falaise WHERE type = 'velo' AND public >= 0");
     $this->assertSame((int) $velos['n'], $bilan['itineraires_velo'] + $bilan['itineraires_velo_sans_gpx'], 'seuls les accès vélo sont exportés comme itinéraires');
   }
+
+  public function testLesLignesDeTransportSontExportees(): void
+  {
+    $bilan = $this->lancerExport();
+    $nb = (int) self::dbQueryOne('SELECT COUNT(*) AS n FROM lignes_transport')['n'];
+    $this->assertSame($nb, $bilan['lignes']);
+
+    $geo = json_decode(file_get_contents(dirname(__DIR__, 2) . '/public/open-data/lignes.geojson'), true);
+    $this->assertCount($nb, $geo['features']);
+    foreach ($geo['features'] as $f) {
+      foreach (['id', 'nom', 'numero', 'operateur', 'couleur', 'arret_ids'] as $k) {
+        $this->assertArrayHasKey($k, $f['properties']);
+      }
+    }
+
+    $arrets = json_decode(file_get_contents(dirname(__DIR__, 2) . '/public/open-data/arrets.geojson'), true);
+    $this->assertNotEmpty($arrets['features']);
+    foreach ($arrets['features'] as $f) {
+      $this->assertArrayHasKey('lignes', $f['properties']);
+      $this->assertArrayNotHasKey('liaisons', $f['properties']);
+    }
+    if ($nb > 0) {
+      $avecLigne = array_filter($arrets['features'], fn($f) => $f['properties']['lignes']);
+      $this->assertNotEmpty($avecLigne, 'un arrêt desservi embarque ses lignes');
+    }
+  }
 }

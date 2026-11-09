@@ -35,7 +35,7 @@ final class FalaisePageDataTest extends ApiTestCase
       $this->assertSame(self::WITNESS_FALAISE_ID, (int) $ligne['falaise_id'], "un itinéraire de falaise.php?falaise_id=" . self::WITNESS_FALAISE_ID . " référence une autre falaise");
       $this->assertSame('velo', $ligne['type'], "seuls les accès vélo sont des itinéraires (les accès à pied ont leur section)");
 
-      // La jointure `LEFT JOIN gares ... AND gares.deleted = 0` renvoie des
+      // La jointure `JOIN arrets ... AND arrets.deleted = 0` renvoie des
       // colonnes gare_* NULL si la gare référencée a été supprimée/désactivée
       // (velo.gare_id reste NOT NULL) : un gare_nom vide signale un lien cassé.
       $this->assertNotEmpty(

@@ -197,3 +197,5 @@ Les tables `velo` et `acces_pieton_falaise` ont ensuite été fusionnées en `ac
 ### Etape 8 : Cleaning anciennes entités / tables liées aux bus
 
 bus_lignes et bus_liaisons deviennent obsolètes. On ne supprime pas ces tables (les données restent en base indéfiniment) : on arrête simplement de les lire/écrire depuis le code applicatif une fois lignes_transport en production.
+
+**Fait (Lot 9, 2026-11-09)** : plus aucune lecture ni écriture de `bus_lignes` / `bus_liaisons` (API, formulaires, fiche falaise, export open data). Les tables restent en base, sans `DROP`.

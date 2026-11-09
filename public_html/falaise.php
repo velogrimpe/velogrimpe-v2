@@ -169,7 +169,7 @@ if (!$dataF) {
   exit;
 }
 
-$stmtAllGares = $mysqli->prepare("SELECT gare_id, gare_nom FROM gares WHERE deleted = 0 ORDER BY gare_nom");
+$stmtAllGares = $mysqli->prepare("SELECT id AS gare_id, nom AS gare_nom FROM arrets WHERE (ter = 1 OR tgv = 1) AND deleted = 0 ORDER BY nom");
 $stmtAllGares->execute();
 $result = $stmtAllGares->get_result();
 $allGares = [];
@@ -1479,100 +1479,6 @@ $stmtC->close();
         console.error("Erreur lors du chargement des données de falaise :", error);
       });
 
-    // --- Arcs de liaison entre arrêts de bus (au clic sur un arrêt) ---
-    const busArcLayer = L.layerGroup().addTo(map);
-    const permanentArretIds = new Set(); // arrêts DB déjà affichés en marqueur
-
-    if (!document.getElementById("vg-bus-arc-style")) {
-      const st = document.createElement("style");
-      st.id = "vg-bus-arc-style";
-      st.textContent =
-        ".vg-bus-arc-label{background:#fffbeb;border:1px solid #eab308;color:#713f12;" +
-        "border-radius:4px;padding:0 5px;font-size:11px;font-weight:600;white-space:nowrap;" +
-        "box-shadow:0 1px 3px rgba(0,0,0,.25);}.vg-bus-arc-label::before{display:none;}" +
-        ".vg-bus-arc-tip{max-width:260px;font-size:12px;text-wrap:wrap;max-width:260px;width:max-content;}v";
-      document.head.appendChild(st);
-    }
-
-    // Arc courbé (bézier quadratique) entre deux points [lat,lng].
-    const busArcPoints = (from, to, bend = 0.2, segments = 28) => {
-      const [lat1, lng1] = from;
-      const [lat2, lng2] = to;
-      const dlat = lat2 - lat1, dlng = lng2 - lng1;
-      const clat = (lat1 + lat2) / 2 - dlng * bend;
-      const clng = (lng1 + lng2) / 2 + dlat * bend;
-      const pts = [];
-      for (let i = 0; i <= segments; i++) {
-        const t = i / segments, mt = 1 - t;
-        pts.push([
-          mt * mt * lat1 + 2 * mt * t * clat + t * t * lat2,
-          mt * mt * lng1 + 2 * mt * t * clng + t * t * lng2,
-        ]);
-      }
-      return pts;
-    };
-
-    // Étiquette de nom (div) affichée sous l'icône de l'arrêt.
-    const busLabel = (latlng, text) => {
-      const m = L.marker(latlng, {
-        icon: L.divIcon({ className: "vg-bus-label-anchor", html: "", iconSize: [0, 0] }),
-        interactive: false,
-        keyboard: false,
-      });
-      m.bindTooltip(text, {
-        permanent: true,
-        direction: "bottom",
-        offset: [0, BusStop.iconSize / 2],
-        className: "vg-bus-arc-label",
-        opacity: 1,
-      });
-      busArcLayer.addLayer(m);
-      m.openTooltip();
-    };
-
-    const showBusArcs = (arret) => {
-      busArcLayer.clearLayers();
-      const origin = [arret.lat, arret.lng];
-      (arret.liaisons || []).forEach((li) => {
-        const dest = [li.lat, li.lng];
-        // Tooltip (HTML déjà assaini) : ligne qui relie les deux arrêts + son
-        // éventuelle description + le commentaire de la liaison. Affiché sur l'arc
-        // (au survol, suit le curseur) et sur l'arrêt relié.
-        const escHtml = (s) =>
-          String(s ?? "").replace(/[&<>"]/g, (c) =>
-            ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
-        const tipParts = [];
-        if (li.ligne) tipParts.push(`<div class="font-bold">${escHtml(li.ligne)}</div>`);
-        if (li.ligne_description) tipParts.push(li.ligne_description);
-        if (li.description) tipParts.push(li.description);
-        const tip = tipParts.join("");
-        const arc = L.polyline(busArcPoints(origin, dest), {
-          color: "#eab308",
-          weight: 3,
-          opacity: 0.9,
-          dashArray: "6 8",
-        }).addTo(busArcLayer);
-        if (tip) {
-          arc.bindTooltip(tip, { sticky: true, direction: "top", className: "vg-bus-arc-tip" });
-        }
-        // Affiche l'arrêt relié s'il n'est pas déjà un marqueur permanent.
-        if (!permanentArretIds.has(li.arret_id)) {
-          const m = L.marker(dest, {
-            icon: BusStop.busStopIcon(BusStop.iconSize),
-          }).addTo(busArcLayer);
-          if (tip) {
-            m.bindTooltip(tip, {
-              direction: "top",
-              offset: [0, -BusStop.iconSize / 2],
-              className: "vg-bus-arc-tip",
-            });
-          }
-        }
-        busLabel(dest, li.nom);
-      });
-      busLabel(origin, arret.nom);
-    };
-
     // Lignes BTT (table lignes_transport) de l'arrêt cliqué : tracé (couleur + halo)
     // et tous les arrêts liés à la ligne. Effacé au clic ailleurs sur la carte.
     let ligneGroups = [];
@@ -1588,8 +1494,8 @@ $stmtC->close();
       ligneGroups = lignes.map((l) => showLigne(map, l, { fit: false }));
     };
 
-    // Clic ailleurs sur la carte : on efface les arcs et la ligne affichée.
-    map.on("click", () => { busArcLayer.clearLayers(); clearLigne(); });
+    // Clic ailleurs sur la carte : on efface la ligne affichée.
+    map.on("click", () => { clearLigne(); });
 
     // Arrêts liés à la falaise (acces_falaise, type 'pied'), toutes modalités : chacun
     // avec l'icône de son type (ter > tgv > tram > téléphérique > bus) et un
@@ -1599,10 +1505,7 @@ $stmtC->close();
       .then(data => {
         let added = false;
         (data.arrets || []).forEach(arret => {
-          const lignes = (arret.lignes || []).join(", ");
-          const descHtml =
-            (lignes ? `<div class="text-xs opacity-70">${lignes}</div>` : "") +
-            (arret.description || "");
+          const descHtml = arret.description || "";
           const feature = {
             type: "Feature",
             geometry: { type: "Point", coordinates: [arret.lng, arret.lat] },
@@ -1611,11 +1514,9 @@ $stmtC->close();
           const obj = new BusStop(map, feature);
           obj._element_id = `bus_db_${arret.id}`;
           featureMap[obj._element_id] = obj;
-          permanentArretIds.add(arret.id);
-          // Au clic : arcs jaunes vers les arrêts reliés + noms + cadrage.
+          // Au clic : tracé des lignes qui desservent l'arrêt.
           obj.layer.on("click", (ev) => {
             L.DomEvent.stopPropagation(ev);
-            showBusArcs(arret);
             showLignes(arret);
           });
           added = true;

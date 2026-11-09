@@ -61,6 +61,25 @@ final class FetchBusArretsTest extends ApiTestCase
     $this->assertSame([$linked], $ids);
   }
 
+  public function testNExposePlusLignesNiLiaisonsDeBus(): void
+  {
+    // Lot 9 : bus_lignes / bus_liaisons ne sont plus lues (les lignes passent par lignes_transport)
+    $falaiseId = $this->createFixtureFalaise();
+    $arret = $this->createFixtureArret('PHPUnit Arret sans liaison', 43.8270, 5.3830, ['bus']);
+    $this->createFixtureAccesPied($arret, $falaiseId);
+
+    $res = $this->httpGet("/api/fetch_arrets.php?falaise_id=$falaiseId");
+    $this->assertSame(200, $res['status'], $res['raw']);
+    $this->assertCount(1, $res['body']['arrets']);
+    $this->assertArrayNotHasKey('lignes', $res['body']['arrets'][0]);
+    $this->assertArrayNotHasKey('liaisons', $res['body']['arrets'][0]);
+
+    $res = $this->httpGet("/api/fetch_arret.php?arret_id=$arret");
+    $this->assertSame(200, $res['status'], $res['raw']);
+    $this->assertArrayNotHasKey('lignes', $res['body']);
+    $this->assertArrayNotHasKey('liaisons', $res['body']);
+  }
+
   public function testReturnsArretsOfAllModalitiesNotOnlyBus(): void
   {
     $falaiseId = $this->createFixtureFalaise();

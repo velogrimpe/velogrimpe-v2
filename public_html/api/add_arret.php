@@ -42,8 +42,6 @@ $falaise_ids = is_array($input['falaise_ids'] ?? null) ? array_map('intval', $in
 // Détails facultatifs des accès à pied, par falaise : { "<falaise_id>": { description, km, dplus, dmoins } }.
 // Appliqués aux falaises liées ; un accès déjà renseigné n'est jamais écrasé (champs vides seulement).
 $falaises_acces = is_array($input['falaises_acces'] ?? null) ? $input['falaises_acces'] : [];
-$lignes = is_array($input['lignes'] ?? null) ? $input['lignes'] : [];
-$liaisons = is_array($input['liaisons'] ?? null) ? $input['liaisons'] : [];
 
 // Modalités desservies : sous-ensemble de ter/tgv/bus/tram/telepherique
 // (colonne `teleph` en base), cf. docs/conception-bus.md Étape 2.
@@ -215,110 +213,7 @@ try {
     $stmt->close();
   }
 
-  // --- 2. Upsert lignes -> map key => ligne_id ---
-  $ligneKeyToId = [];
-  foreach ($lignes as $ligne) {
-    $key = (string) ($ligne['key'] ?? '');
-    $ligne_nom = trim($ligne['nom'] ?? '');
-    if ($ligne_nom === '') {
-      continue; // ligne sans nom : ignorée
-    }
-    $ligne_descr = rt_sanitize_html($ligne['description'] ?? '');
-    $ligne_lien = trim($ligne['lien'] ?? '');
-    $ligne_lien = $ligne_lien !== '' ? $ligne_lien : null;
-    $ligne_id = isset($ligne['id']) && $ligne['id'] !== null && $ligne['id'] !== '' ? (int) $ligne['id'] : null;
-
-    $oldLigne = [];
-    if ($ligne_id !== null) {
-      $sel = $mysqli->prepare("SELECT nom, description, lien FROM bus_lignes WHERE id = ?");
-      $sel->bind_param("i", $ligne_id);
-      $sel->execute();
-      $oldLigne = $sel->get_result()->fetch_assoc() ?: [];
-      $sel->close();
-
-      $stmt = $mysqli->prepare(
-        "UPDATE bus_lignes SET nom = ?, description = ?, lien = ?, contrib = ?, contrib_mail = ? WHERE id = ?"
-      );
-      $stmt->bind_param("sssssi", $ligne_nom, $ligne_descr, $ligne_lien, $nom_prenom, $email, $ligne_id);
-      $stmt->execute();
-      $stmt->close();
-    } else {
-      $stmt = $mysqli->prepare(
-        "INSERT INTO bus_lignes (nom, description, lien, contrib, contrib_mail) VALUES (?, ?, ?, ?, ?)"
-      );
-      $stmt->bind_param("sssss", $ligne_nom, $ligne_descr, $ligne_lien, $nom_prenom, $email);
-      $stmt->execute();
-      $ligne_id = $mysqli->insert_id;
-      $stmt->close();
-    }
-    if ($key !== '') {
-      $ligneKeyToId[$key] = $ligne_id;
-    }
-    $logEntries[] = [
-      'type' => $oldLigne ? 'update' : 'insert',
-      'collection' => 'bus_lignes',
-      'id' => $ligne_id,
-      'new' => ['nom' => $ligne_nom, 'description' => $ligne_descr, 'lien' => $ligne_lien],
-      'old' => $oldLigne,
-    ];
-  }
-
-  // --- 3. Liaisons (upsert) ---
-  foreach ($liaisons as $liaison) {
-    $arret_2_id = isset($liaison['arret_2_id']) && $liaison['arret_2_id'] !== '' ? (int) $liaison['arret_2_id'] : null;
-    $ligne_key = (string) ($liaison['ligne_key'] ?? '');
-    $resolved_ligne_id = $ligneKeyToId[$ligne_key] ?? null;
-    // fallback : ligne_id direct fourni
-    if ($resolved_ligne_id === null && isset($liaison['ligne_id']) && $liaison['ligne_id'] !== '' && $liaison['ligne_id'] !== null) {
-      $resolved_ligne_id = (int) $liaison['ligne_id'];
-    }
-    if (!$arret_2_id || !$resolved_ligne_id || $arret_2_id === $arret_id) {
-      continue; // liaison incomplète ou auto-référence : ignorée
-    }
-    $liaison_descr = rt_sanitize_html($liaison['description'] ?? '');
-    $liaison_id = isset($liaison['id']) && $liaison['id'] !== null && $liaison['id'] !== '' ? (int) $liaison['id'] : null;
-
-    $oldLiaison = [];
-    if ($liaison_id !== null) {
-      $sel = $mysqli->prepare(
-        "SELECT arret_1_id, arret_2_id, ligne_id, description FROM bus_liaisons WHERE id = ?"
-      );
-      $sel->bind_param("i", $liaison_id);
-      $sel->execute();
-      $oldLiaison = $sel->get_result()->fetch_assoc() ?: [];
-      $sel->close();
-
-      $stmt = $mysqli->prepare(
-        "UPDATE bus_liaisons SET arret_1_id = ?, arret_2_id = ?, ligne_id = ?, description = ?, contrib = ?, contrib_mail = ? WHERE id = ?"
-      );
-      $stmt->bind_param("iiisssi", $arret_id, $arret_2_id, $resolved_ligne_id, $liaison_descr, $nom_prenom, $email, $liaison_id);
-      $stmt->execute();
-      $stmt->close();
-    } else {
-      $stmt = $mysqli->prepare(
-        "INSERT INTO bus_liaisons (arret_1_id, arret_2_id, ligne_id, description, contrib, contrib_mail)
-         VALUES (?, ?, ?, ?, ?, ?)"
-      );
-      $stmt->bind_param("iiisss", $arret_id, $arret_2_id, $resolved_ligne_id, $liaison_descr, $nom_prenom, $email);
-      $stmt->execute();
-      $liaison_id = $mysqli->insert_id;
-      $stmt->close();
-    }
-    $logEntries[] = [
-      'type' => $oldLiaison ? 'update' : 'insert',
-      'collection' => 'bus_liaisons',
-      'id' => $liaison_id,
-      'new' => [
-        'arret_1_id' => $arret_id,
-        'arret_2_id' => $arret_2_id,
-        'ligne_id' => $resolved_ligne_id,
-        'description' => $liaison_descr,
-      ],
-      'old' => $oldLiaison,
-    ];
-  }
-
-  // --- 4. Liens falaises (remplacement du set) ---
+  // --- 2. Liens falaises (remplacement du set) ---
   // Ancien set (pour le log)
   require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/velo_lib.php';
   $oldFalaiseIds = acces_pied_falaise_ids($mysqli, $arret_id);
@@ -392,20 +287,7 @@ function busHumanizeValues($mysqli, string $collection, array $values): array
   if (empty($values)) {
     return $values;
   }
-  if ($collection === 'bus_liaisons') {
-    $out = [];
-    if (array_key_exists('arret_2_id', $values)) {
-      $out['Arrêt relié'] = busLookupName($mysqli, 'arrets', 'id', 'nom', $values['arret_2_id']);
-    }
-    if (array_key_exists('ligne_id', $values)) {
-      $out['Ligne'] = busLookupName($mysqli, 'bus_lignes', 'id', 'nom', $values['ligne_id']);
-    }
-    if (array_key_exists('description', $values)) {
-      $out['Description'] = $values['description'];
-    }
-    return $out;
-  }
-  if ($collection === 'acces_falaise' || $collection === 'acces_pieton_falaise') {
+  if ($collection === 'acces_falaise') {
     $out = [];
     if (array_key_exists('falaise_ids', $values)) {
       $ids = array_filter(array_map('trim', explode(',', (string) $values['falaise_ids'])), 'strlen');
@@ -420,7 +302,7 @@ function busHumanizeValues($mysqli, string $collection, array $values): array
 $type = $isEdition ? "update" : "insert";
 $arretChangesJson = logChanges($nom_prenom, $email, $type, 'arrets', $arret_id, null, $newArret, $oldArret);
 
-// Log des entités liées (lignes, liaisons, liens falaises) + capture des diffs pour le mail
+// Log des entités liées (liens falaises) + capture des diffs pour le mail
 $loggedEntries = [];
 foreach ($logEntries as $entry) {
   $newVals = busHumanizeValues($mysqli, $entry['collection'], $entry['new']);
@@ -458,10 +340,7 @@ function renderBusChanges(?string $changesJson): string
 
 // Libellés lisibles par collection
 $collectionLabels = [
-  'bus_lignes' => 'Ligne',
-  'bus_liaisons' => 'Liaison',
   'acces_falaise' => 'Falaises liées',
-  'acces_pieton_falaise' => 'Falaises liées',
 ];
 
 $html = "<html><body>";
@@ -477,18 +356,12 @@ $html .= "</p>";
 $html .= "<h2>Arrêt</h2>";
 $html .= renderBusChanges($arretChangesJson);
 
-// Détail des modifications des entités liées (lignes, liaisons, falaises)
+// Détail des modifications des entités liées (falaises)
 if (!empty($loggedEntries)) {
-  $html .= "<h2>Lignes, liaisons et falaises</h2>";
+  $html .= "<h2>Falaises</h2>";
   foreach ($loggedEntries as $logged) {
     $entry = $logged['entry'];
     $label = $collectionLabels[$entry['collection']] ?? $entry['collection'];
-    // Précision du libellé selon le type d'entité
-    if ($entry['collection'] === 'bus_lignes') {
-      $label .= " « " . htmlspecialchars($entry['new']['nom'] ?? '') . " »";
-    } elseif ($entry['collection'] === 'bus_liaisons') {
-      $label .= " vers « " . htmlspecialchars(busLookupName($mysqli, 'arrets', 'id', 'nom', $entry['new']['arret_2_id'] ?? null)) . " »";
-    }
     $verb = $entry['type'] === 'insert' ? 'ajouté(e)' : 'modifié(e)';
     $html .= "<h3>$label <span style='color:#888;font-weight:normal;'>($verb)</span></h3>";
     $html .= renderBusChanges($logged['changesJson']);

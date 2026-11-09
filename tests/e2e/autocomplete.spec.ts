@@ -362,6 +362,8 @@ test.describe('Autocomplete - Ajout Train', () => {
 test.describe('Autocomplete - Carte recherche', () => {
   // La recherche n'est plus un bloc autonome (#vue-search) : elle vit dans le
   // contrôle de filtres de la carte, repliée derrière un bouton « Rechercher ».
+  // Gare cherchée : carte.php n'embarque que les gares « du topo » (au moins un accès publié) ; les autres
+  // sont rendues depuis le PMTiles et ne sont pas cherchables. Culoz (gare TER de départ d'itinéraires) l'est.
   const RECHERCHE = '#vue-map-filters input[type="text"]'
 
   test.beforeEach(async ({ page }) => {
@@ -386,7 +388,7 @@ test.describe('Autocomplete - Carte recherche', () => {
 
   test('autocomplete recherche affiche des suggestions de gares', async ({ page }) => {
     const input = page.locator(RECHERCHE)
-    await saisir(input, 'Lyon')
+    await saisir(input, 'Culoz')
 
     const dropdown = page.locator('.autocomplete-list')
     await expect(dropdown).toBeVisible()
@@ -425,7 +427,7 @@ test.describe('Autocomplete - Carte recherche', () => {
 
   test('sélectionner une gare émet un événement', async ({ page }) => {
     const input = page.locator(RECHERCHE)
-    await saisir(input, 'Lyon')
+    await saisir(input, 'Culoz')
 
     const dropdown = page.locator('.autocomplete-list')
     await expect(dropdown).toBeVisible()
@@ -440,17 +442,17 @@ test.describe('Autocomplete - Carte recherche', () => {
     })
 
     // Cliquer sur une gare
-    const option = dropdown.locator('li').filter({ hasText: /Lyon.*\(gare\)/ }).first()
+    const option = dropdown.locator('li').filter({ hasText: /Culoz.*\(gare\)/ }).first()
     await option.click()
 
     // Vérifier l'événement
     const eventDetail = await eventPromise
     expect(eventDetail.type).toBe('arret')
-    expect(eventDetail.name).toContain('Lyon')
+    expect(eventDetail.name).toContain('Culoz')
   })
 
   test('navigation clavier sur recherche', async ({ page }) => {
-    await testAutocompleteKeyboard(page, RECHERCHE, 'Lyon', {
+    await testAutocompleteKeyboard(page, RECHERCHE, 'Culoz', {
       seFermeApresSelection: true,
     })
   })

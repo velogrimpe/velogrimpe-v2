@@ -87,10 +87,6 @@ export function initEditorBusStops(map, { falaiseId, ensureContrib }) {
   };
 
   const buildPopup = (arret) => {
-    const lignes =
-      Array.isArray(arret.lignes) && arret.lignes.length
-        ? `<div class="text-xs opacity-70">${escapeHtml(arret.lignes.join(", "))}</div>`
-        : "";
     // arret.description est du HTML déjà assaini côté serveur (rt_sanitize_html).
     const desc = arret.description
       ? `<div class="text-sm">${arret.description}</div>`
@@ -119,7 +115,6 @@ export function initEditorBusStops(map, { falaiseId, ensureContrib }) {
     return `
       <div class="flex flex-col gap-2 w-[260px]">
         <div class="font-bold">${escapeHtml(arret.nom)}</div>
-        ${lignes}
         ${desc}
         ${existants}
         ${formulaire("pied")}

@@ -1,5 +1,4 @@
 import { createApp, h, ref, type Ref } from 'vue'
-import AjoutBus from '@/components/ajout/AjoutBus.vue'
 import FalaisesLiees, { type AccesExistant } from '@/components/ajout/FalaisesLiees.vue'
 import RichTextField from '@/components/shared/RichTextField.vue'
 import { postBusStop } from '@/utils/bus-api'
@@ -12,7 +11,7 @@ interface FalaiseItem {
 }
 
 // Pont posé par le script carte inline de ajout_arret.php : il détient l'état des
-// liaisons (Set + hidden #arret_falaise_ids) et notifie par événement.
+// falaises liées (Set + hidden #arret_falaise_ids) et notifie par événement.
 declare global {
   interface Window {
     busFalaises?: FalaiseItem[]
@@ -22,47 +21,21 @@ declare global {
   }
 }
 
-interface ArretItem {
-  id: number
-  nom: string
-}
-interface LigneItem {
-  id: number
-  nom: string
-  description?: string
-  lien?: string
-}
-
 document.addEventListener('DOMContentLoaded', () => {
+  // Simple porteur de données (arrêt à éditer) : plus de composant Vue monté dessus depuis le Lot 9
   const mountEl = document.getElementById('vue-ajout-bus')
   if (!mountEl) {
-    console.warn('[velogrimpe] #vue-ajout-bus mount point not found')
+    console.warn('[velogrimpe] #vue-ajout-bus data element not found')
     return
   }
 
-  let arrets: ArretItem[] = []
-  let lignes: LigneItem[] = []
   let presetArretId: number | null = null
   try {
-    arrets = JSON.parse(mountEl.dataset.arrets || '[]')
-    lignes = JSON.parse(mountEl.dataset.lignes || '[]')
     presetArretId = mountEl.dataset.presetArretId
       ? parseInt(mountEl.dataset.presetArretId, 10)
       : null
   } catch (e) {
     console.error('[velogrimpe] Failed to parse ajout-bus data:', e)
-  }
-
-  // --- Composant principal (liaisons / lignes) ---
-  const app = createApp(AjoutBus, {
-    arrets,
-    lignes,
-    excludeArretId: presetArretId,
-  })
-  const vm = app.mount(mountEl) as unknown as {
-    getLignes: () => unknown[]
-    getLiaisons: () => unknown[]
-    hydrate: (d: unknown) => Promise<void>
   }
 
   // Accès déjà décrits de l'arrêt (édition), par falaise : renseignés au chargement de l'arrêt (prefill)
@@ -178,8 +151,6 @@ document.addEventListener('DOMContentLoaded', () => {
           ;(parFalaise[String(a.falaise_id)] ??= []).push(a)
         }
         accesExistants.value = parFalaise
-        // Liaisons / lignes
-        vm.hydrate({ lignes: data.lignes || [], liaisons: data.liaisons || [] })
       })
       .catch((e) => console.error('[velogrimpe] prefill bus failed:', e))
   }
@@ -231,8 +202,6 @@ document.addEventListener('DOMContentLoaded', () => {
       osm_data: osmDataRaw || null,
       falaise_ids: falaiseIds,
       falaises_acces: falaisesAcces,
-      lignes: vm.getLignes(),
-      liaisons: vm.getLiaisons(),
       nom_prenom: val('nom_prenom'),
       email: val('email'),
       message: val('message'),

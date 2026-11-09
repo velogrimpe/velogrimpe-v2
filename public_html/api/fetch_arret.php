@@ -80,60 +80,8 @@ foreach ($stmt->get_result()->fetch_all(MYSQLI_ASSOC) as $ac) {
 }
 $stmt->close();
 
-// --- Liaisons (non orientées : arret_1_id OU arret_2_id = arret courant) ---
-$liaisons = [];
-$ligne_ids = [];
-$stmt = $mysqli->prepare(
-  "SELECT l.id, l.arret_1_id, l.arret_2_id, l.ligne_id, l.description,
-          li.nom AS ligne_nom,
-          CASE WHEN l.arret_1_id = ? THEN l.arret_2_id ELSE l.arret_1_id END AS autre_id,
-          a.nom AS autre_nom
-   FROM bus_liaisons l
-   JOIN bus_lignes li ON li.id = l.ligne_id
-   JOIN arrets a ON a.id = CASE WHEN l.arret_1_id = ? THEN l.arret_2_id ELSE l.arret_1_id END
-   WHERE l.arret_1_id = ? OR l.arret_2_id = ?"
-);
-$stmt->bind_param("iiii", $arret_id, $arret_id, $arret_id, $arret_id);
-$stmt->execute();
-$res = $stmt->get_result();
-while ($row = $res->fetch_assoc()) {
-  $liaisons[] = [
-    "id" => (int) $row["id"],
-    "arret_2_id" => (int) $row["autre_id"],
-    "arret_2_nom" => $row["autre_nom"],
-    "ligne_id" => (int) $row["ligne_id"],
-    "ligne_nom" => $row["ligne_nom"],
-    "description" => $row["description"],
-  ];
-  $ligne_ids[(int) $row["ligne_id"]] = true;
-}
-$stmt->close();
-
-// --- Lignes distinctes référencées par ces liaisons ---
-$lignes = [];
-if (!empty($ligne_ids)) {
-  $ids = array_keys($ligne_ids);
-  $placeholders = implode(",", array_fill(0, count($ids), "?"));
-  $types = str_repeat("i", count($ids));
-  $stmt = $mysqli->prepare("SELECT id, nom, description, lien FROM bus_lignes WHERE id IN ($placeholders)");
-  $stmt->bind_param($types, ...$ids);
-  $stmt->execute();
-  $res = $stmt->get_result();
-  while ($row = $res->fetch_assoc()) {
-    $lignes[] = [
-      "id" => (int) $row["id"],
-      "nom" => $row["nom"],
-      "description" => $row["description"],
-      "lien" => $row["lien"],
-    ];
-  }
-  $stmt->close();
-}
-
 echo json_encode([
   "arret" => $arret,
   "falaise_ids" => $falaise_ids,
   "acces" => $acces,
-  "lignes" => $lignes,
-  "liaisons" => $liaisons,
 ]);

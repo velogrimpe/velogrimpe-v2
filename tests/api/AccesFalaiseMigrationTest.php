@@ -194,4 +194,13 @@ final class AccesFalaiseMigrationTest extends ApiTestCase
     $this->assertSame('Accès par le Sud', $r[0]['variante']);
     $this->assertSame('Accès par le Nord', $r[1]['variante']);
   }
+
+  /** Migration 7 (Lot 9) : les anciennes tables bus / accès piéton sont supprimées. */
+  public function testLesAnciennesTablesBusSontSupprimees(): void
+  {
+    foreach (['bus_liaisons', 'bus_lignes', 'bus_arrets_falaise', 'bus_arrets', 'acces_pieton_falaise', 'gares'] as $t) {
+      $n = self::dbQueryOne("SELECT COUNT(*) AS n FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$t'");
+      $this->assertSame('0', $n['n'], "`$t` doit être supprimée");
+    }
+  }
 }

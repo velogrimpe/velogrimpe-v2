@@ -18,15 +18,16 @@ $falaises = $mysqli->query("SELECT
 ")->fetch_all(MYSQLI_ASSOC);
 $villes = $mysqli->query("SELECT * FROM villes ORDER BY ville_nom")->fetch_all(MYSQLI_ASSOC);
 $gares = $mysqli->query("SELECT
-  g.*,
+  g.id AS gare_id, g.nom AS gare_nom, g.tgv AS gare_tgv, g.deleted,
+  CONCAT(ST_Y(g.loc), ',', ST_X(g.loc)) AS gare_latlng,
   GROUP_CONCAT(CONCAT(t.ville_id, '|', t.train_depart, '|', t.train_temps, '|', t.train_correspmin) SEPARATOR '=|=') AS villes
-  FROM gares g
-  LEFT JOIN train t ON t.arret_id = g.gare_id
-  where g.deleted = 0
-  GROUP BY g.gare_id;"
+  FROM arrets g
+  LEFT JOIN train t ON t.arret_id = g.id
+  where g.deleted = 0 AND (g.ter = 1 OR g.tgv = 1)
+  GROUP BY g.id;"
 )->fetch_all(MYSQLI_ASSOC);
 // Itinéraires depuis un arrêt non-gare : rendu carte au Lot 6.
-$itineraires = $mysqli->query("SELECT acces_id AS velo_id, falaise_id, arret_id, arret_id AS gare_id FROM acces_falaise WHERE type = 'velo' AND public >= 1 AND arret_id IN (SELECT gare_id FROM gares WHERE deleted = 0)")->fetch_all(MYSQLI_ASSOC);
+$itineraires = $mysqli->query("SELECT acces_id AS velo_id, falaise_id, arret_id, arret_id AS gare_id FROM acces_falaise WHERE type = 'velo' AND public >= 1 AND arret_id IN (SELECT id FROM arrets WHERE (ter = 1 OR tgv = 1) AND deleted = 0)")->fetch_all(MYSQLI_ASSOC);
 
 ?>
 <!DOCTYPE html>

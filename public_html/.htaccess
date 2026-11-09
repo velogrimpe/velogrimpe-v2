@@ -24,7 +24,7 @@ RewriteRule ^p/([a-z0-9/-]+)/?$ /p/dispatch.php?slug=$1 [L,QSA]
 # Sert les exports open data via download.php pour tracer chaque téléchargement.
 # Réécriture INTERNE : l'URL publique reste .geojson (canonique). download.php
 # lit le fichier sur disque (readfile), donc aucune boucle de réécriture.
-RewriteRule ^open-data/(falaises|falaises-details|itineraires-velo|arrets|complet)\.geojson$ /open-data/download.php?f=$1 [L,QSA]
+RewriteRule ^open-data/(falaises|falaises-details|itineraires-velo|arrets|lignes|complet)\.geojson$ /open-data/download.php?f=$1 [L,QSA]
 
 # --- Contenus statiques : point de montage des données ------------------------
 # `public` est un lien symbolique versionné vers un dossier hors du dossier
