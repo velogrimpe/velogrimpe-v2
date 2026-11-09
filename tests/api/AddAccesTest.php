@@ -7,7 +7,7 @@ require_once __DIR__ . '/ApiTestCase.php';
  * d'ACCÈS arrêt → falaise. Deux modes, discriminés par le champ `mode` :
  *  - `velo` (défaut) : itinéraire vélo depuis un arrêt QUELCONQUE (les cars
  *    qui prennent les vélos existent) → `acces_falaise` type `velo`, clé
- *    `arret_id` (renommée depuis `gare_id`, cf. sql_migrations/3_velo_arret_id.sql) ;
+ *    `arret_id` (renommée depuis `gare_id`, cf. sql_migrations/1_unification_arrets.sql) ;
  *  - `pied` : accès piéton (description, pas de GPX) → `acces_falaise` type
  *    `pied` (Lot 8quater : une seule table pour les deux).
  * Les cas vélo depuis une gare sont dans AddVeloTest.

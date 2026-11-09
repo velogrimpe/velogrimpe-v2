@@ -6,6 +6,11 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ## 2026-11-09
 
+### Changed (Lot 11 — migrations SQL réunies en une seule)
+
+- Les sept migrations du développement (`1_arrets_multimodaux` à `7_drop_anciennes_tables_bus`) sont remplacées par **`sql_migrations/1_unification_arrets.sql`**, qui amène directement le schéma de production (`0_base_schema.sql`) au schéma actuel. Les tables intermédiaires (`acces_pieton_falaise`) ne sont jamais créées en production. Vérifié sur l'export de prod : schéma et données identiques à ceux obtenus en rejouant les sept migrations l'une après l'autre.
+- `backfill_gares_geocode.php` se lance désormais **après** la migration (il géocode les arrêts sans code INSEE). CLAUDE.md et le README décrivent le re-seed suivi de la migration.
+
 ### Removed (Lot 9 — nettoyage des anciennes entités bus)
 
 - **Plus aucune lecture ni écriture de `bus_lignes` / `bus_liaisons`** dans le code (les tables et leurs données restent en base, pas de `DROP`). Retirés : les arcs jaunes de liaison entre arrêts sur la fiche falaise (le tracé des lignes `lignes_transport` reste), les sections « Lignes » et « Liaisons » du formulaire d'arrêt et du dialogue « Ajouter cet arrêt » de l'éditeur (`AjoutBus.vue`), `api/delete_bus_liaison.php`, et les champs `lignes` / `liaisons` de `add_arret.php`, `fetch_arrets.php` et `fetch_arret.php`.
@@ -16,15 +21,19 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 - `falaise.php`, `ajout_sortie.php`, `edit_sortie.php`, `admin/tableau_trains.php`, `admin/oblyk.php`, l'export open data et `backfill_gares_geocode.php` (qui renseigne désormais `code_insee` / `commune` / `cp` des arrêts) lisent `arrets` (`ter = 1 OR tgv = 1`, non supprimés) : plus aucun code ne lit la table `gares`. Mêmes 2965 gares, mêmes identifiants (`gare_id` = `arrets.id`).
 - **Open data** : la propriété `gare.departement` des itinéraires vélo (`falaises.geojson`, `itineraires-velo.geojson`) disparaît (le nom du département n'existe que dans l'ancienne table `gares`). `code_uic` vient désormais de la référence externe SNCF de l'arrêt, `commune` de `arrets.commune`.
 
+### Added (tableau)
+
+- Une falaise qui a un accès sans vélo (arrêt de bus, tram…) mais aucun train depuis la ville affichée vers cet arrêt reçoit une ligne « Également accessible sans vélo via les TC, plus de détails sur la fiche falaise » (desktop et mobile). Jusqu'ici elle était marquée « accessible à pied » sans rien montrer (ex. Dentelles de Montmirail, La Goulandière, Buoux depuis Lyon).
+
 ### Removed (migration 7)
 
-- `sql_migrations/7_drop_anciennes_tables_bus.sql` : suppression de `bus_liaisons`, `bus_arrets_falaise`, `bus_lignes`, `bus_arrets`, `acces_pieton_falaise` et `gares`. Irréversible, à jouer après sauvegarde ; contenu des lignes et liaisons de la base de dev archivé dans `docs/archive-bus-lignes-liaisons.md`.
+- Étape 4 de la migration unique (`sql_migrations/1_unification_arrets.sql`) : suppression de `bus_liaisons`, `bus_arrets_falaise`, `bus_lignes`, `bus_arrets`, `acces_pieton_falaise` et `gares`. Irréversible, à jouer après sauvegarde ; contenu des lignes et liaisons de la base de dev archivé dans `docs/archive-bus-lignes-liaisons.md`.
 
 ## 2026-11-08
 
 ### Changed
 
-- **Fusion des tables `velo` et `acces_pieton_falaise` en `acces_falaise`** (Lot 8quater, `sql_migrations/6_acces_falaise.sql`) : une ligne par accès arrêt → falaise, avec un `type` (`velo` ou `pied`), `km` / `dplus` / `dmoins` facultatifs y compris à pied, et le contributeur séparé en `contrib` / `contrib_mail`. Les `velo_id` sont conservés (`acces_id`, ils composent le nom des fichiers GPX). Les six itinéraires « à pied uniquement » redeviennent des accès `pied` publics. Clés étrangères vers `arrets` et `falaises` sans cascade.
+- **Fusion des tables `velo` et `acces_pieton_falaise` en `acces_falaise`** (Lot 8quater, étape 3 de `sql_migrations/1_unification_arrets.sql`) : une ligne par accès arrêt → falaise, avec un `type` (`velo` ou `pied`), `km` / `dplus` / `dmoins` facultatifs y compris à pied, et le contributeur séparé en `contrib` / `contrib_mail`. Les `velo_id` sont conservés (`acces_id`, ils composent le nom des fichiers GPX). Les six itinéraires « à pied uniquement » redeviennent des accès `pied` publics. Clés étrangères vers `arrets` et `falaises` sans cascade.
 - « Faisable à pied » n'est plus une case à cocher ni une colonne : un accès `pied`, ou de 5 km ou moins, l'est d'office. Sur les données de dev, 22 itinéraires deviennent « à pied possible » et 1 ne l'est plus.
 - `api/add_velo.php` accepte `type` (`velo` | `pied`) en plus de `mode`. Une variante déjà présente entre le même arrêt et la même falaise est refusée.
 - `api/add_arret.php` met à jour les falaises liées par différence au lieu de tout supprimer puis recréer : un accès à pied garde sa description, ses km et son dénivelé.

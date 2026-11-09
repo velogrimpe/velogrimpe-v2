@@ -29,6 +29,9 @@ const modeLabels: Record<string, string> = {
  * l'arrêt, ses lignes le cas échéant (« via Bus (L21, L22) »), puis son nom —
  * « en gare de » pour un arrêt TER/TGV, « à l'arrêt » sinon.
  */
+export const TC_AILLEURS_LABEL =
+  'Également accessible sans vélo via les TC, plus de détails sur la fiche falaise'
+
 export function accesPietonLabel(it: {
   gare_nom: string
   acces_pieton_types: string[]

@@ -37,6 +37,8 @@ export interface TableauItinerary {
   acces_pieton: number;
   /** 1 : la falaise a au moins un accès à pied depuis un arrêt (critère du filtre « Accessible à pied »). */
   falaise_acces_pieton: number;
+  /** 1 si la falaise a un accès sans vélo (TC) qui n'est pas listé ici : aucun train depuis cette ville vers l'arrêt. */
+  falaise_acces_tc_ailleurs?: number;
   /** null pour un accès à pied (temps de marche arrêt → falaise inconnu). */
   temps_total: number | null;
   /** Modalités de l'arrêt d'un accès à pied (ter, tgv, bus, tram, telepherique) ; [] pour un itinéraire vélo. */

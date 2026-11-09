@@ -3,13 +3,13 @@
 require_once __DIR__ . '/ApiTestCase.php';
 
 /**
- * Lot 8quater : sql_migrations/6_acces_falaise.sql renomme `velo` en
+ * Lot 8quater : l'étape 3 de sql_migrations/1_unification_arrets.sql renomme `velo` en
  * `acces_falaise`, y verse les accès de `acces_pieton_falaise` et supprime
  * `velo_apiedpossible` / `velo_apieduniquement`. Migration ponctuelle non
  * rejouable : on vérifie l'état du schéma et des données, pas le script.
  *
  * Témoins (jeu de dev) : les 6 itinéraires « à pied uniquement » (velo_id 19,
- * 125, 203, 204, 273, 374) étaient masqués par la migration 4 ; ils deviennent
+ * 125, 203, 204, 273, 374) étaient des itinéraires `velo_apieduniquement` ; ils deviennent
  * `type = 'pied'`, `public = 1`.
  */
 final class AccesFalaiseMigrationTest extends ApiTestCase
@@ -154,7 +154,7 @@ final class AccesFalaiseMigrationTest extends ApiTestCase
   public function testConflitArretFalaiseLaVersionVeloPrime(): void
   {
     // Les 6 couples « à pied uniquement » existaient aussi dans acces_pieton_falaise
-    // (copie de la migration 4) : une seule ligne pied par couple, celle venue de velo.
+    // : une seule ligne pied par couple, celle venue de velo.
     $liste = implode(',', self::ID_PIED_VENUS_DE_VELO);
     $doublons = self::dbQueryOne(
       "SELECT COUNT(*) AS n FROM acces_falaise a
@@ -195,7 +195,7 @@ final class AccesFalaiseMigrationTest extends ApiTestCase
     $this->assertSame('Accès par le Nord', $r[1]['variante']);
   }
 
-  /** Migration 7 (Lot 9) : les anciennes tables bus / accès piéton sont supprimées. */
+  /** Étape 4 de la migration (Lot 9) : les anciennes tables bus / accès piéton sont supprimées. */
   public function testLesAnciennesTablesBusSontSupprimees(): void
   {
     foreach (['bus_liaisons', 'bus_lignes', 'bus_arrets_falaise', 'bus_arrets', 'acces_pieton_falaise', 'gares'] as $t) {

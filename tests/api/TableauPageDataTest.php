@@ -148,6 +148,29 @@ final class TableauPageDataTest extends ApiTestCase
     $this->assertSame(1, (int) $group[0]['falaise_acces_pieton'], 'le drapeau de filtre reste vrai');
   }
 
+  /** Dentelles de Montmirail (358), La Goulandière (154), Buoux (249) : accès à pied depuis des arrêts de bus sans train depuis Lyon. */
+  public function testFalaisesAvecAccesPiedSansTrainDepuisLaVilleSontSignalees(): void
+  {
+    foreach ([358, 154, 249] as $falaiseId) {
+      $group = $this->groupeDeLaFalaise($falaiseId);
+      $this->assertNotNull($group, "falaise #$falaiseId absente du tableau (BDD de dev modifiée ?)");
+      $this->assertCount(0, array_filter($group, fn($r) => (int) $r['acces_pieton'] === 1), 'aucun accès à pied listé : pas de train vers ces arrêts');
+      foreach ($group as $row) {
+        $this->assertSame(1, (int) $row['falaise_acces_tc_ailleurs'], "falaise #$falaiseId : mention « via les TC » attendue");
+      }
+    }
+  }
+
+  public function testPasDeMentionQuandLAccesAPiedEstDejaListe(): void
+  {
+    [$falaiseId, $arretId] = $this->falaiseEtArretRelies();
+    $this->createFixtureAccesPied($arretId, $falaiseId);
+
+    $group = $this->groupeDeLaFalaise($falaiseId);
+    $this->assertNotNull($group);
+    $this->assertSame(0, (int) $group[0]['falaise_acces_tc_ailleurs']);
+  }
+
   public function testItineraireVeloMasqueNEstPasListe(): void
   {
     [$falaiseId, $arretId] = $this->falaiseEtArretRelies();

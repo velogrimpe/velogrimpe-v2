@@ -78,6 +78,18 @@ docker exec velogrimpe /opt/lampp/bin/mysql -uroot u829510062_bdd \
 curl -s -o /dev/null -w "%{http_code}\n" http://localhost:4000/carte.php
 ```
 
+**Migration du schéma.** L'export de la prod suit le schéma `sql_migrations/0_base_schema.sql`
+(gares, bus\_arrets, velo…). Tant que la prod n'a pas migré, rejouer après le re-seed la
+migration unique, qui amène la base au schéma actuel (arrets, acces\_falaise…, suppression des
+anciennes tables) :
+
+```bash
+docker exec -i velogrimpe /opt/lampp/bin/mysql -uroot u829510062_bdd < sql_migrations/1_unification_arrets.sql
+```
+
+Non rejouable sur une base déjà migrée (re-seed d'abord). Les arrêts sans code INSEE se
+géocodent ensuite via `api/private/backfill_gares_geocode.php?admin=…`.
+
 L'export ne couvre que les données SQL. Les fichiers associés (images de
 falaises, GPX, GeoJSON de barres) vivent dans `public/` et se récupèrent
 séparément.
@@ -86,14 +98,16 @@ séparément.
 
 **Databases:**
 
-- `u829510062_bdd` - Main DB (falaises, arrets, acces\_falaise, gares, villes,
-  train, bus\_\*, sorties, pages, newsletters…). Nom et identifiants dans `config.php` ;
+- `u829510062_bdd` - Main DB (falaises, arrets, acces\_falaise, villes, train,
+  lignes\_transport, sorties, pages, newsletters…). Schéma : `sql_migrations/0_base_schema.sql`
+  (prod, avant refonte) + `1_unification_arrets.sql` (migration unique : tables `gares`, `bus_*`,
+  `velo` remplacées par `arrets` / `acces_falaise`). Nom et identifiants dans `config.php` ;
   connexion via `public_html/database/velogrimpe.php`.
 
 **Accès arrêt → falaise (`acces_falaise`) :** une seule table pour les
 itinéraires vélo (`type = 'velo'`, avec trace GPX) et les accès à pied
 (`type = 'pied'`, sans trace) ; elle remplace `velo` et `acces_pieton_falaise`
-(Lot 8quater). Clé `acces_id` (= l'ancien `velo_id`, préfixe du nom du GPX),
+(Lot 8quater ; `gares` et les anciennes tables `bus_*` n'existent plus). Clé `acces_id` (= l'ancien `velo_id`, préfixe du nom du GPX),
 unicité `(arret_id, falaise_id, type, variante)`, FK vers `arrets` et `falaises`
 **sans cascade**. « Faisable à pied » n'est pas stocké : `type = 'pied'` ou
 `km <= 5`, calculé par `acces_a_pied_possible()` / `acces_a_pied_sql()`

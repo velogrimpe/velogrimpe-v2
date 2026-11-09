@@ -1,3 +1,9 @@
+> **État final (Lots 1 à 11).** Ce document est la conception d'origine ; plusieurs de ses étapes ont évolué
+> pendant l'implémentation. Schéma actuel : table `arrets` (remplace `gares` et `bus_arrets`), `acces_falaise`
+> (remplace `velo` et `acces_pieton_falaise` ; ex-`bus_arrets_falaise` versée avec `type = 'pied'`),
+> `lignes_transport` (remplace `bus_lignes` / `bus_liaisons`). Les anciennes tables n'existent plus : tout passe par
+> la migration unique `sql_migrations/1_unification_arrets.sql`. Détail des écarts : `docs/plan-implementation-arrets.md`.
+
 Récapitulons :
 
 ### Etape 1 : Modification DB
@@ -77,7 +83,7 @@ Il faut que chaque type d'arrêt soit représenté par un icone différent, repr
 
 Requête GET sur `https://data.geopf.fr/geocodage/reverse?lon={longitude}&lat={latitude}` (paramètres `lon`/`lat` en degrés décimaux, WGS84). Réponse JSON de type GeoJSON : extraire `features[0].properties`, avec les clés `citycode` (code INSEE), `postcode` (CP) et `city` (nom de commune) — si `features` est vide, aucun résultat trouvé à proximité. Respecter une limite de 50 requêtes/seconde/IP (throttle ~20ms entre appels pour un traitement en boucle).
 
-Le backfill des gares existantes se fait via l'endpoint `api/private/backfill_gares_geocode.php` (admin), qui appelle l'API batch `https://api-adresse.data.gouv.fr/reverse/csv/` (équivalent à `curl -X POST -F data=@gares.csv -F lat=lat -F lon=lon https://api-adresse.data.gouv.fr/reverse/csv/`) pour renseigner `gares.gare_com_insee`/`gare_com_nom`/`gare_com_cp` en un seul appel HTTP pour l'ensemble des gares. Volontairement un endpoint applicatif plutôt qu'un import de fichier dans la migration SQL : un chemin de fichier local (`LOAD DATA INFILE`) ne fonctionne qu'en dev (propre au montage du conteneur Docker), alors que cet endpoint fonctionne identiquement en dev et en prod. À appeler avant de rejouer la migration DB (étape 1), qui copie ensuite ces colonnes dans `arrets`. Les arrêts de bus n'ont pas d'équivalent connu à ce stade.
+Le backfill des gares existantes se fait via l'endpoint `api/private/backfill_gares_geocode.php` (admin), qui appelle l'API batch `https://api-adresse.data.gouv.fr/reverse/csv/` (équivalent à `curl -X POST -F data=@gares.csv -F lat=lat -F lon=lon https://api-adresse.data.gouv.fr/reverse/csv/`) pour renseigner `gares.gare_com_insee`/`gare_com_nom`/`gare_com_cp` en un seul appel HTTP pour l'ensemble des gares. Volontairement un endpoint applicatif plutôt qu'un import de fichier dans la migration SQL : un chemin de fichier local (`LOAD DATA INFILE`) ne fonctionne qu'en dev (propre au montage du conteneur Docker), alors que cet endpoint fonctionne identiquement en dev et en prod. Depuis le Lot 9 il opère sur `arrets` (`code_insee` / `commune` / `cp`) et s'appelle APRÈS la migration, qui reprend déjà les valeurs de `gares.gare_com_*` quand elles existent. Les arrêts de bus n'ont pas d'équivalent connu à ce stade.
 
 ### Etape 3 : Éditeur de détails
 

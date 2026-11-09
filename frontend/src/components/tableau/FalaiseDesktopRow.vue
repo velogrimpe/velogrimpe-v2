@@ -2,7 +2,7 @@
 import { computed } from "vue";
 import type { TableauFalaise, TableauItinerary } from "@/types/tableau";
 import { formatTime, calculateVeloTime } from "@/utils";
-import { getNbVoiesLabel, accesPietonLabel, accesPietonChiffres } from "./utils";
+import { getNbVoiesLabel, accesPietonLabel, accesPietonChiffres, TC_AILLEURS_LABEL } from "./utils";
 import RoseDesVents from "@/components/shared/RoseDesVents.vue";
 
 const props = defineProps<{
@@ -11,6 +11,8 @@ const props = defineProps<{
 }>();
 
 const common = computed(() => props.falaise[0]);
+const tcAilleurs = computed(() => common.value.falaise_acces_tc_ailleurs === 1);
+const nbLignes = computed(() => props.falaise.length + (tcAilleurs.value ? 1 : 0));
 
 function formatCorrespondances(it: TableauItinerary): string {
   const min = it.train_correspmin === 0 ? "D" : `${it.train_correspmin}C`;
@@ -87,7 +89,7 @@ function getVeloReturnTime(it: TableauItinerary): string {
     <!-- Total time column -->
     <div
       class="font-bold bg-base-100 py-1 self-stretch grid divide-y divide-slate-200 items-center"
-      :style="{ gridTemplateRows: `repeat(${falaise.length}, 1fr)` }"
+      :style="{ gridTemplateRows: `repeat(${nbLignes}, 1fr)` }"
     >
       <div
         v-for="(row, idx) in falaise"
@@ -98,13 +100,14 @@ function getVeloReturnTime(it: TableauItinerary): string {
           row.temps_total === null ? "" : formatTime(row.temps_total)
         }}</span>
       </div>
+      <div v-if="tcAilleurs" class="self-stretch py-2 px-2"></div>
     </div>
 
     <!-- Train + Velo columns : sous-grille des deux colonnes de la grille du tableau (alignement
          identique pour toutes les falaises) ; un accès à pied fusionne les deux cellules (col-span-2) -->
     <div
       class="col-span-2 bg-base-300 self-stretch grid grid-cols-subgrid gap-y-px items-stretch"
-      :style="{ gridTemplateRows: `repeat(${falaise.length}, 1fr)` }"
+      :style="{ gridTemplateRows: `repeat(${nbLignes}, 1fr)` }"
     >
       <template v-for="(row, idx) in falaise" :key="idx">
         <div
@@ -160,6 +163,13 @@ function getVeloReturnTime(it: TableauItinerary): string {
           </div>
         </template>
       </template>
+      <div
+        v-if="tcAilleurs"
+        :data-testid="`acces-tc-ailleurs-${common.falaise_id}`"
+        class="col-span-2 bg-base-100 flex flex-col justify-center py-2 px-2 text-primary"
+      >
+        {{ TC_AILLEURS_LABEL }}
+      </div>
     </div>
 
     <!-- Falaise info column -->

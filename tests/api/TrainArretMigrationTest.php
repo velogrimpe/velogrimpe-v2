@@ -3,9 +3,9 @@
 require_once __DIR__ . '/ApiTestCase.php';
 
 /**
- * Lot 8bis : sql_migrations/5_train_arret_id.sql renomme `train.gare_id` en
+ * Lot 8bis : l'étape 2 de sql_migrations/1_unification_arrets.sql renomme `train.gare_id` en
  * `train.arret_id` (int(11), comme `arrets.id`) et pose une FK vers `arrets.id`,
- * sur le modèle de `velo` (migration 3). Migration ponctuelle non rejouable :
+ * sur le modèle de `velo`. Migration ponctuelle non rejouable :
  * on vérifie l'état du schéma et des données, pas le script.
  */
 final class TrainArretMigrationTest extends ApiTestCase

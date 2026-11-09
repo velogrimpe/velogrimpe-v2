@@ -3,7 +3,7 @@ import { computed } from "vue";
 import type { TableauFalaise, TableauItinerary } from "@/types/tableau";
 import { formatTime, calculateVeloTime } from "@/utils";
 import RoseDesVents from "@/components/shared/RoseDesVents.vue";
-import { accesPietonLabel, accesPietonChiffres } from "./utils";
+import { accesPietonLabel, accesPietonChiffres, TC_AILLEURS_LABEL } from "./utils";
 
 const props = defineProps<{
   falaise: TableauFalaise;
@@ -29,7 +29,7 @@ function formatCorrespondances(it: TableauItinerary): string {
     :data-testid="`falaise-card-${common.falaise_id}`"
   >
     <div class="flex flex-col rounded-lg shadow-xl bg-base-100 p-2 text-sm">
-      <div class="flex flex-row justify-start gap-1">
+      <div class="flex flex-row justify-between items-baseline gap-2">
         <h3 class="text-xl font-bold text-primary hover:underline">
           {{ common.falaise_nom }}
           <span v-if="common.falaise_fermee" class="text-error font-normal"
@@ -130,6 +130,13 @@ function formatCorrespondances(it: TableauItinerary): string {
                 <br /><span class="text-primary">Aussi accessible a pied</span>
               </template>
             </template>
+          </li>
+          <li
+            v-if="common.falaise_acces_tc_ailleurs === 1"
+            :data-testid="`acces-tc-ailleurs-${common.falaise_id}`"
+            class="text-primary"
+          >
+            {{ TC_AILLEURS_LABEL }}
           </li>
         </ul>
       </div>

@@ -87,7 +87,7 @@ $stmtPieton = $mysqli->prepare("
     a.ter, a.tgv, a.bus, a.tram, a.teleph, a.id AS acces_pieton_arret_id,
     t.train_arrivee, t.train_temps, t.train_correspmin, t.train_correspmax, COALESCE(t.train_tgv, 0) AS train_tgv,
     0 AS velo_km, 0 AS velo_dplus, 0 AS velo_dmoins,
-    p.km AS acces_pieton_km, p.dplus AS acces_pieton_dplus, p.dmoins AS acces_pieton_dmoins,
+    p.acces_id AS acces_pieton_acces_id, p.km AS acces_pieton_km, p.dplus AS acces_pieton_dplus, p.dmoins AS acces_pieton_dmoins,
     1 AS velo_apiedpossible, 1 AS acces_pieton, 1 AS falaise_acces_pieton,
     villes.ville_nom
   FROM acces_falaise p
@@ -182,6 +182,27 @@ if (count($rows) > 0 || count($rowsPieton) > 0) {
   foreach ($rowsPieton as $row) {
     $falaises[$row['falaise_id']][] = $row;
   }
+  // Falaises ayant un accès à pied (arrêt de bus, tram…) qui n'est PAS affiché ci-dessus, faute de train depuis cette
+  // ville vers l'arrêt : l'interface ajoute une ligne « Également accessible sans vélo via les TC ».
+  $accesAffiches = array_flip(array_map(fn($r) => (int) $r['acces_pieton_acces_id'], $rowsPieton));
+  $idsFalaises = array_keys($falaises);
+  $falaisesTcAilleurs = [];
+  if ($idsFalaises) {
+    $in = implode(',', array_map('intval', $idsFalaises));
+    foreach ($mysqli->query("SELECT p.acces_id, p.falaise_id FROM acces_falaise p JOIN arrets a ON a.id = p.arret_id AND a.deleted = 0
+        WHERE p.type = 'pied' AND p.public >= 0 AND p.falaise_id IN ($in)")->fetch_all(MYSQLI_ASSOC) as $p) {
+      if (!isset($accesAffiches[(int) $p['acces_id']])) {
+        $falaisesTcAilleurs[(int) $p['falaise_id']] = 1;
+      }
+    }
+  }
+  foreach ($falaises as $fid => &$rowsFalaise) {
+    foreach ($rowsFalaise as &$r) {
+      $r['falaise_acces_tc_ailleurs'] = $falaisesTcAilleurs[(int) $fid] ?? 0;
+    }
+    unset($r);
+  }
+  unset($rowsFalaise);
   // sort the falaises by the minimum total time ascending ; sans temps total (accès piéton seuls) : en dernier
   usort($falaises, function ($a, $b) {
     return ($a[0]['temps_total'] ?? PHP_INT_MAX) <=> ($b[0]['temps_total'] ?? PHP_INT_MAX);

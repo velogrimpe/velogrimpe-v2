@@ -103,6 +103,14 @@ docker exec velogrimpe /opt/lampp/bin/mysql -uroot -e "
 docker exec -i velogrimpe /opt/lampp/bin/mysql -uroot velogrimpe < db_backup.sql
 ```
 
+Cet export suit le schéma de la prod (`sql_migrations/0_base_schema.sql`). Tant que la prod n'a pas migré, amenez-le au schéma actuel avec la migration unique :
+
+```bash
+docker exec -i velogrimpe /opt/lampp/bin/mysql -uroot velogrimpe < sql_migrations/1_unification_arrets.sql
+```
+
+(non rejouable : pour recommencer, réimportez d'abord l'export).
+
 Vérifiez ensuite que le site répond avec des données :
 
 ```bash

@@ -36,7 +36,7 @@ function arret_types(array $arret): array
  * Slug best-effort à partir du nom libre d'un arrêt (minuscules, accents
  * translittérés, ponctuation/espaces -> tirets). `arrets.slug` est NOT NULL
  * mais n'est pas encore saisi par le formulaire (cf. Lot 3) : généré ici pour
- * rester cohérent avec le slug déjà calculé en SQL pur par la migration 1.
+ * rester cohérent avec le slug déjà calculé en SQL pur par la migration `sql_migrations/1_unification_arrets.sql`.
  */
 function arret_slugify(string $nom): string
 {
