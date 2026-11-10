@@ -390,4 +390,70 @@ final class LigneTransportTest extends ApiTestCase
     }
     $this->assertSame(['commune' => null, 'code_insee' => null, 'cp' => null], $this->communeDe($crees[11]));
   }
+
+  private function gtfsRefs(int $arretId): array
+  {
+    $rows = self::dbQuery("SELECT ref, libelle FROM references_externes WHERE arret_id = $arretId AND source = 'gtfs' ORDER BY id");
+    return array_map(fn($r) => [$r['ref'], $r['libelle']], $rows);
+  }
+
+  public function testGtfsStopIdsAreStoredAndReturnedByFetchLigne(): void
+  {
+    $a = $this->createFixtureArret('PHPUnit Arrêt GTFS A');
+    $res = $this->httpPostJson('/api/add_ligne.php', $this->payload([
+      'arret_ids' => [$a],
+      'gtfs_refs' => [['arret_id' => $a, 'stop_id' => 'STOP_A', 'nom' => 'Stop A']],
+      'nouveaux_arrets' => [['nom' => 'PHPUnit GTFS - Nouveau', 'lat' => 45.7596, 'lng' => 4.8586, 'stop_id' => 'STOP_N']],
+    ]));
+    $this->assertSame(200, $res['status'], $res['raw']);
+    $ligneId = $res['body']['ligne_id'];
+    $this->cleanupOnTearDown("DELETE FROM lignes_transport WHERE id = $ligneId");
+    $this->registerCreated($res['body']['arrets_crees']);
+    $nouveau = $res['body']['arrets_crees'][0];
+
+    $this->assertSame([['STOP_A', 'Stop A']], $this->gtfsRefs($a));
+    $this->assertSame([['STOP_N', 'PHPUnit GTFS - Nouveau']], $this->gtfsRefs($nouveau));
+
+    $refs = $this->httpGet("/api/fetch_ligne.php?ligne_id=$ligneId")['body']['gtfs_refs'];
+    $this->assertSame(['STOP_A'], $refs[$a]);
+    $this->assertSame(['STOP_N'], $refs[$nouveau]);
+  }
+
+  public function testGtfsRefsAreIdempotentAndIgnoredForUnlinkedArrets(): void
+  {
+    $a = $this->createFixtureArret('PHPUnit Arrêt GTFS B');
+    $b = $this->createFixtureArret('PHPUnit Arrêt GTFS C');
+    $ligneId = $this->createLigne(['arret_ids' => [$a]]);
+    $payload = $this->payload([
+      'ligne_id' => $ligneId,
+      'arret_ids' => [$a],
+      'gtfs_refs' => [
+        ['arret_id' => $a, 'stop_id' => 'S1'],
+        ['arret_id' => $b, 'stop_id' => 'S2'], // non lié à la ligne : ignoré
+      ],
+    ]);
+    // Deux envois identiques : pas d'erreur de doublon, une seule référence
+    $this->assertSame(200, $this->httpPostJson('/api/add_ligne.php', $payload)['status']);
+    $this->assertSame(200, $this->httpPostJson('/api/add_ligne.php', $payload)['status']);
+    $this->assertCount(1, $this->gtfsRefs($a));
+    $this->assertSame([], $this->gtfsRefs($b));
+  }
+
+  public function testInvalidGtfsRefIsRejected(): void
+  {
+    $res = $this->httpPostJson('/api/add_ligne.php', $this->payload([
+      'gtfs_refs' => [['arret_id' => 0, 'stop_id' => '']],
+    ]));
+    $this->assertSame(400, $res['status']);
+  }
+
+  public function testDeleteArretIsLogicalAndRequiresBearer(): void
+  {
+    $a = $this->createFixtureArret('PHPUnit Arrêt à supprimer');
+    $this->assertSame(401, $this->httpPostJson('/api/delete_arret.php', ['arret_id' => $a])['status']);
+    $this->assertSame(404, $this->httpPostJson('/api/delete_arret.php', ['arret_id' => 999999999], $this->bearer())['status']);
+    $res = $this->httpPostJson('/api/delete_arret.php', ['arret_id' => $a], $this->bearer());
+    $this->assertSame(200, $res['status'], $res['raw']);
+    $this->assertSame(1, (int) self::dbQueryOne("SELECT deleted FROM arrets WHERE id = $a")['deleted']);
+  }
 }

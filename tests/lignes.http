@@ -34,6 +34,19 @@ Content-Type: application/json
   ]
 }
 
+### Mise à jour GTFS : stop_id mémorisés (arrêt existant 1 + nouvel arrêt)
+# Les stop_id sont écrits en references_externes (source gtfs) et relus dans `gtfs_refs` de fetch_ligne.php.
+POST {{host}}/api/add_ligne.php
+Content-Type: application/json
+
+{
+  "ligne_id": 1,
+  "nom": "Test - Ligne HTTP",
+  "arret_ids": [1],
+  "gtfs_refs": [{ "arret_id": 1, "stop_id": "STOP_1", "nom": "Stop 1" }],
+  "nouveaux_arrets": [{ "nom": "Test - Arrêt GTFS", "lat": 45.5, "lng": 6.1, "types": ["bus"], "stop_id": "STOP_2" }]
+}
+
 ### Supprimer une ligne (Bearer admin)
 POST {{host}}/api/delete_ligne.php
 Authorization: Bearer {{admin_token}}
@@ -43,3 +56,13 @@ Content-Type: application/json
 
 ### Toutes les lignes avec géométrie (carte de la page admin/arrets_lignes.php)
 GET {{host}}/api/fetch_lignes.php?geometry=1
+
+### Toutes les lignes avec géométrie et leurs arrêts (couche « lignes » de carte.php, z12+)
+GET {{host}}/api/fetch_lignes.php?geometry=1&arrets=1
+
+### Supprimer un arrêt (suppression logique, Bearer admin)
+POST {{host}}/api/delete_arret.php
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{ "arret_id": 1 }

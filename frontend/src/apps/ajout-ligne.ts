@@ -1,5 +1,7 @@
 import { createApp, h, ref } from 'vue'
 import ArretsLies from '@/components/ajout/ArretsLies.vue'
+import GtfsComparaison from '@/components/ajout/GtfsComparaison.vue'
+import { compareGtfsStops, type GtfsDiff } from '@/utils/gtfs-match'
 import {
   MAX_GTFS_ZIP_BYTES,
   listRouteStops,
@@ -14,6 +16,7 @@ import {
   type GtfsRoute,
   type MultiLineString,
 } from '@/utils/gtfs'
+import type { ArretGeo } from '@/utils/gtfs-match'
 
 interface ArretItem {
   id: number
@@ -32,6 +35,8 @@ declare global {
     ligneShowGtfsStops?: (stops: GtfsStop[], types: Modalite[]) => void
     ligneImportGtfsStops?: (stops: GtfsStop[], types: Modalite[]) => void
     ligneClearGtfsStops?: () => void
+    ligneAddNouvelArret?: (key: string, nom: string, lat: number, lng: number, types: Modalite[]) => void
+    ligneRecordGtfsRef?: (arretId: number, stopId: string, nom: string) => void
     ligneGtfsStops?: GtfsStop[]
   }
 }
@@ -151,7 +156,60 @@ document.addEventListener('DOMContentLoaded', () => {
   routesSelect.addEventListener('change', () => {
     window.ligneClearGtfsStops?.()
     setStopsButtons(routesSelect.value !== '')
+    closeDiff()
   })
+
+  // --- Mise à jour : comparaison GTFS ↔ arrêts liés (mode édition) ---
+  let savedRefs: Record<number, string[]> = {}
+  const compareBtn = el<HTMLButtonElement>('gtfs-compare')
+  const diffMount = el('vue-gtfs-diff')
+  const diff = ref<GtfsDiff | null>(null)
+  const diffKey = ref(0) // nouvelle clé à chaque comparaison : l'état des cases repart de zéro
+  const closeDiff = () => (diff.value = null)
+  let diffTypes: Modalite[] = ['bus']
+  if (compareBtn && diffMount) {
+    routesSelect.addEventListener('change', () => (compareBtn.disabled = routesSelect.value === ''))
+    compareBtn.addEventListener('click', () => {
+      const route = routes[Number(routesSelect.value)]
+      if (!feed || !route) return
+      const stops = listRouteStops(feed, route)
+      if (!stops.length) {
+        showError('gtfs-error', 'Aucun arrêt trouvé pour cette ligne dans le GTFS (stops.txt / stop_times.txt).')
+        return
+      }
+      showError('gtfs-error', null)
+      diffTypes = routeModalites(route)
+      const catalog = (window.ligneArrets ?? []) as unknown as ArretGeo[]
+      const linkedIds = new Set(
+        input('ligne_arret_ids').value.split(',').map((s) => parseInt(s, 10)).filter((n) => !isNaN(n)),
+      )
+      diffKey.value++
+      diff.value = compareGtfsStops(stops, catalog.filter((a) => linkedIds.has(a.id)), catalog, savedRefs)
+    })
+    createApp({
+      setup: () => () =>
+        diff.value
+          ? h(GtfsComparaison, {
+              key: diffKey.value,
+              diff: diff.value,
+              onClose: closeDiff,
+              onApply: (sel: { added: number[]; removed: number[] }) => {
+                const d = diff.value!
+                d.served.forEach((s) => window.ligneRecordGtfsRef?.(s.arret.id, s.stop.id, s.stop.nom))
+                sel.added.forEach((i) => {
+                  const { stop, arret } = d.added[i]
+                  if (arret) {
+                    window.ligneSetArretLinked?.(arret.id, true)
+                    window.ligneRecordGtfsRef?.(arret.id, stop.id, stop.nom)
+                  } else window.ligneAddNouvelArret?.(`gtfs:${stop.id}`, stop.nom, stop.lat, stop.lng, diffTypes)
+                })
+                sel.removed.forEach((i) => window.ligneSetArretLinked?.(d.removed[i].id, false))
+                closeDiff()
+              },
+            })
+          : null,
+    }).mount(diffMount)
+  }
 
   // Arrêts de la ligne GTFS choisie : suggestions sur la carte, ou ajout direct à la ligne
   const stopsAction = (action: 'ligneShowGtfsStops' | 'ligneImportGtfsStops') => () => {
@@ -203,6 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`fetch_ligne ${r.status}`))))
       .then((data) => {
         for (const key of Object.keys(FIELDS) as FieldKey[]) setField(key, data.ligne[key] ?? '')
+        savedRefs = data.gtfs_refs ?? {}
         if (data.ligne.geometry) setGeometry(data.ligne.geometry)
         const apply = () => (data.arret_ids as number[]).forEach((id) => window.ligneSetArretLinked?.(id, true))
         if (window.ligneSetArretLinked) apply()
@@ -231,6 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .map((s) => parseInt(s, 10))
         .filter((n) => !isNaN(n)),
     }
+    payload.gtfs_refs = input('ligne_gtfs_refs').value ? JSON.parse(input('ligne_gtfs_refs').value) : []
     for (const key of Object.keys(FIELDS) as FieldKey[]) payload[key] = input(FIELDS[key]).value
     const btn = form.querySelector<HTMLButtonElement>('button[type="submit"]')
     if (btn) btn.disabled = true
