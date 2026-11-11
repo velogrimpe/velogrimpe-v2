@@ -37,3 +37,16 @@ describe('compareGtfsStops', () => {
     expect(d.removed).toEqual([a1])
   })
 })
+
+describe('compareGtfsStops : dédoublonnage', () => {
+  test('deux arrêts GTFS à < 100 m (aller/retour) sans arrêt existant : un seul à créer', () => {
+    const d = compareGtfsStops([stop('a', 45, 5), stop('b', 45.0006, 5), stop('c', 45.01, 5)], [], [], {})
+    expect(d.added.map((x) => x.stop.id)).toEqual(['a', 'c'])
+  })
+
+  test('rayon de rapprochement de 100 m', () => {
+    const a = arret(1, 45, 5)
+    const d = compareGtfsStops([stop('s', 45.0008, 5)], [], [a], {}) // ~89 m
+    expect(d.added[0].arret?.id).toBe(1)
+  })
+})

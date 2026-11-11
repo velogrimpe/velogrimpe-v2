@@ -211,7 +211,7 @@ bus_lignes et bus_liaisons deviennent obsolètes. On ne supprime pas ces tables 
 En mode édition (`ajout_ligne.php?ligne_id=…`), après avoir chargé un zip GTFS et choisi la ligne, le bouton « Comparer les arrêts avec ceux de la ligne » affiche un aperçu en trois groupes (`GtfsComparaison.vue`, logique pure dans `frontend/src/utils/gtfs-match.ts`) :
 
 - **toujours desservis** : arrêts GTFS rapprochés d'un arrêt déjà lié ;
-- **nouveaux** (cochés par défaut) : à lier à un arrêt existant proche (< 50 m) ou à créer ;
+- **nouveaux** (cochés par défaut) : à lier à un arrêt existant proche (< 100 m) ou à créer ;
 - **absents du GTFS** (décochés par défaut, mis en évidence) : arrêts liés mais plus présents. Les cocher les **délie** de la ligne ; l'arrêt lui-même n'est jamais supprimé (il peut servir à d'autres lignes ou à des accès falaise).
 
 Ordre de rapprochement : `stop_id` mémorisé parmi les arrêts déjà liés, puis proximité parmi les arrêts liés, puis proximité dans le catalogue, sinon nouvel arrêt. « Appliquer » ne modifie que le formulaire ; tout est écrit à l'envoi.

@@ -1,7 +1,7 @@
 import type { GtfsStop } from "./gtfs";
 
 /** Distance max (m) pour rapprocher un arrêt GTFS d'un arrêt existant (même seuil que le formulaire). */
-export const MATCH_METERS = 50;
+export const MATCH_METERS = 100;
 
 export interface ArretGeo {
   id: number;
@@ -96,8 +96,15 @@ export function compareGtfsStops(
   // 3. proximité parmi les arrêts non liés, sinon nouvel arrêt
   const linkedIds = new Set(linked.map((l) => l.id));
   const unlinked = catalog.filter((c) => !linkedIds.has(c.id));
+  // Deux arrêts GTFS proches (aller/retour) sans arrêt existant ne donnent qu'un seul arrêt à créer.
+  const created: GtfsStop[] = [];
   for (const stop of stillPending) {
-    added.push({ stop, arret: nearest(stop, unlinked, maxMeters) });
+    const arret = nearest(stop, unlinked, maxMeters);
+    if (!arret) {
+      if (created.some((c) => distanceMeters(stop, c) <= maxMeters)) continue;
+      created.push(stop);
+    }
+    added.push({ stop, arret });
   }
 
   return { served, added, removed: linked.filter((l) => !matched.has(l.id)) };
