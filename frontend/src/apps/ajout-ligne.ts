@@ -184,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
         input('ligne_arret_ids').value.split(',').map((s) => parseInt(s, 10)).filter((n) => !isNaN(n)),
       )
       diffKey.value++
-      diff.value = compareGtfsStops(stops, catalog.filter((a) => linkedIds.has(a.id)), catalog, savedRefs)
+      diff.value = compareGtfsStops(stops, catalog.filter((a) => linkedIds.has(a.id)), catalog, savedRefs, undefined, diffTypes)
     })
     createApp({
       setup: () => () =>
@@ -240,18 +240,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       showError('gtfs-error', 'Cette ligne n\'a pas de tracé (shapes.txt) dans le GTFS : tracez-la à la main.')
     }
-  })
-
-  // --- Import d'un shapes.txt seul (remplace la géométrie) ---
-  input('shapes-file').addEventListener('change', async (e) => {
-    const file = (e.target as HTMLInputElement).files?.[0]
-    if (!file) return
-    const geometry = shapesToMultiLineString(await file.text())
-    if (!geometry) {
-      alert('Aucune forme exploitable dans ce shapes.txt.')
-      return
-    }
-    setGeometry(geometry)
   })
 
   // --- Prefill en mode édition ---

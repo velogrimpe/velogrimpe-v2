@@ -32,3 +32,18 @@ export function calculateVeloTime(itinerary: {
 
   return Math.round(timeInHours * 60)
 }
+
+/**
+ * Durée de marche en minutes : 4 km/h + 500 m de D+ par heure (formule historique des
+ * itinéraires « à pied uniquement »). null si km ou D+ manque : pas de durée approximative.
+ */
+export function calculatePiedTime(acces: {
+  km?: number | string | null
+  dplus?: number | string | null
+}): number | null {
+  const [km, dplus] = [acces.km, acces.dplus].map((v) =>
+    v === null || v === undefined || v === '' ? NaN : Number(v),
+  )
+  if (Number.isNaN(km) || Number.isNaN(dplus)) return null
+  return Math.round((km / 4 + dplus / 500) * 60)
+}

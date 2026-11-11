@@ -172,9 +172,8 @@ Champs du formulaire pour alimenter les champs texte.
 Et une carte pour afficher la géométrie importée depuis le shapes.txt si présent dans le zip GTFS.
 La carte affiche aussi tous les arrêts en BDD, avec comme dans le cas de l'ajout bus (lier falaise à un arrêt), la possibilité de lier les arrêts à la ligne via popup.
 
-Ajouter deux boutons au dessus de la carte :
+Boutons au-dessus de la carte (icônes, sur deux lignes : tracé, puis arrêts du GTFS) :
 
-- Importer un fichier shapes.txt (Remplace la geometry de la ligne)
 - Tracer à la main : active l'éditeur geoman qui permet de tracer des lignes à la main (lignes directes sans routage) avec snapping possible sur des arrêts existants. Quand on clique sur un arrêt existant ça trace le trait et ça ajoute l'arrêt à la liste des arrêts de la ligne.
 
 Comme pour le cas de l'ajout bus, on liste les arrêts liés avec possibilité de lier via un champ auto-complete.
@@ -211,7 +210,7 @@ bus_lignes et bus_liaisons deviennent obsolètes. On ne supprime pas ces tables 
 En mode édition (`ajout_ligne.php?ligne_id=…`), après avoir chargé un zip GTFS et choisi la ligne, le bouton « Comparer les arrêts avec ceux de la ligne » affiche un aperçu en trois groupes (`GtfsComparaison.vue`, logique pure dans `frontend/src/utils/gtfs-match.ts`) :
 
 - **toujours desservis** : arrêts GTFS rapprochés d'un arrêt déjà lié ;
-- **nouveaux** (cochés par défaut) : à lier à un arrêt existant proche (< 100 m) ou à créer ;
+- **nouveaux** (cochés par défaut) : à lier à un arrêt existant proche (< 100 m, même famille de modalité) ou à créer ;
 - **absents du GTFS** (décochés par défaut, mis en évidence) : arrêts liés mais plus présents. Les cocher les **délie** de la ligne ; l'arrêt lui-même n'est jamais supprimé (il peut servir à d'autres lignes ou à des accès falaise).
 
 Ordre de rapprochement : `stop_id` mémorisé parmi les arrêts déjà liés, puis proximité parmi les arrêts liés, puis proximité dans le catalogue, sinon nouvel arrêt. « Appliquer » ne modifie que le formulaire ; tout est écrit à l'envoi.

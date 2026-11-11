@@ -50,3 +50,24 @@ describe('compareGtfsStops : dédoublonnage', () => {
     expect(d.added[0].arret?.id).toBe(1)
   })
 })
+
+describe('compareGtfsStops : types d\'arrêt', () => {
+  const bus = { ...arret(1, 45, 5), types: ['bus'] }
+  const gare = { ...arret(2, 45, 5), types: ['ter', 'tgv'] }
+
+  test('une ligne de bus ne se rapproche pas d\'une gare au même endroit', () => {
+    const d = compareGtfsStops([stop('s', 45, 5)], [], [gare], {}, undefined, ['bus'])
+    expect(d.added[0].arret).toBeNull()
+  })
+
+  test('une ligne de bus se rapproche d\'un arrêt de bus, une ligne TER d\'une gare TGV', () => {
+    expect(compareGtfsStops([stop('s', 45, 5)], [], [gare, bus], {}, undefined, ['bus']).added[0].arret?.id).toBe(1)
+    expect(compareGtfsStops([stop('s', 45, 5)], [], [bus, gare], {}, undefined, ['ter']).added[0].arret?.id).toBe(2)
+  })
+
+  test('arrêt lié incompatible : non rapproché, donc retiré', () => {
+    const d = compareGtfsStops([stop('s', 45, 5)], [gare], [gare], {}, undefined, ['bus'])
+    expect(d.served).toHaveLength(0)
+    expect(d.removed.map((a) => a.id)).toEqual([2])
+  })
+})

@@ -8,6 +8,18 @@ export interface ArretGeo {
   nom: string;
   lat: number;
   lng: number;
+  /** ter / tgv / bus / tram / telepherique (absent : compatible avec tout). */
+  types?: string[];
+}
+
+/** Famille de modalité : TER et TGV (gares) ne forment qu'une famille, les autres sont distinctes. */
+const family = (t: string) => (t === "ter" || t === "tgv" ? "rail" : t);
+
+/** Un arrêt existant ne peut être rapproché que d'un arrêt GTFS de même famille (bus ≠ gare TER). */
+export function typesCompatibles(arretTypes: string[] | undefined, stopTypes: string[] | undefined): boolean {
+  if (!arretTypes?.length || !stopTypes?.length) return true;
+  const fams = new Set(stopTypes.map(family));
+  return arretTypes.some((t) => fams.has(family(t)));
 }
 
 export interface GtfsDiff {
@@ -54,7 +66,8 @@ function nearest<T extends ArretGeo>(
  * Compare les arrêts d'un GTFS rechargé avec ceux déjà liés à la ligne.
  * Ordre de rapprochement : stop_id mémorisé (`refs`) parmi les arrêts liés, puis proximité
  * parmi les arrêts liés restants, puis proximité parmi le reste du catalogue (arrêt à lier),
- * sinon nouvel arrêt. Les arrêts liés jamais rapprochés sont « retirés ».
+ * sinon nouvel arrêt. Seuls les arrêts de même famille de modalité que `stopTypes` sont rapprochables
+ * (bus ≠ gare TER ; TER et TGV vont ensemble). Les arrêts liés jamais rapprochés sont « retirés ».
  */
 export function compareGtfsStops(
   stops: GtfsStop[],
@@ -62,7 +75,9 @@ export function compareGtfsStops(
   catalog: ArretGeo[],
   refs: Record<number, string[]>,
   maxMeters = MATCH_METERS,
+  stopTypes?: string[],
 ): GtfsDiff {
+  const compatibles = <T extends ArretGeo>(list: T[]) => list.filter((a) => typesCompatibles(a.types, stopTypes));
   const served: GtfsDiff["served"] = [];
   const added: GtfsDiff["added"] = [];
   const matched = new Set<number>();
@@ -84,7 +99,7 @@ export function compareGtfsStops(
   for (const stop of pending) {
     const a = nearest(
       stop,
-      linked.filter((l) => !matched.has(l.id)),
+      compatibles(linked.filter((l) => !matched.has(l.id))),
       maxMeters,
     );
     if (a) {
@@ -99,7 +114,7 @@ export function compareGtfsStops(
   // Deux arrêts GTFS proches (aller/retour) sans arrêt existant ne donnent qu'un seul arrêt à créer.
   const created: GtfsStop[] = [];
   for (const stop of stillPending) {
-    const arret = nearest(stop, unlinked, maxMeters);
+    const arret = nearest(stop, compatibles(unlinked), maxMeters);
     if (!arret) {
       if (created.some((c) => distanceMeters(stop, c) <= maxMeters)) continue;
       created.push(stop);

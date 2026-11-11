@@ -1,1 +1,1 @@
-export { formatTime, calculateVeloTime } from './time'
+export { formatTime, calculateVeloTime, calculatePiedTime } from './time'

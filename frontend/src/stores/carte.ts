@@ -13,8 +13,17 @@ export interface CarteFalaise {
   type: 'falaise' | 'falaise_hors_topo'
   access: CarteItineraire[]
   /** Arrêts reliés à pied (acces_falaise, type 'pied') */
-  pieton?: Array<{ arret: CarteArret }>
+  pieton?: Array<{ arret: CarteArret; acces?: CarteAccesPied }>
   filteredOut?: boolean
+}
+
+/** Accès à pied arrêt → falaise (km / D+ / D- quand renseignés) */
+export interface CarteAccesPied {
+  km: number | null
+  dplus: number | null
+  dmoins: number | null
+  /** Une trace GPX existe pour cet accès (tracée sur la carte) */
+  has_gpx?: boolean
 }
 
 export type ArretType = 'ter' | 'tgv' | 'bus' | 'tram' | 'telepherique'
@@ -24,6 +33,8 @@ export interface CarteArret {
   arret_nom: string
   arret_latlng: string
   types: ArretType[]
+  /** Numéros des lignes de transport desservant l'arrêt (celles sans numéro sont omises) */
+  lignes?: string[]
   type: 'arret' | 'arret_hors_topo'
   access: CarteItineraire[]
   /** Falaises reliées à pied (acces_falaise, type 'pied') */
