@@ -57,7 +57,7 @@ Content-Type: application/json
 ### Toutes les lignes avec géométrie (carte de la page admin/arrets_lignes.php)
 GET {{host}}/api/fetch_lignes.php?geometry=1
 
-### Toutes les lignes avec géométrie et leurs arrêts (couche « lignes » de carte.php, z12+)
+### Toutes les lignes avec géométrie et leurs arrêts (couche « lignes » de carte.php, z11+)
 GET {{host}}/api/fetch_lignes.php?geometry=1&arrets=1
 
 ### Supprimer un arrêt (suppression logique, Bearer admin)
