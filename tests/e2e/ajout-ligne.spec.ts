@@ -502,7 +502,11 @@ const arretsCrees: number[] = []
 test.afterEach(() => {
   if (!arretsCrees.length) return
   const ids = arretsCrees.splice(0).join(',')
-  execSync(`docker exec velogrimpe /opt/lampp/bin/mysql -uroot u829510062_bdd -e "DELETE FROM arrets WHERE id IN (${ids})"`)
+  const sql = (q: string) => execSync(`docker exec velogrimpe /opt/lampp/bin/mysql -uroot u829510062_bdd -N -e "${q}"`).toString()
+  // Les regroupements créent des parents (arrêts non listés ici) : détacher les enfants, puis supprimer enfants et parents
+  const parents = sql(`SELECT DISTINCT parent_id FROM arrets WHERE id IN (${ids}) AND parent_id IS NOT NULL`).split('\n').filter(Boolean)
+  sql(`UPDATE arrets SET parent_id = NULL WHERE id IN (${ids})`)
+  sql(`DELETE FROM arrets WHERE id IN (${[ids, ...parents].join(',')})`)
 })
 
 async function choisirLigneGtfs(page: Page, numero: string) {

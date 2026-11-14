@@ -5,7 +5,7 @@
  * sélection, le formulaire la répercute sur les liaisons, et tout est enregistré à l'envoi du formulaire.
  */
 import { reactive } from "vue";
-import type { GtfsDiff } from "@/utils/gtfs-match";
+import { describePlanItem, type GtfsDiff } from "@/utils/gtfs-match";
 
 const props = defineProps<{ diff: GtfsDiff }>();
 const emit = defineEmits<{
@@ -45,7 +45,7 @@ const apply = () =>
         <input v-model="addedChecked[i]" type="checkbox" class="checkbox checkbox-xs" />
         <span>{{ a.stop.nom }}</span>
         <span class="badge badge-xs" :class="a.arret ? 'badge-ghost' : 'badge-success'">
-          {{ a.arret ? `lier à « ${a.arret.nom} » (#${a.arret.id})` : "à créer" }}
+          {{ a.arret ? `lier à « ${a.arret.nom} » (#${a.arret.id})` : describePlanItem(a.item) }}
         </span>
       </label>
     </div>

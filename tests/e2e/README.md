@@ -53,6 +53,7 @@ tests/e2e/
 ├── ajout-bus-falaises.spec.ts # Falaises liées d'un arrêt de bus (liste + carte)
 ├── ajout-velo.spec.ts    # Formulaire d'ajout d'accès (arrêt de départ, modes vélo/pied)
 ├── ajout-ligne.spec.ts   # Formulaire admin de ligne BTT (import GTFS, tracé à la main, CRUD)
+├── carte-groupes.spec.ts # Arrêts regroupés sous un parent (enfants, enveloppe, seuils de zoom)
 ├── voir-ligne.spec.ts    # Bouton « voir la ligne » (cartes globales + page falaise) ; série, ligne partagée
 └── autocomplete.spec.ts  # Tests des champs autocomplete
 ```

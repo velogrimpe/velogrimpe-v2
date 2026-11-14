@@ -24,7 +24,12 @@ export interface GtfsStop {
   nom: string;
   lat: number;
   lng: number;
+  /** `stop_id` de la station parente (`parent_station`), null pour un arrêt sans parent. */
+  parentId: string | null;
 }
+
+/** Clé d'une paire d'arrêts, indépendante du sens (`a|b` avec a ≤ b). */
+export const pairKey = (a: string, b: string) => (a <= b ? `${a}|${b}` : `${b}|${a}`);
 
 export type Modalite = "ter" | "tgv" | "bus" | "tram" | "telepherique";
 
@@ -262,12 +267,8 @@ export function routeToLigneFields(
   };
 }
 
-/**
- * Arrêts desservis par une ligne (trips.txt → stop_times.txt → stops.txt) :
- * un arrêt par lieu (les quais sont regroupés sous leur `parent_station`),
- * dans l'ordre de première desserte le long des trajets.
- */
-export function listRouteStops(feed: GtfsFeed, route: GtfsRoute): GtfsStop[] {
+/** Arrêts de chaque trajet de la ligne (trips.txt → stop_times.txt), dans l'ordre de `stop_sequence`. */
+function routeTrips(feed: GtfsFeed, route: GtfsRoute): string[][] {
   if (!feed.stopTimesText || !feed.stops.length) return [];
   const tripIds = new Set(
     feed.trips.filter((t) => t.route_id === route.id).map((t) => t.trip_id),
@@ -281,25 +282,51 @@ export function listRouteStops(feed: GtfsFeed, route: GtfsRoute): GtfsStop[] {
       .get(r.trip_id!)!
       .push({ seq: Number(r.stop_sequence), stop: r.stop_id! });
   }
+  return [...byTrip.values()].map((rows) =>
+    rows.sort((a, b) => a.seq - b.seq).map((r) => r.stop),
+  );
+}
+
+/**
+ * Arrêts desservis par une ligne (trips.txt → stop_times.txt → stops.txt) : un arrêt GTFS par `stop_id`
+ * (les quais / sens d'une même station restent distincts, avec leur `parentId`), dans l'ordre de première
+ * desserte le long des trajets. Un arrêt sans nom prend celui de sa station parente.
+ */
+export function listRouteStops(feed: GtfsFeed, route: GtfsRoute): GtfsStop[] {
+  const trips = routeTrips(feed, route);
   const stopsById = new Map(feed.stops.map((s) => [s.stop_id!, s]));
   const seen = new Set<string>();
   const result: GtfsStop[] = [];
-  for (const rows of byTrip.values()) {
-    for (const { stop } of rows.sort((a, b) => a.seq - b.seq)) {
-      const raw = stopsById.get(stop);
-      if (!raw) continue;
-      const place =
-        (raw.parent_station && stopsById.get(raw.parent_station)) || raw;
-      if (seen.has(place.stop_id!)) continue;
-      const lat = Number(place.stop_lat);
-      const lng = Number(place.stop_lon);
-      if (!place.stop_lat || !place.stop_lon || isNaN(lat) || isNaN(lng))
-        continue;
-      seen.add(place.stop_id!);
-      result.push({ id: place.stop_id!, nom: place.stop_name ?? "", lat, lng });
+  for (const stops of trips) {
+    for (const id of stops) {
+      const raw = stopsById.get(id);
+      if (!raw || seen.has(id)) continue;
+      const lat = Number(raw.stop_lat);
+      const lng = Number(raw.stop_lon);
+      if (!raw.stop_lat || !raw.stop_lon || isNaN(lat) || isNaN(lng)) continue;
+      const parentId = raw.parent_station || null;
+      seen.add(id);
+      result.push({
+        id,
+        nom: raw.stop_name || (parentId ? stopsById.get(parentId)?.stop_name : "") || "",
+        lat,
+        lng,
+        parentId,
+      });
     }
   }
   return result;
+}
+
+/** Paires d'arrêts consécutifs dans au moins un trajet de la ligne (clés `pairKey`) : jamais le même lieu. */
+export function listRouteStopPairs(feed: GtfsFeed, route: GtfsRoute): Set<string> {
+  const pairs = new Set<string>();
+  for (const stops of routeTrips(feed, route)) {
+    for (let i = 1; i < stops.length; i++) {
+      if (stops[i - 1] !== stops[i]) pairs.add(pairKey(stops[i - 1]!, stops[i]!));
+    }
+  }
+  return pairs;
 }
 
 /** Modalité(s) de la ligne d'après `route_type` (GTFS de base et étendu) ; bus par défaut. */

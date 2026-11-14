@@ -9,15 +9,16 @@ import { test, expect, Page } from '@playwright/test'
  * page (marqueur présent ou non, classe de l'icône, couche de tracé).
  *
  * Données de la base locale (export prod) :
- *  - 6214 « La Balme - Pont du Rhône » : arrêt de bus, accès piéton seul vers
- *    la falaise 29 (qui a aussi des accès vélo) → arrêt « du topo »
+ *  - 7729 : parent de 6214 « La Balme - Pont du Rhône » (arrêt de bus regroupé lors du
+ *    réimport des lignes) ; accès piéton seul vers la falaise 29 (qui a aussi des accès
+ *    vélo) → arrêt « du topo ». Seul le parent est un point de la carte.
  *  - 6216 « Chambéry » : arrêt de bus sans aucun accès → hors topo
  */
 
 // Noms lexicaux des scripts de page (const/var de script classique, hors globalThis)
 declare const arrets: any, falaises: any, map: any, L: any
 
-const BUS_TOPO_PIETON = 6214
+const BUS_TOPO_PIETON = 7729
 const BUS_HORS_TOPO = 6216
 const FALAISE_AVEC_PIETON = '29'
 

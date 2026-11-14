@@ -4,6 +4,37 @@ Tous les changements notables de ce projet sont documentés dans ce fichier.
 
 Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 2026-11-14
+
+### Changed (admin arrêts / lignes, ajout de ligne)
+
+- `ajout_ligne.php` : les boutons Tracé / Arrêts portent un libellé court (Tracer, Modifier, Effacer, Voir, Importer).
+- Admin arrêts : « Défusionner » devient une icône (`unmerge`, nouveau symbole du sprite) dans la liste et la popup carte ; « Déplacer » utilise l'icône `map-pin`.
+- Liste admin des arrêts : les enfants sont des lignes compactes sous celle du parent, affichées au clic sur la ligne du parent (la ligne du parent ne bouge pas) ; un enfant dont le parent est filtré reste listé seul.
+
+### Changed (arrêts regroupés sur la carte)
+
+- `carte.php` : les enfants, leurs noms et l'enveloppe n'apparaissent qu'à partir du zoom MapLibre 14 (13 auparavant) ; avant, seul le parent est montré et nommé. Chaque enfant porte son propre nom, avec la gestion des collisions de MapLibre. Admin : le parent est représenté plus gros, les enfants plus petits avec un halo très fin.
+
+### Added
+
+- **Carte** (`carte.php`) : option `?sync=true` qui synchronise la vue de la carte dans le hash de l'URL (`#zoom/lat/lng`, option `hash` de MapLibre) : la vue est relue au chargement et mise à jour à chaque déplacement. Sans l'option, comportement inchangé.
+- **Admin** : bouton de suppression d'une ligne (`admin/arrets_lignes.php`). Un dialogue propose de supprimer la ligne seule, ou aussi ses arrêts sans falaise (`api/delete_ligne.php`, paramètre `supprimer_arrets` : suppression **définitive** des arrêts de la ligne sans accès falaise ni trajet train — ni eux ni leur parent — et sans autre ligne, avec leurs références GTFS et exclusions de villes ; un parent laissé sans enfant disparaît aussi).
+
+## 2026-11-13
+
+### Added (arrêts parents / enfants — `docs/plan-arrets-parents.md`)
+
+- **Fusion non destructive** : `sql_migrations/2_arrets_parents.sql` ajoute `arrets.parent_id` et `arrets.position_manuelle`. Fusionner deux arrêts (`api/merge_arrets.php`) les regroupe sous un parent à la position du barycentre (ou rattache un arrêt à un parent existant, ou aplatit deux parents) au lieu d'en supprimer un. Seuls des arrêts de même mode (TER et TGV ensemble) peuvent être fusionnés ; accès aux falaises et trajets train passent au parent, lignes et références GTFS restent sur les enfants. Nouveaux endpoints `api/detach_arret.php` et `api/unmerge_arret.php` ; `api/move_arret.php` fixe la position à la main (`position_manuelle`) ou la rend automatique (`auto`).
+- **Import GTFS** : chaque arrêt GTFS (quai, sens) devient un arrêt avec sa référence ; la politique de rapprochement (50 m, ou 100 m avec le même nom ; identité si l'arrêt n'a pas de référence, regroupement sinon ; stations GTFS et même nom à 200 m regroupés ; jamais deux arrêts consécutifs d'un trajet) est unifiée dans `gtfs-match.ts` pour « Importer », « Montrer » et la comparaison de mise à jour. La réimport met à jour la position d'un arrêt déjà suivi (jamais le nom, jamais une position manuelle).
+- **Admin** (`admin/arrets_lignes.php`) : règles de fusion, détacher, défusionner, « Position auto », enveloppe des arrêts regroupés sur la carte. **Carte** (`carte.php`) : parent seul à bas zoom, enfants et enveloppe à fort zoom.
+
+### Changed
+
+- Les enfants sont invisibles des formulaires, de l'éditeur de falaise, des cibles d'accès et de trajets et de l'open data ; les lignes des enfants remontent sur le parent (carte, fiche falaise, tableau, open data, `fetch_lignes.php?arret_id=`). Un parent ne se lie pas directement à une ligne.
+- `api/merge_arrets.php` ne supprime plus l'arrêt « source » : réponse `{ success, parent_id, acces_deplaces }`.
+- `fetch_lignes.php` expose `parent_id` sur les arrêts d'une ligne. Le catalogue du formulaire de ligne n'inclut plus les arrêts supprimés ni les parents, et porte les références GTFS de chaque arrêt.
+
 ## 2026-11-09
 
 ### Changed (Lot 11 — migrations SQL réunies en une seule)

@@ -240,6 +240,122 @@ final class LigneTransportTest extends ApiTestCase
     $this->assertNotNull(self::dbQueryOne("SELECT id FROM arrets WHERE id = $a"), 'l\'arrêt ne doit pas être supprimé');
   }
 
+  // --- Suppression d'une ligne avec ses arrêts (supprimer_arrets) : suppression PHYSIQUE ------------------
+
+  private function deleteLigne(int $ligneId, bool $avecArrets): array
+  {
+    return $this->httpPostJson('/api/delete_ligne.php', ['ligne_id' => $ligneId, 'supprimer_arrets' => $avecArrets], $this->bearer());
+  }
+
+  private function arretExiste(int $arretId): bool
+  {
+    return self::dbQueryOne("SELECT id FROM arrets WHERE id = $arretId") !== null;
+  }
+
+  public function testDeleteAvecArretsSupprimeDefinitivementCeuxSansFalaiseNiAutreLigne(): void
+  {
+    $falaise = $this->createFixtureFalaise();
+    $libre = $this->createFixtureArret('PHPUnit Suppr libre', 43.80, 5.40);
+    $avecAcces = $this->createFixtureArret('PHPUnit Suppr accès', 43.81, 5.41);
+    $autreLigne = $this->createFixtureArret('PHPUnit Suppr autre ligne', 43.82, 5.42);
+    $this->createFixtureAccesPied($avecAcces, $falaise);
+    $this->createLigne(['arret_ids' => [$autreLigne]]);
+    $ligneId = $this->createLigne(['arret_ids' => [$libre, $avecAcces, $autreLigne]]);
+    self::dbExec("INSERT INTO references_externes (arret_id, source, ref) VALUES ($libre, 'gtfs', 'SUPPR1')");
+
+    $res = $this->deleteLigne($ligneId, true);
+    $this->assertSame(200, $res['status'], $res['raw']);
+    $this->assertSame(1, $res['body']['arrets_supprimes']);
+    $this->assertSame(2, $res['body']['arrets_conserves']);
+
+    $this->assertNull(self::dbQueryOne("SELECT id FROM lignes_transport WHERE id = $ligneId"));
+    $this->assertNull(self::dbQueryOne("SELECT id FROM arrets_lignes_transport WHERE ligne_id = $ligneId"), 'liens arrêts-ligne supprimés');
+    $this->assertFalse($this->arretExiste($libre), 'sans accès falaise ni autre ligne : supprimé définitivement');
+    $this->assertNull(self::dbQueryOne("SELECT id FROM references_externes WHERE ref = 'SUPPR1'"), 'ses références suivent');
+    $this->assertTrue($this->arretExiste($avecAcces), 'relié à une falaise : conservé');
+    $this->assertTrue($this->arretExiste($autreLigne), 'desservi par une autre ligne : conservé');
+  }
+
+  public function testDeleteAvecArretsConserveUnArretPorteurDUnTrajetTrain(): void
+  {
+    $a = $this->createFixtureArret('PHPUnit Suppr train', 43.80, 5.40, ['ter']);
+    $trainId = self::dbInsert("INSERT INTO train (ville_id, arret_id, train_depart, train_arrivee, train_descr, train_public, train_contrib)
+      VALUES (" . self::WITNESS_VILLE_ID . ", $a, 'x', 'y', '', 1, 'phpunit')");
+    $this->cleanupOnTearDown("DELETE FROM train WHERE train_id = $trainId");
+    $ligneId = $this->createLigne(['arret_ids' => [$a]]);
+
+    $res = $this->deleteLigne($ligneId, true);
+    $this->assertSame(200, $res['status'], $res['raw']);
+    $this->assertSame(0, $res['body']['arrets_supprimes']);
+    $this->assertTrue($this->arretExiste($a), 'un trajet train le référence : conservé');
+  }
+
+  public function testDeleteAvecArretsNettoieLesExclusionsDeVilles(): void
+  {
+    $a = $this->createFixtureArret('PHPUnit Suppr exclusion', 43.80, 5.40, ['ter']);
+    $falaise = $this->createFixtureFalaise();
+    self::dbExec("INSERT INTO exclusions_villes_gares (ville_id, gare_id) VALUES (" . self::WITNESS_VILLE_ID . ", $a)");
+    self::dbExec("INSERT INTO exclusions_villes_gares_falaises (ville_id, gare_id, falaise_id) VALUES (" . self::WITNESS_VILLE_ID . ", $a, $falaise)");
+    $this->cleanupOnTearDown("DELETE FROM exclusions_villes_gares WHERE gare_id = $a");
+    $this->cleanupOnTearDown("DELETE FROM exclusions_villes_gares_falaises WHERE gare_id = $a");
+    $ligneId = $this->createLigne(['arret_ids' => [$a]]);
+
+    $this->assertSame(200, $this->deleteLigne($ligneId, true)['status']);
+    $this->assertFalse($this->arretExiste($a));
+    $this->assertNull(self::dbQueryOne("SELECT 1 AS x FROM exclusions_villes_gares WHERE gare_id = $a"));
+    $this->assertNull(self::dbQueryOne("SELECT 1 AS x FROM exclusions_villes_gares_falaises WHERE gare_id = $a"));
+  }
+
+  public function testDeleteSansOptionNeSupprimeAucunArret(): void
+  {
+    $a = $this->createFixtureArret('PHPUnit Suppr sans option');
+    $ligneId = $this->createLigne(['arret_ids' => [$a]]);
+    $res = $this->deleteLigne($ligneId, false);
+    $this->assertSame(200, $res['status'], $res['raw']);
+    $this->assertSame(0, $res['body']['arrets_supprimes']);
+    $this->assertTrue($this->arretExiste($a));
+  }
+
+  public function testDeleteAvecArretsRespecteLesParents(): void
+  {
+    $falaise = $this->createFixtureFalaise();
+    $admin = $this->bearer();
+    // Parent P1 (accès falaise) : ses enfants sont « reliés à une falaise »
+    $a1 = $this->createFixtureArret('PHPUnit Suppr P1-a', 43.80, 5.40);
+    $b1 = $this->createFixtureArret('PHPUnit Suppr P1-b', 43.80, 5.4002);
+    $p1 = (int) $this->httpPostJson('/api/merge_arrets.php', ['source_id' => $a1, 'cible_id' => $b1], $admin)['body']['parent_id'];
+    $this->createFixtureAccesPied($p1, $falaise);
+    // Parent P2 (aucun accès) : tous ses enfants sont supprimés, donc lui aussi
+    $a2 = $this->createFixtureArret('PHPUnit Suppr P2-a', 43.90, 5.50);
+    $b2 = $this->createFixtureArret('PHPUnit Suppr P2-b', 43.90, 5.5002);
+    $p2 = (int) $this->httpPostJson('/api/merge_arrets.php', ['source_id' => $a2, 'cible_id' => $b2], $admin)['body']['parent_id'];
+    // Parent P3 : un seul de ses deux enfants est sur la ligne, l'autre reste (le parent aussi, recalculé)
+    $a3 = $this->createFixtureArret('PHPUnit Suppr P3-a', 43.95, 5.60);
+    $b3 = $this->createFixtureArret('PHPUnit Suppr P3-b', 43.95, 5.6002);
+    $p3 = (int) $this->httpPostJson('/api/merge_arrets.php', ['source_id' => $a3, 'cible_id' => $b3], $admin)['body']['parent_id'];
+    foreach ([$p1, $p2, $p3] as $p) {
+      $this->cleanupOnTearDown("DELETE FROM arrets WHERE id = $p");
+      $this->cleanupOnTearDown("DELETE FROM acces_falaise WHERE arret_id = $p");
+      $this->cleanupOnTearDown("UPDATE arrets SET parent_id = NULL WHERE parent_id = $p");
+    }
+    $ligneId = $this->createLigne(['arret_ids' => [$a1, $b1, $a2, $b2, $a3]]);
+
+    $res = $this->deleteLigne($ligneId, true);
+    $this->assertSame(200, $res['status'], $res['raw']);
+
+    $this->assertSame([true, true, true], [$this->arretExiste($a1), $this->arretExiste($b1), $this->arretExiste($p1)]);
+    $this->assertSame([false, false, false], [$this->arretExiste($a2), $this->arretExiste($b2), $this->arretExiste($p2)], 'parent laissé sans enfant : supprimé avec eux');
+    $this->assertFalse($this->arretExiste($a3));
+    $this->assertTrue($this->arretExiste($b3) && $this->arretExiste($p3));
+    $this->assertEqualsWithDelta(5.6002, (float) self::dbQueryOne("SELECT ST_X(loc) AS x FROM arrets WHERE id = $p3")['x'], 1e-6, 'parent recalculé sur l\'enfant restant');
+    $this->assertSame(4, $res['body']['arrets_supprimes'], 'a2, b2, p2 et a3');
+  }
+
+  public function testDeleteAvecArretsInconnuRenvoie404SansRienSupprimer(): void
+  {
+    $this->assertSame(404, $this->deleteLigne(999999999, true)['status']);
+  }
+
   /** Arrêts créés par add_ligne.php (import GTFS) : suppression en fin de test. */
   private function registerCreated(array $ids): void
   {

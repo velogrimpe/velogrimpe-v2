@@ -66,7 +66,7 @@ fournit :
 
 Ces tests couvrent aujourd'hui les endpoints bus (`add_arret.php`, `fetch_arret.php`,
 `fetch_arrets.php`, `link_arret_falaise.php`, cf. `docs/conception-bus.md`)
-et accès vélo/pied (`add_velo.php` en modes `velo` et `pied`, `edit_velo.php`) et lignes BTT (`add_ligne.php`, `fetch_ligne.php`, `fetch_lignes.php`, `delete_ligne.php` — `LigneTransportTest`, Lot 7) : ils serviront de garde-fou
+et accès vélo/pied (`add_velo.php` en modes `velo` et `pied`, `edit_velo.php`) et lignes BTT (`add_ligne.php`, `fetch_ligne.php`, `fetch_lignes.php`, `delete_ligne.php` — `LigneTransportTest`, Lot 7 ; regroupements d'arrêts à l'import — `AddLigneRegroupementTest`) et arrêts parents / enfants (`ArretsParentsSchemaTest`, `ArretsFusionTest` : fusion, détachement, défusion, suppression, déplacement ; `ArretsParentsReadersTest` : enfants masqués des formulaires, carte, lignes remontées sur le parent) : ils serviront de garde-fou
 pendant la migration vers la table `arrets` multimodale, et seront adaptés
 au fil de l'eau plutôt que réécrits.
 

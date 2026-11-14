@@ -4,6 +4,7 @@ import { resolve } from 'node:path'
 import { strToU8, zipSync } from 'fflate'
 import {
   agencyForRoute,
+  listRouteStopPairs,
   listRouteStops,
   listRoutes,
   parseCsv,
@@ -199,13 +200,33 @@ t5,09:00,09:00,Q9,1
   )
   const routes = listRoutes(feed)
 
-  test('arrêts de la ligne : un par lieu (quais regroupés sous leur gare parente), dans l\'ordre du trajet', () => {
+  test('arrêts de la ligne : chaque quai est un arrêt (avec sa station parente), dans l\'ordre du trajet', () => {
     const stops = listRouteStops(feed, routes[0]!)
     expect(stops).toEqual([
-      { id: 'P1', nom: 'Gare centrale', lat: 45.0, lng: 5.0 },
-      { id: 'Q2', nom: 'Mairie', lat: 45.1, lng: 5.1 },
-      { id: 'Q3', nom: 'Lycée', lat: 45.2, lng: 5.2 },
+      { id: 'Q1a', nom: 'Gare centrale', lat: 45.0001, lng: 5.0001, parentId: 'P1' },
+      { id: 'Q2', nom: 'Mairie', lat: 45.1, lng: 5.1, parentId: null },
+      { id: 'Q3', nom: 'Lycée', lat: 45.2, lng: 5.2, parentId: null },
+      { id: 'Q1b', nom: 'Gare centrale', lat: 45.0002, lng: 5.0002, parentId: 'P1' },
     ])
+  })
+  test('un arrêt sans nom prend celui de sa station parente', () => {
+    const f = readGtfs(
+      buildZip({
+        'routes.txt': ROUTES,
+        'trips.txt': TRIPS,
+        'stops.txt': 'stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station\nP1,Longchamp,45,5,1,\nQ1,,45.001,5.001,0,P1\n',
+        'stop_times.txt': 'trip_id,stop_id,stop_sequence\nt1,Q1,1\n',
+      }),
+    )
+    expect(listRouteStops(f, listRoutes(f)[0]!)[0]).toMatchObject({ id: 'Q1', nom: 'Longchamp', parentId: 'P1' })
+  })
+  test('paires d\'arrêts consécutifs dans un trajet (clé ordonnée, indépendante du sens)', () => {
+    const pairs = listRouteStopPairs(feed, routes[0]!)
+    expect(pairs.has('Q1a|Q2')).toBe(true)
+    expect(pairs.has('Q2|Q3')).toBe(true)
+    expect(pairs.has('Q1b|Q2')).toBe(true) // t2 : Q2 puis Q1b (clé triée)
+    expect(pairs.has('Q1a|Q1b')).toBe(false)
+    expect(pairs.has('Q1a|Q3')).toBe(false) // non consécutifs
   })
   test('les arrêts des autres lignes ne sont pas inclus', () => {
     expect(listRouteStops(feed, routes[1]!).map((s) => s.id)).toEqual(['Q9'])

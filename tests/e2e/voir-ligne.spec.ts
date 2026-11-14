@@ -21,7 +21,10 @@ test.describe.configure({ mode: 'serial' })
 
 const ROOT = resolve(__dirname, '../..')
 const ADMIN_TOKEN = /['"]admin_token['"]\s*=>\s*['"]([^'"]+)['"]/.exec(readFileSync(resolve(ROOT, 'config.php'), 'utf8'))![1]
-const BUS = 6214
+// 6214 « La Balme - Pont du Rhône » est regroupé sous le parent 7729 (seul point de la carte, porteur des accès) :
+// la ligne de test dessert l'enfant 6214, on sélectionne le parent 7729 sur la carte.
+const BUS_ENFANT = 6214
+const BUS = 7729
 const FALAISE = 29
 const COULEUR = '#ff0000'
 const NUMERO = 'E2EV'
@@ -34,17 +37,23 @@ let autreArretId: number
 test.beforeEach(async ({ request }) => {
   // Un second arrêt desservi, pour vérifier la mise en évidence des arrêts liés
   const autre = await (await request.get(`/api/fetch_arrets.php?falaise_id=${FALAISE}`)).json()
-  autreArretId = autre.arrets.find((a: any) => a.id !== BUS)?.id ?? 6216
-  const res = await request.post('/api/add_ligne.php', {
-    data: {
-      nom: 'PHPUnit e2e - Voir la ligne',
-      numero: NUMERO,
-      couleur: COULEUR,
-      geometry: { type: 'MultiLineString', coordinates: [[[5.30, 45.85], [5.35, 45.90], [5.40, 45.95]]] },
-      arret_ids: [BUS, autreArretId],
-    },
+  const donnees = (arretIds: number[]) => ({
+    nom: 'PHPUnit e2e - Voir la ligne',
+    numero: NUMERO,
+    couleur: COULEUR,
+    geometry: { type: 'MultiLineString', coordinates: [[[5.30, 45.85], [5.35, 45.90], [5.40, 45.95]]] },
+    arret_ids: arretIds,
   })
-  ligneId = (await res.json()).ligne_id
+  // Un parent ne se lie pas à une ligne (400) : on prend le premier autre arrêt de la falaise qu'elle accepte
+  let res: any
+  for (const id of [...autre.arrets.map((a: any) => a.id).filter((id: number) => id !== BUS), 6216]) {
+    res = await request.post('/api/add_ligne.php', { data: donnees([BUS_ENFANT, id]) })
+    if (res.ok()) {
+      autreArretId = id
+      ligneId = (await res.json()).ligne_id
+      break
+    }
+  }
   nbLignes = (await (await request.get(`/api/fetch_lignes.php?arret_id=${BUS}`)).json()).lignes.length
 })
 test.afterEach(async ({ request }) => {

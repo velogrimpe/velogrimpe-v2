@@ -1,9 +1,17 @@
 import { createApp, h, ref } from 'vue'
 import ArretsLies from '@/components/ajout/ArretsLies.vue'
 import GtfsComparaison from '@/components/ajout/GtfsComparaison.vue'
-import { compareGtfsStops, type GtfsDiff } from '@/utils/gtfs-match'
+import {
+  compareGtfsStops,
+  describePlanItem,
+  nouvelArretExtra,
+  planGtfsStops,
+  type GtfsDiff,
+  type PlanItem,
+} from '@/utils/gtfs-match'
 import {
   MAX_GTFS_ZIP_BYTES,
+  listRouteStopPairs,
   listRouteStops,
   listRoutes,
   readGtfs,
@@ -32,11 +40,13 @@ declare global {
     ligneSetArretLinked?: (id: number, linked: boolean) => void
     ligneFocusArret?: (id: number) => void
     ligneRemoveNouvelArret?: (key: string) => void
-    ligneShowGtfsStops?: (stops: GtfsStop[], types: Modalite[]) => void
-    ligneImportGtfsStops?: (stops: GtfsStop[], types: Modalite[]) => void
+    ligneShowGtfsStops?: (items: { stop: GtfsStop; label: string; item: PlanItem }[], onAdd: (item: { item: PlanItem }) => void) => void
+    ligneFitStops?: (stops: GtfsStop[]) => void
     ligneClearGtfsStops?: () => void
-    ligneAddNouvelArret?: (key: string, nom: string, lat: number, lng: number, types: Modalite[]) => void
-    ligneRecordGtfsRef?: (arretId: number, stopId: string, nom: string) => void
+    ligneAddNouvelArret?: (
+      key: string, nom: string, lat: number, lng: number, types: Modalite[], extra?: Record<string, string | number>,
+    ) => void
+    ligneRecordGtfsRef?: (arretId: number, stopId: string, nom: string, pos?: { lat: number; lng: number }) => void
     ligneGtfsStops?: GtfsStop[]
   }
 }
@@ -70,6 +80,35 @@ function showError(id: string, message: string | null) {
   if (!box) return
   box.textContent = message ?? ''
   box.classList.toggle('hidden', !message)
+}
+
+/**
+ * Répercute un arrêt du plan d'import sur le formulaire : arrêt existant lié (avec sa ref GTFS ; repositionné
+ * à l'envoi s'il est déjà suivi sous cette ref), ou nouvel arrêt (regroupé, le cas échéant).
+ */
+function applyPlanItem(it: PlanItem, types: Modalite[]) {
+  const { stop, arret } = it
+  if ((it.action === 'served' || it.action === 'adopt') && arret) {
+    window.ligneSetArretLinked?.(arret.id, true)
+    window.ligneRecordGtfsRef?.(arret.id, stop.id, stop.nom, it.action === 'served' ? { lat: stop.lat, lng: stop.lng } : undefined)
+  } else {
+    window.ligneAddNouvelArret?.(`gtfs:${stop.id}`, stop.nom, stop.lat, stop.lng, types, nouvelArretExtra(it))
+  }
+}
+
+/** Arrêts de la ligne GTFS choisie et contexte de rapprochement (arrêts liés, catalogue, trajets). */
+function planFor(feed: GtfsFeed, route: GtfsRoute, stops: GtfsStop[]) {
+  const catalog = (window.ligneArrets ?? []) as unknown as ArretGeo[]
+  const linkedIds = new Set(
+    input('ligne_arret_ids').value.split(',').map((s) => parseInt(s, 10)).filter((n) => !isNaN(n)),
+  )
+  return {
+    types: routeModalites(route),
+    linked: catalog.filter((a) => linkedIds.has(a.id)),
+    catalog,
+    consecutive: listRouteStopPairs(feed, route),
+    stops,
+  }
 }
 
 /** Zip trop volumineux : pas d'analyse, et des pistes pour réduire la portée du GTFS. */
@@ -160,7 +199,6 @@ document.addEventListener('DOMContentLoaded', () => {
   })
 
   // --- Mise à jour : comparaison GTFS ↔ arrêts liés (mode édition) ---
-  let savedRefs: Record<number, string[]> = {}
   const compareBtn = el<HTMLButtonElement>('gtfs-compare')
   const diffMount = el('vue-gtfs-diff')
   const diff = ref<GtfsDiff | null>(null)
@@ -178,13 +216,10 @@ document.addEventListener('DOMContentLoaded', () => {
         return
       }
       showError('gtfs-error', null)
-      diffTypes = routeModalites(route)
-      const catalog = (window.ligneArrets ?? []) as unknown as ArretGeo[]
-      const linkedIds = new Set(
-        input('ligne_arret_ids').value.split(',').map((s) => parseInt(s, 10)).filter((n) => !isNaN(n)),
-      )
+      const ctx = planFor(feed, route, stops)
+      diffTypes = ctx.types
       diffKey.value++
-      diff.value = compareGtfsStops(stops, catalog.filter((a) => linkedIds.has(a.id)), catalog, savedRefs, undefined, diffTypes)
+      diff.value = compareGtfsStops(stops, ctx.linked, ctx.catalog, { stopTypes: ctx.types, consecutive: ctx.consecutive })
     })
     createApp({
       setup: () => () =>
@@ -195,14 +230,10 @@ document.addEventListener('DOMContentLoaded', () => {
               onClose: closeDiff,
               onApply: (sel: { added: number[]; removed: number[] }) => {
                 const d = diff.value!
-                d.served.forEach((s) => window.ligneRecordGtfsRef?.(s.arret.id, s.stop.id, s.stop.nom))
-                sel.added.forEach((i) => {
-                  const { stop, arret } = d.added[i]
-                  if (arret) {
-                    window.ligneSetArretLinked?.(arret.id, true)
-                    window.ligneRecordGtfsRef?.(arret.id, stop.id, stop.nom)
-                  } else window.ligneAddNouvelArret?.(`gtfs:${stop.id}`, stop.nom, stop.lat, stop.lng, diffTypes)
-                })
+                d.served.forEach((s) =>
+                  window.ligneRecordGtfsRef?.(s.arret.id, s.stop.id, s.stop.nom, s.by === 'id' ? { lat: s.stop.lat, lng: s.stop.lng } : undefined),
+                )
+                sel.added.forEach((i) => applyPlanItem(d.added[i].item, diffTypes))
                 sel.removed.forEach((i) => window.ligneSetArretLinked?.(d.removed[i].id, false))
                 closeDiff()
               },
@@ -212,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Arrêts de la ligne GTFS choisie : suggestions sur la carte, ou ajout direct à la ligne
-  const stopsAction = (action: 'ligneShowGtfsStops' | 'ligneImportGtfsStops') => () => {
+  const stopsAction = (action: 'show' | 'import') => () => {
     const route = routes[Number(routesSelect.value)]
     if (!feed || !route || routesSelect.value === '') return
     const stops = listRouteStops(feed, route)
@@ -221,10 +252,22 @@ document.addEventListener('DOMContentLoaded', () => {
       return
     }
     showError('gtfs-error', null)
-    window[action]?.(stops, routeModalites(route))
+    const ctx = planFor(feed, route, stops)
+    const { items } = planGtfsStops(stops, { linked: ctx.linked, catalog: ctx.catalog, stopTypes: ctx.types, consecutive: ctx.consecutive })
+    if (action === 'show') {
+      window.ligneShowGtfsStops?.(
+        items.map((item) => ({ stop: item.stop, label: describePlanItem(item), item })),
+        ({ item }) => applyPlanItem(item, ctx.types),
+      )
+    } else {
+      window.ligneClearGtfsStops?.()
+      window.ligneGtfsStops = stops
+      items.forEach((item) => applyPlanItem(item, ctx.types))
+      window.ligneFitStops?.(stops)
+    }
   }
-  el('gtfs-show-stops')!.addEventListener('click', stopsAction('ligneShowGtfsStops'))
-  el('gtfs-import-stops')!.addEventListener('click', stopsAction('ligneImportGtfsStops'))
+  el('gtfs-show-stops')!.addEventListener('click', stopsAction('show'))
+  el('gtfs-import-stops')!.addEventListener('click', stopsAction('import'))
 
   el('gtfs-import')!.addEventListener('click', () => {
     const route = routes[Number(routesSelect.value)]
@@ -249,7 +292,6 @@ document.addEventListener('DOMContentLoaded', () => {
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`fetch_ligne ${r.status}`))))
       .then((data) => {
         for (const key of Object.keys(FIELDS) as FieldKey[]) setField(key, data.ligne[key] ?? '')
-        savedRefs = data.gtfs_refs ?? {}
         if (data.ligne.geometry) setGeometry(data.ligne.geometry)
         const apply = () => (data.arret_ids as number[]).forEach((id) => window.ligneSetArretLinked?.(id, true))
         if (window.ligneSetArretLinked) apply()

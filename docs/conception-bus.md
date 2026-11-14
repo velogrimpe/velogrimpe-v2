@@ -205,14 +205,19 @@ bus_lignes et bus_liaisons deviennent obsolètes. On ne supprime pas ces tables 
 
 **Fait (Lot 9, 2026-11-09)** : plus aucune lecture ni écriture de `bus_lignes` / `bus_liaisons` (API, formulaires, fiche falaise, export open data). Les tables restent en base, sans `DROP`.
 
-#### Mise à jour d'une ligne depuis un GTFS rechargé
+#### Import et mise à jour d'une ligne depuis un GTFS (arrêts parents / enfants)
 
-En mode édition (`ajout_ligne.php?ligne_id=…`), après avoir chargé un zip GTFS et choisi la ligne, le bouton « Comparer les arrêts avec ceux de la ligne » affiche un aperçu en trois groupes (`GtfsComparaison.vue`, logique pure dans `frontend/src/utils/gtfs-match.ts`) :
+Chaque arrêt GTFS (`stop_id`, quai ou sens de circulation : `listRouteStops`) devient un arrêt ; ses références (`references_externes`, `source = 'gtfs'`, `ref = stop_id`, `libelle` = nom GTFS) restent sur l'arrêt, les stations GTFS (`parent_station`) deviennent des **parents** (cf. « Arrêts parents et enfants » dans `public_html/README.md`). La politique est dans `frontend/src/utils/gtfs-match.ts` (`planGtfsStops`), commune à « Importer les arrêts », « Montrer les arrêts » et à la comparaison de mise à jour (`GtfsComparaison.vue`). Pas de notion de flux (`feed`) : on ne regarde que les arrêts de la ligne (références) ; hors ligne, seuls la distance et le nom comptent.
 
-- **toujours desservis** : arrêts GTFS rapprochés d'un arrêt déjà lié ;
-- **nouveaux** (cochés par défaut) : à lier à un arrêt existant proche (< 100 m, même famille de modalité) ou à créer ;
-- **absents du GTFS** (décochés par défaut, mis en évidence) : arrêts liés mais plus présents. Les cocher les **délie** de la ligne ; l'arrêt lui-même n'est jamais supprimé (il peut servir à d'autres lignes ou à des accès falaise).
+Pour chaque arrêt GTFS S, dans l'ordre (toujours intra-mode : TER et TGV ensemble, les autres modes distincts) :
 
-Ordre de rapprochement : `stop_id` mémorisé parmi les arrêts déjà liés, puis proximité parmi les arrêts liés, puis proximité dans le catalogue, sinon nouvel arrêt. « Appliquer » ne modifie que le formulaire ; tout est écrit à l'envoi.
+1. **Déjà suivi** : un arrêt lié à la ligne porte la référence S → mise à jour (`served`). À la réimport sa position est mise à jour (sauf `position_manuelle`), son nom jamais.
+2. **Même référence ailleurs** : un arrêt du catalogue porte déjà la référence S, à 100 m ou moins → il est repris (`adopt`).
+3. **Proximité** : l'arrêt existant le plus proche, à 50 m ou moins (100 m ou moins avec le même nom, normalisé : casse, accents, « Gare de »…). S'il n'a aucune référence GTFS (ou déjà S), il **adopte** la référence (identité, pas de nouvel arrêt). Sinon (autre quai, autre flux) : **regroupement** — S est créé et rangé sous le parent de l'arrêt (créé si l'arrêt est orphelin).
+4. **Sinon** : nouvel arrêt (`create`).
 
-Mémorisation : le `route_id` est déjà dans `lignes_transport.ref` ; les `stop_id` sont dans `references_externes` (`source = 'gtfs'`, `ref = stop_id`, `libelle` = nom GTFS), écrits par `api/add_ligne.php` (`gtfs_refs` pour les arrêts existants, `nouveaux_arrets[].stop_id` pour les créés) et relus par `api/fetch_ligne.php` (`gtfs_refs`). Limite : un `stop_id` n'est unique que dans son GTFS, d'où la recherche restreinte aux arrêts liés à la ligne.
+Puis les arrêts GTFS entre eux : même `parent_station` (quelle que soit la distance), ou même nom à 200 m ou moins, sauf deux arrêts consécutifs d'un même trajet (`listRouteStopPairs`), sont regroupés : sous l'arrêt existant s'ils sont rapprochés d'un seul de ces arrêts, sinon sous un parent créé (la référence de la station GTFS est portée par ce parent). Un groupe à un seul arrêt ne crée pas de parent. Limite : deux arrêts existants distincts rapprochés de deux quais d'une même station ne sont pas regroupés automatiquement (fusion manuelle).
+
+Envoi (`api/add_ligne.php`) : `nouveaux_arrets[]` accepte `regrouper_avec` (arrêt existant), `groupe` / `groupe_stop_id` (arrêts créés ensemble, station parente) ; `gtfs_refs[]` accepte `lat` / `lng` (repositionnement d'un arrêt déjà suivi par la ligne sous cette référence). Tout est validé avant écriture et créé dans une transaction ; un refus (mode différent) annule tout. La ligne est liée aux arrêts enfants, jamais à un parent (400).
+
+La comparaison d'une ligne rechargée montre trois groupes : **toujours desservis**, **nouveaux** (cochés par défaut : à lier à un arrêt existant, ou à créer — éventuellement regroupé) et **absents du GTFS** (décochés par défaut ; les cocher les délie de la ligne, l'arrêt n'est jamais supprimé). « Appliquer » ne modifie que le formulaire ; tout est écrit à l'envoi. Le `route_id` est dans `lignes_transport.ref`.

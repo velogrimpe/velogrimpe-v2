@@ -47,12 +47,21 @@ Content-Type: application/json
   "nouveaux_arrets": [{ "nom": "Test - Arrêt GTFS", "lat": 45.5, "lng": 6.1, "types": ["bus"], "stop_id": "STOP_2" }]
 }
 
-### Supprimer une ligne (Bearer admin)
+### Supprimer une ligne (Bearer admin) ; les arrêts ne sont pas touchés
 POST {{host}}/api/delete_ligne.php
 Authorization: Bearer {{admin_token}}
 Content-Type: application/json
 
 { "ligne_id": 1 }
+
+### Supprimer une ligne ET ses arrêts sans falaise (suppression DÉFINITIVE, irréversible)
+# Supprimés : arrêts de la ligne sans accès falaise ni trajet train (ni eux ni leur parent) et ne desservant aucune
+# autre ligne ; un parent laissé sans enfant l'est aussi. Références GTFS et exclusions de villes suivent. Réponse : { success, arrets_supprimes, arrets_conserves }.
+POST {{host}}/api/delete_ligne.php
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{ "ligne_id": 1, "supprimer_arrets": true }
 
 ### Toutes les lignes avec géométrie (carte de la page admin/arrets_lignes.php)
 GET {{host}}/api/fetch_lignes.php?geometry=1
@@ -67,16 +76,69 @@ Content-Type: application/json
 
 { "arret_id": 1 }
 
-### Fusionner deux arrêts : source_id est absorbé par cible_id (falaises, lignes, refs, trains reportés ; source supprimée)
+### Fusionner deux arrêts (Bearer admin) : rien n'est supprimé, ils sont regroupés sous un parent
+# Deux orphelins → nouveau parent (nom de cible_id, position au barycentre) ; parent + orphelin → l'orphelin rejoint
+# le parent ; deux parents → cible_id absorbe les enfants de source_id. Accès falaise et trajets train passent au
+# parent ; lignes et références GTFS restent sur les enfants. 409 : enfant, supprimé, modes sans famille commune
+# (TER+TGV ensemble), ou accès identique (même falaise, type, variante). Réponse : { success, parent_id, acces_deplaces }.
 POST {{host}}/api/merge_arrets.php
 Authorization: Bearer {{admin_token}}
 Content-Type: application/json
 
 { "source_id": 2, "cible_id": 1 }
 
-### Repositionner un arrêt (seule la position change)
+### Détacher un enfant de son parent (Bearer admin) : il redevient orphelin, le parent est recalculé
+# 409 si ce n'est pas un enfant ou si c'est le dernier enfant (utiliser unmerge_arret.php).
+POST {{host}}/api/detach_arret.php
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{ "arret_id": 2 }
+
+### Défusionner un parent (Bearer admin) : ses enfants redeviennent orphelins, le parent est supprimé logiquement
+# heritier_id (un enfant) reçoit les accès falaise et trajets train du parent : requis s'il y a plusieurs enfants
+# et que le parent en porte (400 sinon). 409 si l'arrêt n'est pas un parent.
+POST {{host}}/api/unmerge_arret.php
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{ "parent_id": 10, "heritier_id": 1 }
+
+### Repositionner un arrêt (position fixée à la main : position_manuelle = 1, jamais recalculée ni mise à jour par un import GTFS)
+# Si l'arrêt est un enfant, la position de son parent est recalculée.
 POST {{host}}/api/move_arret.php
 Authorization: Bearer {{admin_token}}
 Content-Type: application/json
 
 { "arret_id": 1, "lat": 45.1885, "lng": 5.7245 }
+
+### Repasser un parent en position automatique (barycentre de ses enfants)
+POST {{host}}/api/move_arret.php
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{ "arret_id": 10, "auto": true }
+
+### Import GTFS avec regroupements (api/add_ligne.php, non protégé)
+# nouveaux_arrets[] :
+#  - regrouper_avec : id d'un arrêt existant ; le nouvel arrêt est rangé sous son parent (créé si l'arrêt est orphelin)
+#  - groupe : clé commune aux nouveaux arrêts à regrouper sous un même parent (≥ 2 membres, sinon sans effet)
+#  - groupe_stop_id : stop_id GTFS de la station parente, mémorisé comme référence du parent
+# gtfs_refs[] : lat / lng optionnels, pour un arrêt déjà suivi par cette ligne sous ce stop_id (réimport) :
+#  repositionné sauf position manuelle ; le nom n'est jamais modifié.
+# 400 : arret_ids contenant un parent (lier ses enfants), regrouper_avec inconnu ; 409 : modes différents.
+# Réponse : { success, ligne_id, arrets_crees, parents } (parents = parents créés par cet envoi).
+POST {{host}}/api/add_ligne.php
+Content-Type: application/json
+
+{
+  "ligne_id": null,
+  "nom": "Test - Ligne regroupée",
+  "numero": "L22",
+  "arret_ids": [],
+  "nouveaux_arrets": [
+    { "nom": "Longchamp", "lat": 46.1364, "lng": 5.1933, "types": ["bus"], "stop_id": "Q1", "groupe": "ST1", "groupe_stop_id": "ST1" },
+    { "nom": "Longchamp", "lat": 46.1335, "lng": 5.1911, "types": ["bus"], "stop_id": "Q2", "groupe": "ST1", "groupe_stop_id": "ST1" },
+    { "nom": "Mairie", "lat": 46.14, "lng": 5.2, "types": ["bus"], "stop_id": "Q3", "regrouper_avec": 1 }
+  ]
+}

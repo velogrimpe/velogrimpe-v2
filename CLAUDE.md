@@ -90,6 +90,12 @@ docker exec -i velogrimpe /opt/lampp/bin/mysql -uroot u829510062_bdd < sql_migra
 Non rejouable sur une base déjà migrée (re-seed d'abord). Les arrêts sans code INSEE se
 géocodent ensuite via `api/private/backfill_gares_geocode.php?admin=…`.
 
+Puis les arrêts parents / enfants (`parent_id`, `position_manuelle`) :
+
+```bash
+docker exec -i velogrimpe /opt/lampp/bin/mysql -uroot u829510062_bdd < sql_migrations/2_arrets_parents.sql
+```
+
 L'export ne couvre que les données SQL. Les fichiers associés (images de
 falaises, GPX, GeoJSON de barres) vivent dans `public/` et se récupèrent
 séparément.
@@ -103,6 +109,14 @@ séparément.
   (prod, avant refonte) + `1_unification_arrets.sql` (migration unique : tables `gares`, `bus_*`,
   `velo` remplacées par `arrets` / `acces_falaise`). Nom et identifiants dans `config.php` ;
   connexion via `public_html/database/velogrimpe.php`.
+
+**Arrêts parents / enfants (`arrets.parent_id`, `lib/arrets_parents_lib.php`) :** fusionner deux arrêts ne
+supprime rien, ils sont regroupés sous un parent (deux niveaux au plus). Le parent (ou l'orphelin) porte
+`acces_falaise` et `train` ; les enfants gardent `arrets_lignes_transport` et `references_externes`
+(références GTFS). Parent : position = barycentre de ses enfants sauf `position_manuelle = 1`, modalités = OU
+de celles des enfants. Les enfants ne sont sélectionnables ni pour un accès ni pour un trajet, un parent ne se
+lie pas à une ligne : toute lecture « par arrêt d'accès » doit agréger les lignes des enfants
+(`COALESCE(a.parent_id, a.id)`). Détail : section « Arrêts parents et enfants » de `public_html/README.md`.
 
 **Accès arrêt → falaise (`acces_falaise`) :** une seule table pour les
 itinéraires vélo (`type = 'velo'`, avec trace GPX) et les accès à pied
