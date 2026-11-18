@@ -34,20 +34,43 @@ const norm = (s) =>
     .replace(/[̀-ͯ]/g, "")
     .toLowerCase();
 
-// Bouton-icône (symbole du sprite /symbols/icons.svg) ; le libellé reste en title / aria-label.
+// Bouton-icône (symbole du sprite /symbols/icons.svg) ; le libellé est en tooltip (cf. « Tooltips » plus bas) et en aria-label.
 const ico = (name) =>
   `<svg class="w-4 h-4 fill-none stroke-current" stroke-width="1.5" aria-hidden="true"><use href="#${name}"></use></svg>`;
+// Barre d'outils : une seule bordure aux extrémités arrondies (.vg-toolbar, cf. admin/arrets_lignes.php) autour de boutons séparés par un filet ;
+// tous en contour, seule la suppression est en rouge.
+const toolbar = (html) => (html ? `<div class="vg-toolbar">${html}</div>` : "");
 const iconBtn = (name, label, cls, attrs) =>
-  `<button type="button" class="btn btn-xs btn-square ${cls}" title="${label}" aria-label="${label}" ${attrs}>${ico(name)}</button>`;
-const iconLink = (name, label, cls, href) =>
-  `<a class="btn btn-xs btn-square ${cls}" style="${cls.includes("btn-ghost") ? "" : BTN_STYLE}" title="${label}" aria-label="${label}" href="${href}">${ico(name)}</a>`;
+  `<button type="button" class="btn btn-xs btn-square ${cls}" data-tip="${label}" aria-label="${label}" ${attrs}>${ico(name)}</button>`;
 
-// Les liens des popups héritent de la couleur bleue de `a` : on force la couleur du bouton.
-const BTN_STYLE = "color:var(--color-primary-content,#fff)";
-const editArretUrl = (id) =>
-  `/ajout/ajout_arret.php?admin=${encodeURIComponent(token)}&arret_id=${id}`;
-const editLigneUrl = (id) =>
-  `/ajout/ajout_ligne.php?admin=${encodeURIComponent(token)}&ligne_id=${id}`;
+// --- Tooltips des boutons (`data-tip`) ---------------------------------------------------------
+// Un seul élément `position: fixed` au-dessus du bouton, rattaché au body : aucun conteneur à défilement (tableaux,
+// popups) ne le rogne. Centré sur le bouton, décalé si besoin pour rester dans la fenêtre (la flèche suit le bouton).
+const tipEl = document.createElement("div");
+tipEl.className = "vg-tip";
+tipEl.hidden = true;
+document.body.appendChild(tipEl);
+const hideTip = () => (tipEl.hidden = true);
+function showTip(el) {
+  tipEl.textContent = el.dataset.tip;
+  tipEl.hidden = false;
+  const r = el.getBoundingClientRect();
+  const w = tipEl.offsetWidth;
+  const left = Math.max(4, Math.min(r.left + r.width / 2 - w / 2, window.innerWidth - w - 4));
+  tipEl.style.left = `${left}px`;
+  tipEl.style.top = `${r.top - tipEl.offsetHeight - 8}px`;
+  tipEl.style.setProperty("--vg-tip-arrow", `${r.left + r.width / 2 - left}px`);
+}
+document.addEventListener("mouseover", (e) => {
+  const el = e.target.closest?.("[data-tip]");
+  el ? showTip(el) : hideTip();
+});
+document.addEventListener("focusin", (e) => {
+  const el = e.target.closest?.("[data-tip]");
+  el ? showTip(el) : hideTip();
+});
+["focusout", "mousedown", "wheel", "keydown"].forEach((t) => document.addEventListener(t, hideTip, true));
+document.addEventListener("scroll", hideTip, true);
 
 // --- État dans l'URL (?q=…&types=bus,tram&falaises=1&deleted=1&view=carte) ---
 // Seules les valeurs différentes des défauts sont écrites ; les autres paramètres sont préservés.
@@ -141,6 +164,13 @@ const arretVisible = (a) =>
     ).includes(state.q));
 
 const ligneLabel = (l) => (l.numero ? `${l.numero} — ` : "") + l.nom;
+// Actions d'une ligne, identiques en liste et sur la carte
+const ligneActions = (l, { liste = false } = {}) =>
+  toolbar(
+  (liste ? iconBtn("map-pin", "Voir sur la carte", "btn-outline", `data-show-ligne="${l.id}"`) : "") +
+  iconBtn("pencil", "Modifier", "btn-outline", `data-edit-ligne="${l.id}"`) +
+  iconBtn("file-upload", "Import GTFS (tracé et arrêts)", "btn-outline", `data-gtfs-ligne="${l.id}"`) +
+  iconBtn("trash", "Supprimer la ligne", "btn-error btn-outline", `data-delete-ligne="${l.id}"`));
 const ligneVisible = (l) =>
   !state.q ||
   norm(`${l.nom} ${l.numero ?? ""} ${l.operateur ?? ""} ${l.id}`).includes(
@@ -181,23 +211,34 @@ const groupeButtons = (a) => {
     return (
       iconBtn("unmerge", "Défusionner", "btn-outline", `data-unmerge-arret="${a.id}"`) +
       (a.position_manuelle
-        ? `<button type="button" class="btn btn-xs btn-outline" data-auto-position="${a.id}" title="Replacer au centre de ses enfants">Position auto</button>`
+        ? `<button type="button" class="btn btn-xs btn-outline" data-auto-position="${a.id}" data-tip="Replacer au centre de ses enfants">Position auto</button>`
         : "")
     );
   return "";
 };
-// Actions d'une ligne : en mode fusion, seul le bouton de regroupement est proposé
-const actionsHtml = (a) => {
-  const inner =
-    mergeSource !== null
-      ? mergeButtons(a)
-      : iconBtn("map-pin", "Voir sur la carte", "btn-outline", `data-show-arret="${a.id}"`) +
-        iconLink("pencil", "Modifier", "btn-primary text-primary-content", editArretUrl(a.id)) +
-        mergeButtons(a) +
-        groupeButtons(a) +
-        (supprimable(a) ? iconBtn("trash", "Supprimer", "btn-error btn-outline", `data-delete-arret="${a.id}"`) : "");
-  return `<div class="flex flex-nowrap justify-end gap-1">${inner}</div>`;
+// Actions d'un arrêt, identiques en liste et sur la carte (`liste` : ajoute « Voir sur la carte », inutile sur la carte).
+// Déplacer et Lier à une falaise sont des gestes de carte : depuis la liste, ils basculent d'abord sur la carte.
+// En mode fusion, seul le bouton de regroupement est proposé.
+const arretActions = (a, opts) => toolbar(arretButtons(a, opts));
+const arretButtons = (a, { liste = false } = {}) => {
+  if (mergeSource !== null) return a.deleted ? "" : mergeButtons(a);
+  const show = liste
+    ? iconBtn("map-pin", "Voir sur la carte", "btn-outline", `data-show-arret="${a.id}"`)
+    : "";
+  const edit = iconBtn("pencil", "Modifier", "btn-outline", `data-edit-arret="${a.id}"`);
+  if (a.deleted) return show + edit;
+  return (
+    show +
+    edit +
+    iconBtn("move", "Déplacer", "btn-outline", `data-move-arret="${a.id}"`) +
+    iconBtn("link", "Lier à une falaise", "btn-outline", `data-link-start="arret:${a.id}"`) +
+    mergeButtons(a) +
+    groupeButtons(a) +
+    (supprimable(a) ? iconBtn("trash", "Supprimer", "btn-error btn-outline", `data-delete-arret="${a.id}"`) : "")
+  );
 };
+const actionsHtml = (a) =>
+  `<div class="flex flex-nowrap justify-end">${arretActions(a, { liste: true })}</div>`;
 // Parents dépliés : conservés d'un rendu à l'autre (le mode fusion re-rend la liste)
 const openParents = new Set();
 // Indicateur sous le parent : la ligne du parent ne change jamais, les enfants sont des lignes en dessous
@@ -213,7 +254,7 @@ const enfantsRows = (a, enfants) =>
           (e) => `<tr data-enfant-de="${a.id}" class="bg-base-200/50"${openParents.has(a.id) ? "" : " hidden"}>
         <td colspan="5" class="py-1"><div class="flex items-center gap-2 text-xs" style="margin-left:1.5rem;padding-left:0.75rem;border-left:2px solid rgba(128,128,128,.35)">
           <span class="grow truncate">${esc(e.nom)} <span class="text-base-content/50">#${e.id}</span> ${e.types.map((t) => `<span class="badge badge-ghost badge-xs">${TYPE_LABELS[t] ?? esc(t)}</span>`).join(" ")}</span>
-          ${mergeSource !== null ? "" : `<span class="flex gap-1 shrink-0">${iconBtn("map-pin", "Voir sur la carte", "btn-ghost", `data-show-arret="${e.id}"`)}${iconLink("pencil", "Modifier", "btn-ghost", editArretUrl(e.id))}${enfants.length > 1 ? iconBtn("unlink", "Détacher du parent", "btn-ghost", `data-detach-arret="${e.id}"`) : ""}</span>`}
+          <span class="flex gap-1 shrink-0">${arretActions(e, { liste: true })}</span>
         </div></td></tr>`,
         )
         .join("")
@@ -251,19 +292,25 @@ function renderMergeBanner() {
       <button type="button" class="btn btn-xs" data-merge-cancel>Annuler</button>`;
 }
 
-/** Appel d'un endpoint admin de regroupement (Bearer) puis rechargement : compteurs, parents et types à jour. */
+/** Appel d'un endpoint admin (Bearer) ; lève une Error portant le message du serveur. */
+async function callAdmin(url, body) {
+  const r = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || r.statusText);
+  return data;
+}
+
+/** Appel d'un endpoint admin de regroupement puis rechargement : compteurs, parents et types à jour. */
 async function postAdmin(url, body, echec) {
   try {
-    const r = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(body),
-    });
-    if (!r.ok)
-      throw new Error((await r.json().catch(() => ({}))).error || r.statusText);
+    await callAdmin(url, body);
     location.reload();
   } catch (e) {
     alert(`${echec} : ${e.message}`);
@@ -329,10 +376,86 @@ const autoPosition = (id) =>
     "Repositionnement impossible",
   );
 
+// --- Dialogs de modification : arrêt (nom, modalités) et ligne (infos de base) ---------------------
+// Un seul gabarit (formulaire + message d'erreur + validation) pour les deux ; les dialogs sont dans la page PHP.
+function setupEditDialog({ dialog, form, error, fill, submit }) {
+  const dlg = $(dialog);
+  const err = $(error);
+  const showError = (m) => {
+    err.textContent = m ?? "";
+    err.classList.toggle("hidden", !m);
+  };
+  dlg.querySelector("[data-dialog-close]").addEventListener("click", () => dlg.close());
+  $(form).addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = e.submitter;
+    btn.disabled = true;
+    try {
+      await submit();
+      location.reload(); // compteurs, noms, types, lignes des arrêts et carte à jour
+    } catch (x) {
+      showError(x.message);
+      btn.disabled = false;
+    }
+  });
+  return (item) => {
+    showError(null);
+    $(form).querySelector("[type=submit]").disabled = false;
+    fill(item);
+    dlg.showModal();
+  };
+}
+
+let editedArret = null;
+const openArretDialog = setupEditDialog({
+  dialog: "dlg-arret",
+  form: "form-arret",
+  error: "arret-error",
+  fill(a) {
+    editedArret = a;
+    $("dlg-arret-id").textContent = `#${a.id}`;
+    $("arret-nom").value = a.nom;
+    const parent = a.nb_enfants > 0; // modalités d'un parent = celles de ses enfants
+    $("arret-types-note").classList.toggle("hidden", !parent);
+    document.querySelectorAll("#arret-types input").forEach((c) => {
+      c.checked = a.types.includes(c.value);
+      c.disabled = parent;
+    });
+  },
+  async submit() {
+    const types = [...document.querySelectorAll("#arret-types input:checked")].map((c) => c.value);
+    if (!types.length) throw new Error("Cochez au moins une modalité.");
+    await callAdmin("/api/update_arret.php", { arret_id: editedArret.id, nom: $("arret-nom").value, types });
+  },
+});
+
+const LIGNE_FIELDS = ["nom", "numero", "couleur", "ref", "operateur", "operateur_url", "horaire_url"];
+let editedLigne = null;
+const openLigneDialog = setupEditDialog({
+  dialog: "dlg-ligne",
+  form: "form-ligne",
+  error: "ligne-error",
+  fill(l) {
+    editedLigne = l;
+    $("dlg-ligne-id").textContent = `#${l.id}`;
+    LIGNE_FIELDS.forEach((f) => ($(`ligne-${f}`).value = l[f] ?? ""));
+  },
+  async submit() {
+    await callAdmin("/api/update_ligne.php", {
+      ligne_id: editedLigne.id,
+      ...Object.fromEntries(LIGNE_FIELDS.map((f) => [f, $(`ligne-${f}`).value])),
+    });
+  },
+});
+
+// Import GTFS (mise à jour d'une ligne, ou création avec le « + » des lignes) : dialog Vue (AdminLigneGtfsImport.vue), qui prévient de sa fin
+document.addEventListener("velogrimpe:gtfs-import-done", () => location.reload());
+
 // --- Liste ---------------------------------------------------------------
 const MAX_ROWS = 500; // évite de rendre des milliers de lignes d'un coup
 
 function renderList() {
+  hideTip(); // le bouton survolé va être remplacé
   const as = arrets.filter(arretVisible);
   $("count-arrets").textContent = as.length;
   // Un enfant dont le parent est dans la liste n'a pas de ligne propre : il est dans des lignes sous le parent
@@ -373,9 +496,7 @@ function renderList() {
           <b>${esc(ligneLabel(l))}</b> <span class="text-xs text-base-content/60">#${l.id}</span></td>
         <td>${esc(l.operateur ?? "")}</td>
         <td class="text-right">${l.nb_arrets}</td>
-        <td class="text-right whitespace-nowrap">${iconBtn("map-pin", "Voir sur la carte", "btn-outline", `data-show-ligne="${l.id}"`)}
-          ${iconLink("pencil", "Modifier", "btn-primary text-primary-content", editLigneUrl(l.id))}
-          ${iconBtn("trash", "Supprimer la ligne", "btn-error btn-outline", `data-delete-ligne="${l.id}"`)}</td>
+        <td class="text-right whitespace-nowrap">${ligneActions(l, { liste: true })}</td>
       </tr>`,
       )
       .join("") ||
@@ -471,7 +592,8 @@ const closePopup = () => popup?.remove();
 // 4. formulaire des informations (accès à pied ou à vélo).
 let linkSource = null; // { kind: "arret" | "falaise", item }
 
-function startLink(kind, id) {
+async function startLink(kind, id) {
+  if (state.view !== "carte") await showOnMap(kind, id); // depuis la liste : on bascule d'abord sur la carte
   const item = (kind === "arret" ? arrets : falaises).find((x) => x.id === id);
   if (!item) return;
   closePopup();
@@ -719,33 +841,15 @@ const HIT = (layer) => {
 const arretPopupHtml = (a) =>
   `<b>${esc(a.nom)}</b>${groupeBadges(a)}<br><span class="text-xs">${esc(a.commune ?? "")} · #${a.id} · ${
     a.types.map((t) => TYPE_LABELS[t] ?? t).join(", ") || arretTypeDominant([])
-  }</span><br><div class="flex gap-2 mt-2">${iconLink("pencil", "Modifier l'arrêt", "btn-primary", editArretUrl(a.id))}` +
-  (a.deleted
-    ? ""
-    : mergeSource !== null
-      ? mergeButtons(a)
-      : iconBtn("map-pin", "Déplacer", "btn-outline", `data-move-arret="${a.id}"`) +
-      mergeButtons(a) +
-      groupeButtons(a) +
-      iconBtn(
-        "link",
-        "Lier à une falaise",
-        "btn-outline",
-        `data-link-start="arret:${a.id}"`,
-      ) +
-      (supprimable(a)
-        ? iconBtn(
-            "trash",
-            "Supprimer",
-            "btn-error btn-outline",
-            `data-delete-arret="${a.id}"`,
-          )
-        : "")) +
-  "</div>";
+  }</span><br><div class="mt-2">${arretActions(a)}</div>`;
+
+const lignePopupHtml = (l) =>
+  `<b>${esc(ligneLabel(l))}</b><br><span class="text-xs">${esc(l.operateur ?? "")} · #${l.id}</span><br>` +
+  `<div class="mt-2">${ligneActions(l)}</div>`;
 
 const falaisePopupHtml = (f) =>
   `<b>${esc(f.nom)}</b><br><span class="text-xs opacity-70">Falaise #${f.id}</span>` +
-  `<div class="flex gap-2 mt-2">${iconBtn("link", "Lier à un arrêt", "btn-outline", `data-link-start="falaise:${f.id}"`)}</div>`;
+  `<div class="mt-2">${toolbar(iconBtn("link", "Lier à un arrêt", "btn-outline", `data-link-start="falaise:${f.id}"`))}</div>`;
 
 async function setupLayers() {
   map.addSource("lignes", { type: "geojson", data: emptyFc() });
@@ -891,11 +995,7 @@ async function setupLayers() {
     if (e.originalEvent.__vgHandled) return; // un arrêt / une falaise au même endroit prime
     const l = lignes.find((x) => x.id === first(e)?.properties.id);
     if (!l) return;
-    openPopup(
-      e.lngLat,
-      `<b>${esc(ligneLabel(l))}</b><br><span class="text-xs">${esc(l.operateur ?? "")} · #${l.id}</span><br>` +
-        `<div class="mt-2">${iconLink("pencil", "Modifier la ligne", "btn-primary", editLigneUrl(l.id))}</div>`,
-    );
+    openPopup(e.lngLat, lignePopupHtml(l));
   });
   HIT("arrets-circles");
   HIT("lignes-hit");
@@ -1146,7 +1246,8 @@ function updateLabels() {
 }
 
 // --- Repositionnement : « Déplacer » rend le marqueur déplaçable ; le lâcher demande confirmation ---
-function startMove(id) {
+async function startMove(id) {
+  if (state.view !== "carte") await showOnMap("arret", id); // depuis la liste : on bascule d'abord sur la carte
   const a = arrets.find((x) => x.id === id);
   if (!a || !mapReady) return;
   closePopup();
@@ -1215,11 +1316,7 @@ async function showOnMap(kind, id) {
     if (!bb) return alert("Cette ligne n'a pas de tracé à afficher.");
     const l = lignes.find((x) => x.id === id);
     map.fitBounds(bb, { padding: 30, animate: false });
-    openPopup(
-      [(bb[0][0] + bb[1][0]) / 2, (bb[0][1] + bb[1][1]) / 2],
-      `<b>${esc(ligneLabel(l))}</b><br><span class="text-xs">${esc(l.operateur ?? "")} · #${l.id}</span><br>` +
-        `<div class="mt-2">${iconLink("pencil", "Modifier la ligne", "btn-primary", editLigneUrl(l.id))}</div>`,
-    );
+    openPopup([(bb[0][0] + bb[1][0]) / 2, (bb[0][1] + bb[1][1]) / 2], lignePopupHtml(l));
   }
 }
 
@@ -1334,6 +1431,15 @@ document.addEventListener("click", (e) => {
   if (sl) showOnMap("ligne", Number(sl.dataset.showLigne));
   const dt = e.target.closest("[data-detach-arret]");
   if (dt) detachArret(Number(dt.dataset.detachArret));
+  const ea = e.target.closest("[data-edit-arret]");
+  if (ea) openArretDialog(arrets.find((x) => x.id === Number(ea.dataset.editArret)));
+  const el = e.target.closest("[data-edit-ligne]");
+  if (el) openLigneDialog(lignes.find((x) => x.id === Number(el.dataset.editLigne)));
+  const gi = e.target.closest("[data-gtfs-ligne]");
+  if (gi)
+    document.dispatchEvent(
+      new CustomEvent("velogrimpe:gtfs-import-open", { detail: { ligneId: gi.dataset.gtfsLigne === "new" ? null : Number(gi.dataset.gtfsLigne) } }),
+    );
   const um = e.target.closest("[data-unmerge-arret]");
   if (um) unmergeArret(Number(um.dataset.unmergeArret));
   const ap = e.target.closest("[data-auto-position]");

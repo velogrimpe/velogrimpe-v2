@@ -142,3 +142,18 @@ Content-Type: application/json
     { "nom": "Mairie", "lat": 46.14, "lng": 5.2, "types": ["bus"], "stop_id": "Q3", "regrouper_avec": 1 }
   ]
 }
+
+### Modifier le nom et les modalités d'un arrêt (admin) : met à jour nom + slug + types. 400 nom vide / types invalides, 404 introuvable,
+### 409 arrêt supprimé, types d'un parent modifiés, ou famille incompatible avec les arrêts regroupés.
+POST {{host}}/api/update_arret.php
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{ "arret_id": 6215, "nom": "Nouveau nom de l'arrêt", "types": ["bus", "tram"] }
+
+### Modifier les infos de base d'une ligne (admin) : ni géométrie ni arrêts touchés. 400 nom vide / URL non http(s) / texte trop long, 404 introuvable.
+POST {{host}}/api/update_ligne.php
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{ "ligne_id": 1, "nom": "Castellane - Madrague de Montredon", "numero": "19", "couleur": "#E4348B", "ref": "RTM-80", "operateur": "Marseille", "operateur_url": "https://www.rtm.fr/", "horaire_url": "" }

@@ -272,3 +272,26 @@ export function nouvelArretExtra(it: PlanItem): Record<string, string | number> 
   if ((it.action === "group" || it.action === "create") && it.groupeStopId) extra.groupe_stop_id = it.groupeStopId;
   return extra;
 }
+
+/** Ce qu'un arrêt du plan d'import devient côté ligne : lien (+ réf GTFS) avec un arrêt existant, ou nouvel arrêt. */
+export type PlanEffect =
+  | { kind: "link"; arretId: number; stopId: string; nom: string; pos?: { lat: number; lng: number } }
+  | { kind: "create"; key: string; nom: string; lat: number; lng: number; types: string[]; extra: Record<string, string | number> };
+
+/**
+ * Effet d'un arrêt du plan : arrêt existant lié avec sa ref GTFS (repositionné à l'envoi s'il est déjà suivi sous
+ * cette ref : `pos`), sinon nouvel arrêt (regroupé le cas échéant). Partagé par ajout_ligne.php et l'admin.
+ */
+export function planItemEffect(it: PlanItem, types: string[]): PlanEffect {
+  const { stop, arret } = it;
+  if ((it.action === "served" || it.action === "adopt") && arret) {
+    return {
+      kind: "link",
+      arretId: arret.id,
+      stopId: stop.id,
+      nom: stop.nom,
+      ...(it.action === "served" ? { pos: { lat: stop.lat, lng: stop.lng } } : {}),
+    };
+  }
+  return { kind: "create", key: `gtfs:${stop.id}`, nom: stop.nom, lat: stop.lat, lng: stop.lng, types, extra: nouvelArretExtra(it) };
+}

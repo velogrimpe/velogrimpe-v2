@@ -3,11 +3,23 @@
  * Aperçu de mise à jour des arrêts d'une ligne depuis un GTFS rechargé (ajout_ligne.php, mode édition) :
  * toujours desservis / nouveaux / absents du GTFS. Rien n'est écrit ici : « Appliquer » remonte la
  * sélection, le formulaire la répercute sur les liaisons, et tout est enregistré à l'envoi du formulaire.
+ * Également utilisé par l'import GTFS de l'admin (AdminLigneGtfsImport.vue), avec ses propres libellés.
  */
-import { reactive } from "vue";
+import { computed, reactive } from "vue";
 import { describePlanItem, type GtfsDiff } from "@/utils/gtfs-match";
 
-const props = defineProps<{ diff: GtfsDiff }>();
+const props = withDefaults(
+  defineProps<{
+    diff: GtfsDiff;
+    applyLabel?: string;
+    /** Mention sous les boutons (null : aucune). */
+    note?: string | null;
+    /** Arrêts absents du GTFS cochés (donc retirés) par défaut. */
+    removeByDefault?: boolean;
+    busy?: boolean;
+  }>(),
+  { applyLabel: "Appliquer au formulaire", note: "Rien n'est enregistré avant « Modifier la ligne ».", removeByDefault: false, busy: false },
+);
 const emit = defineEmits<{
   apply: [sel: { added: number[]; removed: number[] }];
   close: [];
@@ -15,7 +27,21 @@ const emit = defineEmits<{
 
 // Nouveaux : cochés par défaut (ajoutés) ; absents : décochés par défaut (retrait à confirmer)
 const addedChecked = reactive(props.diff.added.map(() => true));
-const removedChecked = reactive(props.diff.removed.map(() => false));
+const removedChecked = reactive(props.diff.removed.map(() => props.removeByDefault));
+
+// Bilan de ce qui sera fait (selon les cases cochées) : arrêts créés, liés à un arrêt existant, regroupés, retirés
+const bilan = computed(() => {
+  let crees = 0;
+  let lies = 0;
+  let regroupes = 0;
+  props.diff.added.forEach((a, i) => {
+    if (!addedChecked[i]) return;
+    if (a.arret) lies++;
+    else if (a.item.action === "group" || a.item.groupe) regroupes++;
+    else crees++;
+  });
+  return { crees, lies, regroupes, retires: removedChecked.filter(Boolean).length };
+});
 
 const apply = () =>
   emit("apply", {
@@ -27,6 +53,11 @@ const apply = () =>
 <template>
   <div class="flex flex-col gap-3 rounded-lg border border-base-300 p-3 text-sm" data-testid="gtfs-diff">
     <b>Comparaison avec le GTFS</b>
+    <p class="rounded-md bg-base-200 p-2" data-testid="gtfs-bilan">
+      <b>Bilan :</b>
+      {{ bilan.crees }} arrêt(s) créé(s), {{ bilan.regroupes }} créé(s) et regroupé(s) (fusion),
+      {{ bilan.lies }} lié(s) à un arrêt existant, {{ bilan.retires }} retiré(s) de la ligne.
+    </p>
 
     <details>
       <summary class="cursor-pointer">Toujours desservis ({{ diff.served.length }})</summary>
@@ -64,9 +95,12 @@ const apply = () =>
     </div>
 
     <div class="flex gap-2">
-      <button type="button" class="btn btn-sm btn-primary" @click="apply">Appliquer au formulaire</button>
+      <button type="button" class="btn btn-sm btn-primary" :disabled="busy" @click="apply">
+        <span v-if="busy" class="loading loading-spinner loading-xs"></span>
+        {{ applyLabel }}
+      </button>
       <button type="button" class="btn btn-sm btn-ghost" @click="emit('close')">Fermer</button>
     </div>
-    <i class="opacity-70">Rien n'est enregistré avant « Modifier la ligne ».</i>
+    <i v-if="note" class="opacity-70">{{ note }}</i>
   </div>
 </template>

@@ -257,6 +257,59 @@ final class ArretsFusionTest extends ApiTestCase
     $this->assertSame(409, $this->merge($b, $a)['status']);
   }
 
+  // --- update_arret -----------------------------------------------------------------------------
+
+  private function update(int $id, string $nom, array $types, bool $auth = true): array
+  {
+    return $this->httpPostJson('/api/update_arret.php', ['arret_id' => $id, 'nom' => $nom, 'types' => $types], $auth ? $this->bearer() : []);
+  }
+
+  public function testModifierMetAJourNomSlugEtTypes(): void
+  {
+    $a = $this->createFixtureArret('PHPUnit Update avant', 45.1, 5.1, ['bus']);
+    $res = $this->update($a, '  Café de la Gare  ', ['bus', 'tram']);
+    $this->assertSame(200, $res['status'], $res['raw']);
+    $row = self::dbQueryOne("SELECT nom, slug, bus, tram, ter FROM arrets WHERE id = $a");
+    $this->assertSame('Café de la Gare', $row['nom']);
+    $this->assertSame('cafe-de-la-gare', $row['slug']);
+    $this->assertSame(['1', '1', '0'], [$row['bus'], $row['tram'], $row['ter']]);
+  }
+
+  public function testModifierRefusEntreesInvalides(): void
+  {
+    $a = $this->createFixtureArret('PHPUnit Update refus', 45.1, 5.1, ['bus']);
+    $this->assertSame(401, $this->update($a, 'x', ['bus'], false)['status']);
+    $this->assertSame(400, $this->update($a, '   ', ['bus'])['status']);
+    $this->assertSame(400, $this->update($a, 'x', [])['status']);
+    $this->assertSame(400, $this->update($a, 'x', ['metro'])['status']);
+    $this->assertSame(404, $this->update(999999999, 'x', ['bus'])['status']);
+    self::dbExec("UPDATE arrets SET deleted = 1 WHERE id = $a");
+    $this->assertSame(409, $this->update($a, 'x', ['bus'])['status']);
+    $this->assertSame('PHPUnit Update refus', self::dbQueryOne("SELECT nom FROM arrets WHERE id = $a")['nom']);
+  }
+
+  public function testModifierLesTypesDunEnfantRecalculeLeParent(): void
+  {
+    $a = $this->createFixtureArret('PHPUnit Update enfant A', 45.1, 5.1, ['bus']);
+    $b = $this->createFixtureArret('PHPUnit Update enfant B', 45.1001, 5.1001, ['bus']);
+    $p = (int) $this->merge($a, $b)['body']['parent_id'];
+    $this->assertSame(200, $this->update($a, 'PHPUnit Update enfant A', ['bus', 'tram'])['status']);
+    $this->assertSame('1', self::dbQueryOne("SELECT tram FROM arrets WHERE id = $p")['tram']);
+    // une autre famille que celle du frère est refusée
+    $this->assertSame(409, $this->update($a, 'PHPUnit Update enfant A', ['ter'])['status']);
+    $this->assertSame('1', self::dbQueryOne("SELECT bus FROM arrets WHERE id = $a")['bus']);
+  }
+
+  public function testModifierLesTypesDunParentRefuseMaisPasSonNom(): void
+  {
+    $a = $this->createFixtureArret('PHPUnit Update parent A', 45.1, 5.1, ['bus']);
+    $b = $this->createFixtureArret('PHPUnit Update parent B', 45.1001, 5.1001, ['bus']);
+    $p = (int) $this->merge($a, $b)['body']['parent_id'];
+    $this->assertSame(409, $this->update($p, 'PHPUnit Update parent', ['bus', 'tram'])['status']);
+    $this->assertSame(200, $this->update($p, 'PHPUnit Update parent renommé', ['bus'])['status']);
+    $this->assertSame('PHPUnit Update parent A', self::dbQueryOne("SELECT nom FROM arrets WHERE id = $a")['nom']);
+  }
+
   // --- detach_arret -----------------------------------------------------------------------------
 
   private function detach(int $id): array

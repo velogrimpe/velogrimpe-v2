@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
  *  - api/fetch_ligne.php : lecture d'une ligne (géométrie GeoJSON + arrêts liés)
  *  - api/fetch_lignes.php: liste, filtrable par arrêt (bouton « voir la ligne »)
  *  - api/delete_ligne.php: suppression (Bearer admin_token)
+ *  - api/update_ligne.php: infos de base seules (Bearer admin_token), sans toucher géométrie ni arrêts
  */
 final class LigneTransportTest extends ApiTestCase
 {
@@ -571,5 +572,36 @@ final class LigneTransportTest extends ApiTestCase
     $res = $this->httpPostJson('/api/delete_arret.php', ['arret_id' => $a], $this->bearer());
     $this->assertSame(200, $res['status'], $res['raw']);
     $this->assertSame(1, (int) self::dbQueryOne("SELECT deleted FROM arrets WHERE id = $a")['deleted']);
+  }
+
+  // --- update_ligne -----------------------------------------------------------------------------
+
+  private function updateLigne(array $data, bool $auth = true): array
+  {
+    return $this->httpPostJson('/api/update_ligne.php', $data, $auth ? $this->bearer() : []);
+  }
+
+  public function testUpdateLigneNeToucheQueLesInfosDeBase(): void
+  {
+    $id = $this->createLigne();
+    $res = $this->updateLigne(['ligne_id' => $id, 'nom' => 'PHPUnit - Renommée', 'numero' => 'L22', 'couleur' => '', 'operateur_url' => 'https://op.example.org/']);
+    $this->assertSame(200, $res['status'], $res['raw']);
+    $row = self::dbQueryOne("SELECT nom, numero, couleur, operateur, operateur_url, ST_AsGeoJSON(geometry) AS g FROM lignes_transport WHERE id = $id");
+    $this->assertSame('PHPUnit - Renommée', $row['nom']);
+    $this->assertSame('L22', $row['numero']);
+    $this->assertNull($row['couleur']); // champ vide → NULL
+    $this->assertNull($row['operateur']); // champ omis → NULL aussi : le formulaire envoie toujours tous les champs
+    $this->assertNotNull($row['g']); // géométrie conservée
+  }
+
+  public function testUpdateLigneRefus(): void
+  {
+    $id = $this->createLigne();
+    $this->assertSame(401, $this->updateLigne(['ligne_id' => $id, 'nom' => 'x'], false)['status']);
+    $this->assertSame(400, $this->updateLigne(['ligne_id' => $id, 'nom' => '  '])['status']);
+    $this->assertSame(400, $this->updateLigne(['ligne_id' => $id, 'nom' => 'x', 'horaire_url' => 'javascript:alert(1)'])['status']);
+    $this->assertSame(400, $this->updateLigne(['ligne_id' => $id, 'nom' => 'x', 'numero' => str_repeat('a', 65)])['status']);
+    $this->assertSame(404, $this->updateLigne(['ligne_id' => 999999999, 'nom' => 'x'])['status']);
+    $this->assertSame('PHPUnit - Ligne de test', self::dbQueryOne("SELECT nom FROM lignes_transport WHERE id = $id")['nom']);
   }
 }

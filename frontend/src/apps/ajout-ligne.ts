@@ -4,7 +4,7 @@ import GtfsComparaison from '@/components/ajout/GtfsComparaison.vue'
 import {
   compareGtfsStops,
   describePlanItem,
-  nouvelArretExtra,
+  planItemEffect,
   planGtfsStops,
   type GtfsDiff,
   type PlanItem,
@@ -87,12 +87,12 @@ function showError(id: string, message: string | null) {
  * à l'envoi s'il est déjà suivi sous cette ref), ou nouvel arrêt (regroupé, le cas échéant).
  */
 function applyPlanItem(it: PlanItem, types: Modalite[]) {
-  const { stop, arret } = it
-  if ((it.action === 'served' || it.action === 'adopt') && arret) {
-    window.ligneSetArretLinked?.(arret.id, true)
-    window.ligneRecordGtfsRef?.(arret.id, stop.id, stop.nom, it.action === 'served' ? { lat: stop.lat, lng: stop.lng } : undefined)
+  const e = planItemEffect(it, types)
+  if (e.kind === 'link') {
+    window.ligneSetArretLinked?.(e.arretId, true)
+    window.ligneRecordGtfsRef?.(e.arretId, e.stopId, e.nom, e.pos)
   } else {
-    window.ligneAddNouvelArret?.(`gtfs:${stop.id}`, stop.nom, stop.lat, stop.lng, types, nouvelArretExtra(it))
+    window.ligneAddNouvelArret?.(e.key, e.nom, e.lat, e.lng, e.types as Modalite[], e.extra)
   }
 }
 

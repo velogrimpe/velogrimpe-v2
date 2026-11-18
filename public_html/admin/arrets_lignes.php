@@ -5,6 +5,8 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/map-bundle.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/lib/arrets_lib.php';
 $config = require $_SERVER['DOCUMENT_ROOT'] . '/../config.php';
 $token = $config["admin_token"];
+// Modalités d'arrêt : filtres de la liste et dialog de modification
+$arret_types_labels = ['ter' => 'TER', 'tgv' => 'TGV', 'bus' => 'Bus', 'tram' => 'Tram', 'telepherique' => 'Téléphérique'];
 
 // Tous les arrêts (y compris supprimés : filtre côté client) et toutes les lignes (sans géométrie).
 $arrets = [];
@@ -38,6 +40,10 @@ $resF = $mysqli->query(
    JOIN falaises f ON f.falaise_id = af.falaise_id ORDER BY f.falaise_nom",
 );
 while ($r = $resF->fetch_assoc()) $falaises_par_arret[(int) $r["arret_id"]][] = $r["falaise_nom"];
+// stop_id GTFS mémorisés par arrêt : rapprochement lors de l'import GTFS d'une ligne (AdminLigneGtfsImport.vue)
+$gtfs_refs_par_arret = [];
+$resR = $mysqli->query("SELECT arret_id, ref FROM references_externes WHERE source = 'gtfs' ORDER BY id");
+while ($r = $resR->fetch_assoc()) $gtfs_refs_par_arret[(int) $r["arret_id"]][] = $r["ref"];
 
 while ($row = $res->fetch_assoc()) {
   $arrets[] = [
@@ -55,12 +61,13 @@ while ($row = $res->fetch_assoc()) {
     "nb_enfants" => (int) $row["nb_enfants"], // > 0 : arrêt parent
     "position_manuelle" => (bool) $row["position_manuelle"],
     "falaises" => $falaises_par_arret[(int) $row["id"]] ?? [],
+    "gtfsRefs" => $gtfs_refs_par_arret[(int) $row["id"]] ?? [],
   ];
 }
 
 $lignes = [];
 $res = $mysqli->query(
-  "SELECT l.id, l.nom, l.numero, l.operateur, l.couleur,
+  "SELECT l.id, l.nom, l.numero, l.operateur, l.operateur_url, l.horaire_url, l.ref, l.couleur,
           (SELECT COUNT(*) FROM arrets_lignes_transport alt WHERE alt.ligne_id = l.id) AS nb_arrets
    FROM lignes_transport l ORDER BY l.nom",
 );
@@ -70,6 +77,9 @@ while ($row = $res->fetch_assoc()) {
     "nom" => $row["nom"],
     "numero" => $row["numero"],
     "operateur" => $row["operateur"],
+    "operateur_url" => $row["operateur_url"],
+    "horaire_url" => $row["horaire_url"],
+    "ref" => $row["ref"],
     "couleur" => $row["couleur"],
     "nb_arrets" => (int) $row["nb_arrets"],
   ];
@@ -103,6 +113,7 @@ $pageData = [
   <?php map_bundle_js("map-maplibre"); ?>
   <?php map_bundle_css("map-maplibre"); ?>
   <?php vite_css("main"); ?>
+  <?php vite_js("admin-gtfs-import"); ?>
   <link rel="stylesheet" href="/global.css" />
   <link rel="manifest" href="/site.webmanifest" />
   <style>
@@ -135,6 +146,19 @@ $pageData = [
     .vg-search-results button { display: block; width: 100%; padding: .375rem .5rem; text-align: left; white-space: nowrap;
       overflow: hidden; text-overflow: ellipsis; background: transparent; border: 0; cursor: pointer; }
     .vg-search-results button:hover { background: rgba(0,0,0,.08); }
+    /* Barre d'outils des actions (liste et popups) : une seule bordure aux extrémités arrondies, boutons séparés par un filet */
+    .vg-toolbar { --vg-toolbar-border: color-mix(in oklab, var(--color-base-content) 45%, transparent);
+      display: inline-flex; border: 1px solid var(--vg-toolbar-border); border-radius: var(--radius-field, .5rem); }
+    .vg-toolbar > .btn { border-width: 0; border-radius: 0; box-shadow: none; }
+    .vg-toolbar > .btn:first-child { border-start-start-radius: calc(var(--radius-field, .5rem) - 1px); border-end-start-radius: calc(var(--radius-field, .5rem) - 1px); }
+    .vg-toolbar > .btn:last-child { border-start-end-radius: calc(var(--radius-field, .5rem) - 1px); border-end-end-radius: calc(var(--radius-field, .5rem) - 1px); }
+    /* Tooltip des boutons (data-tip) : élément unique en position fixe, posé au-dessus par admin-arrets-lignes.js */
+    .vg-tip { position: fixed; z-index: 10000; pointer-events: none; max-width: 20rem; padding: .25rem .5rem; border-radius: var(--radius-field, .5rem);
+      background: var(--color-neutral); color: var(--color-neutral-content); font-size: .8125rem; font-weight: 600; line-height: 1.25; text-align: center; }
+    .vg-tip[hidden] { display: none; }
+    .vg-tip::after { content: ""; position: absolute; top: 100%; left: var(--vg-tip-arrow, 50%); transform: translateX(-50%);
+      border: 5px solid transparent; border-top-color: var(--color-neutral); }
+    .vg-toolbar > .btn + .btn { border-left: 1px solid var(--vg-toolbar-border); }
     /* Vue liste, panneaux côte à côte : la page tient dans la fenêtre, seuls les tableaux défilent */
     @media (min-width: 1024px) {
       body:has(#view-liste:not(.hidden)) { height: 100dvh; overflow: hidden; }
@@ -168,7 +192,7 @@ $pageData = [
         placeholder="Rechercher (arrêt, commune, falaise, n°, opérateur, id)…" autocomplete="off" />
       <div id="type-filters" class="flex flex-wrap items-center gap-2 text-sm">
         <span class="font-semibold">Types d'arrêt :</span>
-        <?php foreach (['ter' => 'TER', 'tgv' => 'TGV', 'bus' => 'Bus', 'tram' => 'Tram', 'telepherique' => 'Téléphérique'] as $k => $label): ?>
+        <?php foreach ($arret_types_labels as $k => $label): ?>
           <label class="flex items-center gap-1 cursor-pointer">
             <input type="checkbox" class="checkbox checkbox-xs" data-type="<?= $k ?>"
               <?= in_array($k, ['ter', 'tgv'], true) ? '' : 'checked' ?> />
@@ -201,7 +225,9 @@ $pageData = [
         </div>
       </div>
       <div class="vg-panel" style="min-width:0">
-        <h2 class="text-lg font-bold mb-2">Lignes <span id="count-lignes" class="badge badge-neutral"></span></h2>
+        <h2 class="text-lg font-bold mb-2 flex items-center gap-2">Lignes <span id="count-lignes" class="badge badge-neutral"></span>
+          <button type="button" class="btn btn-xs btn-circle btn-primary text-primary-content" data-gtfs-ligne="new"
+            data-tip="Nouvelle ligne depuis un GTFS" aria-label="Nouvelle ligne depuis un GTFS">+</button></h2>
         <div class="vg-scroll overflow-auto max-h-[70vh] rounded-md bg-base-100">
           <table class="table table-sm table-pin-rows">
             <thead><tr><th>Ligne</th><th>Opérateur</th><th class="text-right">Arrêts</th><th></th></tr></thead>
@@ -222,6 +248,68 @@ $pageData = [
       <div id="admin-map" class="w-full h-[70vh] rounded-md"></div>
     </section>
   </main>
+
+  <!-- Modifier un arrêt : nom et modalités (api/update_arret.php) -->
+  <dialog id="dlg-arret" class="modal">
+    <form class="modal-box flex flex-col gap-3" method="dialog" id="form-arret">
+      <h3 class="font-bold text-lg">Modifier l'arrêt <span id="dlg-arret-id" class="opacity-60"></span></h3>
+      <label class="form-control">
+        <b class="text-sm">Nom</b>
+        <input id="arret-nom" class="input input-sm input-primary w-full" type="text" maxlength="255" required autocomplete="off" />
+      </label>
+      <div class="form-control">
+        <b class="text-sm">Modalités desservies <span class="text-error">(au moins une)</span></b>
+        <div class="flex flex-wrap gap-4 mt-1" id="arret-types">
+          <?php foreach ($arret_types_labels as $k => $label): ?>
+            <label class="flex items-center gap-1 cursor-pointer">
+              <input type="checkbox" class="checkbox checkbox-sm checkbox-primary" value="<?= $k ?>" /> <?= $label ?>
+            </label>
+          <?php endforeach; ?>
+        </div>
+        <i id="arret-types-note" class="hidden text-xs opacity-70 mt-1">Arrêt parent : ses modalités sont celles de ses arrêts regroupés.</i>
+      </div>
+      <div id="arret-error" class="alert alert-error text-sm hidden" role="alert"></div>
+      <div class="modal-action mt-0">
+        <button type="button" class="btn btn-sm" data-dialog-close>Annuler</button>
+        <button type="submit" class="btn btn-sm btn-primary">Valider</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Modifier les infos de base d'une ligne (api/update_ligne.php) ; le tracé et les arrêts se mettent à jour par « Import GTFS » -->
+  <dialog id="dlg-ligne" class="modal">
+    <form class="modal-box max-w-2xl flex flex-col gap-3" method="dialog" id="form-ligne">
+      <h3 class="font-bold text-lg">Modifier la ligne <span id="dlg-ligne-id" class="opacity-60"></span></h3>
+      <label class="form-control">
+        <b class="text-sm">Nom officiel</b>
+        <input id="ligne-nom" class="input input-sm input-primary w-full" type="text" required autocomplete="off" />
+      </label>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+        <label class="form-control"><b class="text-sm">Numéro</b>
+          <input id="ligne-numero" class="input input-sm input-primary w-full" type="text" maxlength="64" autocomplete="off" /></label>
+        <label class="form-control"><b class="text-sm">Couleur (CSS)</b>
+          <input id="ligne-couleur" class="input input-sm input-primary w-full" type="text" maxlength="64" placeholder="#123456, gold…" autocomplete="off" /></label>
+        <label class="form-control"><b class="text-sm">Référence officielle</b>
+          <input id="ligne-ref" class="input input-sm input-primary w-full" type="text" autocomplete="off" /></label>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+        <label class="form-control"><b class="text-sm">Opérateur</b>
+          <input id="ligne-operateur" class="input input-sm input-primary w-full" type="text" maxlength="64" autocomplete="off" /></label>
+        <label class="form-control"><b class="text-sm">Site de l'opérateur</b>
+          <input id="ligne-operateur_url" class="input input-sm input-primary w-full" type="url" autocomplete="off" /></label>
+      </div>
+      <label class="form-control"><b class="text-sm">Horaires (URL)</b>
+        <input id="ligne-horaire_url" class="input input-sm input-primary w-full" type="url" autocomplete="off" /></label>
+      <div id="ligne-error" class="alert alert-error text-sm hidden" role="alert"></div>
+      <div class="modal-action mt-0">
+        <button type="button" class="btn btn-sm" data-dialog-close>Annuler</button>
+        <button type="submit" class="btn btn-sm btn-primary">Valider</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Import GTFS d'une ligne (Vue : frontend/src/components/admin/AdminLigneGtfsImport.vue) -->
+  <div id="vue-gtfs-import"></div>
   <?php include $_SERVER['DOCUMENT_ROOT'] . "/components/footer.php"; ?>
   <script type="application/json" id="page-data"><?= json_encode($pageData, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
   <script type="module" src="/js/admin-arrets-lignes.js"></script>

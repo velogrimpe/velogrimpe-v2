@@ -117,3 +117,10 @@ Voir `playwright.config.ts` à la racine du projet pour :
 - Changer le baseURL
 - Ajouter d'autres navigateurs (Firefox, Safari)
 - Configurer les retries et le parallélisme
+
+## Panneau admin « Arrêts et lignes »
+
+`admin-arrets-lignes.spec.ts` : dialogs de modification (arrêt, ligne) et import GTFS. La page est derrière la Basic Auth de
+`/admin` : `ADMIN_BASIC_AUTH=user:motdepasse` (ignoré sinon). Pour jouer les tests sans le mot de passe, copier la page hors de
+`/admin/` (ex. `cp public_html/admin/arrets_lignes.php public_html/tmp_arrets_lignes.php`, à supprimer ensuite) et lancer avec
+`ADMIN_PAGE=/tmp_arrets_lignes.php`.
