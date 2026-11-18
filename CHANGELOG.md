@@ -4,6 +4,21 @@ Tous les changements notables de ce projet sont documentés dans ce fichier.
 
 Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 2026-11-18
+
+### Added (admin)
+
+- Volet latéral de navigation sur toutes les pages `/admin/` (Données, Communication, Autres outils) ; en mobile il est intégré au tiroir du site, dont la navigation est repliée sous « Navigation du site ».
+- Listes de données : `admin/falaises.php` (filtres « à vérifier » / « hors topo » / « détails renseignés », bouton d'ajout et de modification des détails), `acces.php` (vélo et à pied, filtre « à vérifier »), `trains.php`, `villes.php` ; recherche, filtres à choix unique « Tous / option » synchronisés dans l'URL, liens vers la falaise liée, le formulaire d'ajout et de modification.
+- `admin/actions.php` : les actions d'admin (affectation des zones, MàJ Cartotrain), sorties de l'ancien `/admin/`.
+- `tests/api/AdminPagesTest.php` ; `ApiTestCase::httpGetAdmin()` (Basic Auth dev).
+
+### Changed (admin)
+
+- Admin arrêts et lignes : les filtres (types d'arrêt ; statut Tous / Liés / Non liés / Supprimés) passent en boutons à choix unique « Tous / option », comme les listes de données. Le défaut reste de masquer TER/TGV (option « Hors trains »).
+- `/admin/` devient un tableau de bord de compteurs cliquables ; les boutons et sélecteurs de l'ancienne page sont remplacés par les listes.
+- Barre d'outils (`.vg-toolbar`) et tooltips des boutons extraits d'`arrets_lignes` vers `css/admin-ui.css` et `js/admin-ui.js`, partagés avec les nouvelles listes.
+
 ## 2026-11-14
 
 ### Changed (admin arrêts / lignes, ajout de ligne)

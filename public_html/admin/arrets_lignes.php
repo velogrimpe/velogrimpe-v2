@@ -146,19 +146,6 @@ $pageData = [
     .vg-search-results button { display: block; width: 100%; padding: .375rem .5rem; text-align: left; white-space: nowrap;
       overflow: hidden; text-overflow: ellipsis; background: transparent; border: 0; cursor: pointer; }
     .vg-search-results button:hover { background: rgba(0,0,0,.08); }
-    /* Barre d'outils des actions (liste et popups) : une seule bordure aux extrémités arrondies, boutons séparés par un filet */
-    .vg-toolbar { --vg-toolbar-border: color-mix(in oklab, var(--color-base-content) 45%, transparent);
-      display: inline-flex; border: 1px solid var(--vg-toolbar-border); border-radius: var(--radius-field, .5rem); }
-    .vg-toolbar > .btn { border-width: 0; border-radius: 0; box-shadow: none; }
-    .vg-toolbar > .btn:first-child { border-start-start-radius: calc(var(--radius-field, .5rem) - 1px); border-end-start-radius: calc(var(--radius-field, .5rem) - 1px); }
-    .vg-toolbar > .btn:last-child { border-start-end-radius: calc(var(--radius-field, .5rem) - 1px); border-end-end-radius: calc(var(--radius-field, .5rem) - 1px); }
-    /* Tooltip des boutons (data-tip) : élément unique en position fixe, posé au-dessus par admin-arrets-lignes.js */
-    .vg-tip { position: fixed; z-index: 10000; pointer-events: none; max-width: 20rem; padding: .25rem .5rem; border-radius: var(--radius-field, .5rem);
-      background: var(--color-neutral); color: var(--color-neutral-content); font-size: .8125rem; font-weight: 600; line-height: 1.25; text-align: center; }
-    .vg-tip[hidden] { display: none; }
-    .vg-tip::after { content: ""; position: absolute; top: 100%; left: var(--vg-tip-arrow, 50%); transform: translateX(-50%);
-      border: 5px solid transparent; border-top-color: var(--color-neutral); }
-    .vg-toolbar > .btn + .btn { border-left: 1px solid var(--vg-toolbar-border); }
     /* Vue liste, panneaux côte à côte : la page tient dans la fenêtre, seuls les tableaux défilent */
     @media (min-width: 1024px) {
       body:has(#view-liste:not(.hidden)) { height: 100dvh; overflow: hidden; }
@@ -171,14 +158,13 @@ $pageData = [
 </head>
 
 <body class="min-h-screen flex flex-col">
-  <?php include $_SERVER['DOCUMENT_ROOT'] . "/components/header.html"; ?>
+  <?php $admin_active = 'transports'; include $_SERVER['DOCUMENT_ROOT'] . "/components/admin-layout-open.php"; ?>
   <main class="w-full grow max-w-(--breakpoint-xl) mx-auto p-4 flex flex-col gap-4">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <h1 class="text-2xl font-bold"><span class="text-red-900">ADMIN</span> · Arrêts et lignes</h1>
       <div class="flex gap-2">
         <a class="btn btn-sm btn-primary text-primary-content" href="/ajout/ajout_arret.php?admin=<?= urlencode($token) ?>">+ Arrêt</a>
         <a class="btn btn-sm btn-primary text-primary-content" href="/ajout/ajout_ligne.php?admin=<?= urlencode($token) ?>">+ Ligne</a>
-        <a class="btn btn-sm btn-ghost" href="/admin/">← Admin</a>
       </div>
     </div>
 
@@ -187,28 +173,25 @@ $pageData = [
       <button role="tab" class="tab" data-view="carte">Carte</button>
     </div>
 
-    <div class="flex flex-row items-center gap-4">
+    <div class="flex flex-row flex-wrap items-center gap-x-4 gap-y-2">
       <input id="search" type="search" class="input input-sm input-bordered w-full max-w-xs"
         placeholder="Rechercher (arrêt, commune, falaise, n°, opérateur, id)…" autocomplete="off" />
-      <div id="type-filters" class="flex flex-wrap items-center gap-2 text-sm">
-        <span class="font-semibold">Types d'arrêt :</span>
-        <?php foreach ($arret_types_labels as $k => $label): ?>
-          <label class="flex items-center gap-1 cursor-pointer">
-            <input type="checkbox" class="checkbox checkbox-xs" data-type="<?= $k ?>"
-              <?= in_array($k, ['ter', 'tgv'], true) ? '' : 'checked' ?> />
-            <?= $label ?>
-          </label>
-        <?php endforeach; ?>
-      </div>
-      <div id="other-filters" class="flex flex-wrap items-center gap-2 text-sm">
-        <span class="font-semibold">Autres filtres :</span>
-        <label class="flex items-center gap-1 cursor-pointer">
-          <input type="checkbox" class="checkbox checkbox-xs" id="only-falaises" /> Reliés à des falaises
-        </label>
-        <label class="flex items-center gap-1 cursor-pointer">
-          <input type="checkbox" class="checkbox checkbox-xs" id="show-deleted" /> Supprimés
-        </label>
-      </div>
+      <?php
+      // Filtres à choix unique « Tous / option » (cf. admin-arrets-lignes.js) ; data-default = choix initial.
+      $filter_groups = [
+        'type' => ["Types d'arrêt :", 'local', ['' => 'Tous', 'local' => 'Hors trains'] + $arret_types_labels],
+        'statut' => ['Statut :', '', ['' => 'Tous', 'lies' => 'Liés', 'non_lies' => 'Non liés', 'supprimes' => 'Supprimés']],
+      ];
+      foreach ($filter_groups as $key => [$label, $default, $options]): ?>
+        <div class="flex flex-wrap items-center gap-2 text-sm" data-filter-group="<?= $key ?>" data-default="<?= $default ?>">
+          <span class="font-semibold"><?= $label ?></span>
+          <div class="join">
+            <?php foreach ($options as $value => $text): ?>
+              <button type="button" class="btn btn-xs join-item btn-outline" data-filter="<?= $key ?>" data-value="<?= $value ?>"><?= $text ?></button>
+            <?php endforeach; ?>
+          </div>
+        </div>
+      <?php endforeach; ?>
     </div>
 
     <div id="merge-banner" class="hidden alert alert-info text-sm items-center justify-between"></div>
@@ -310,7 +293,7 @@ $pageData = [
 
   <!-- Import GTFS d'une ligne (Vue : frontend/src/components/admin/AdminLigneGtfsImport.vue) -->
   <div id="vue-gtfs-import"></div>
-  <?php include $_SERVER['DOCUMENT_ROOT'] . "/components/footer.php"; ?>
+  <?php include $_SERVER['DOCUMENT_ROOT'] . "/components/admin-layout-close.php"; ?>
   <script type="application/json" id="page-data"><?= json_encode($pageData, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
   <script type="module" src="/js/admin-arrets-lignes.js"></script>
 </body>

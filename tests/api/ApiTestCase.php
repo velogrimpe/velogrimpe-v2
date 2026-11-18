@@ -163,6 +163,15 @@ abstract class ApiTestCase extends TestCase
     return $this->httpRequest('GET', $path, null);
   }
 
+  /**
+   * GET d'une page /admin/ : protégée par Basic Auth (dev : `dev` / `dev`, cf. README « Accès à /admin/ en local »).
+   * @return array{status:int, body:mixed, raw:string}
+   */
+  protected function httpGetAdmin(string $path): array
+  {
+    return $this->httpRequest('GET', $path, null, [], 'dev:dev');
+  }
+
   /** @return array{status:int, body:mixed, raw:string} */
   protected function httpPostJson(string $path, array $payload, array $extraHeaders = []): array
   {
@@ -170,9 +179,12 @@ abstract class ApiTestCase extends TestCase
   }
 
   /** @return array{status:int, body:mixed, raw:string} */
-  private function httpRequest(string $method, string $path, ?array $jsonPayload, array $extraHeaders = []): array
+  private function httpRequest(string $method, string $path, ?array $jsonPayload, array $extraHeaders = [], ?string $basicAuth = null): array
   {
     $ch = curl_init(VG_TEST_BASE_URL . $path);
+    if ($basicAuth !== null) {
+      curl_setopt($ch, CURLOPT_USERPWD, $basicAuth);
+    }
     $headers = $extraHeaders;
     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);

@@ -9,6 +9,7 @@ import {
 } from "/js/components/map/arret-icon.js";
 import { ligneColor } from "/js/components/map/ligne-view.js";
 import { enveloppe, fusionnable } from "/js/components/map/arrets-groupes.js";
+import { esc, norm, ico, toolbar, iconBtn, hideTip } from "/js/admin-ui.js";
 
 const { arrets, lignes, falaises, contrib, token } = JSON.parse(
   document.getElementById("page-data").textContent,
@@ -22,62 +23,27 @@ const TYPE_LABELS = {
   tram: "Tram",
   telepherique: "Téléph.",
 };
-const esc = (s) =>
-  String(s ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
-const norm = (s) =>
-  String(s ?? "")
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase();
 
-// Bouton-icône (symbole du sprite /symbols/icons.svg) ; le libellé est en tooltip (cf. « Tooltips » plus bas) et en aria-label.
-const ico = (name) =>
-  `<svg class="w-4 h-4 fill-none stroke-current" stroke-width="1.5" aria-hidden="true"><use href="#${name}"></use></svg>`;
-// Barre d'outils : une seule bordure aux extrémités arrondies (.vg-toolbar, cf. admin/arrets_lignes.php) autour de boutons séparés par un filet ;
-// tous en contour, seule la suppression est en rouge.
-const toolbar = (html) => (html ? `<div class="vg-toolbar">${html}</div>` : "");
-const iconBtn = (name, label, cls, attrs) =>
-  `<button type="button" class="btn btn-xs btn-square ${cls}" data-tip="${label}" aria-label="${label}" ${attrs}>${ico(name)}</button>`;
-
-// --- Tooltips des boutons (`data-tip`) ---------------------------------------------------------
-// Un seul élément `position: fixed` au-dessus du bouton, rattaché au body : aucun conteneur à défilement (tableaux,
-// popups) ne le rogne. Centré sur le bouton, décalé si besoin pour rester dans la fenêtre (la flèche suit le bouton).
-const tipEl = document.createElement("div");
-tipEl.className = "vg-tip";
-tipEl.hidden = true;
-document.body.appendChild(tipEl);
-const hideTip = () => (tipEl.hidden = true);
-function showTip(el) {
-  tipEl.textContent = el.dataset.tip;
-  tipEl.hidden = false;
-  const r = el.getBoundingClientRect();
-  const w = tipEl.offsetWidth;
-  const left = Math.max(4, Math.min(r.left + r.width / 2 - w / 2, window.innerWidth - w - 4));
-  tipEl.style.left = `${left}px`;
-  tipEl.style.top = `${r.top - tipEl.offsetHeight - 8}px`;
-  tipEl.style.setProperty("--vg-tip-arrow", `${r.left + r.width / 2 - left}px`);
-}
-document.addEventListener("mouseover", (e) => {
-  const el = e.target.closest?.("[data-tip]");
-  el ? showTip(el) : hideTip();
-});
-document.addEventListener("focusin", (e) => {
-  const el = e.target.closest?.("[data-tip]");
-  el ? showTip(el) : hideTip();
-});
-["focusout", "mousedown", "wheel", "keydown"].forEach((t) => document.addEventListener(t, hideTip, true));
-document.addEventListener("scroll", hideTip, true);
-
-// --- État dans l'URL (?q=…&types=bus,tram&falaises=1&deleted=1&view=carte) ---
+// --- État dans l'URL (?q=…&types=bus&statut=lies&view=carte) ---
 // Seules les valeurs différentes des défauts sont écrites ; les autres paramètres sont préservés.
-const DEFAULT_TYPES = ["bus", "tram", "telepherique"];
-const typeBoxes = () => [
-  ...document.querySelectorAll("#type-filters [data-type]"),
-];
+// Filtres à choix unique (boutons « Tous / option » de arrets_lignes.php) : clé de filtre → paramètre d'URL.
+// « Tous » (valeur "") s'écrit `all` dans l'URL, pour se distinguer d'un paramètre absent (= défaut du filtre).
+// Statut : Tous = arrêts non supprimés ; Liés / Non liés = non supprimés, avec / sans falaise reliée ; Supprimés.
+const FILTER_PARAM = { type: "types", statut: "statut" };
+const filterGroups = () => [...document.querySelectorAll("[data-filter-group]")];
+const filterDefault = (g) => g.dataset.default;
+const filterValue = (g) => g.querySelector("[data-filter].btn-primary")?.dataset.value ?? filterDefault(g);
+function setFilter(g, value) {
+  const valid = [...g.querySelectorAll("[data-filter]")].some((b) => b.dataset.value === value);
+  const v = valid ? value : filterDefault(g);
+  g.querySelectorAll("[data-filter]").forEach((b) => {
+    const on = b.dataset.value === v;
+    b.classList.toggle("btn-primary", on);
+    b.classList.toggle("text-primary-content", on);
+    b.classList.toggle("btn-outline", !on);
+    b.setAttribute("aria-pressed", String(on));
+  });
+}
 
 // Position de la carte : ?map=zoom/lat/lng
 let savedMap = null;
@@ -94,12 +60,12 @@ function readUrl() {
   const p = new URLSearchParams(location.search);
   savedMap = parseMapParam(p.get("map"));
   $("search").value = p.get("q") ?? "";
-  if (p.has("types")) {
-    const wanted = new Set(p.get("types").split(",").filter(Boolean));
-    typeBoxes().forEach((c) => (c.checked = wanted.has(c.dataset.type)));
+  // Ancien lien : falaises=1 (reliés seulement).
+  if (p.get("falaises") === "1" && !p.has("statut")) p.set("statut", "lies");
+  for (const g of filterGroups()) {
+    const raw = p.get(FILTER_PARAM[g.dataset.filterGroup]);
+    setFilter(g, raw === null ? filterDefault(g) : raw === "all" ? "" : raw);
   }
-  $("only-falaises").checked = p.get("falaises") === "1";
-  $("show-deleted").checked = p.get("deleted") === "1";
   return p.get("view") === "carte" ? "carte" : "liste";
 }
 
@@ -107,16 +73,13 @@ function writeUrl() {
   const p = new URLSearchParams(location.search);
   const setOrDel = (k, v) => (v ? p.set(k, v) : p.delete(k));
   setOrDel("q", $("search").value.trim());
-  const types = typeBoxes()
-    .filter((c) => c.checked)
-    .map((c) => c.dataset.type);
-  const isDefault =
-    types.length === DEFAULT_TYPES.length &&
-    DEFAULT_TYPES.every((t) => types.includes(t));
-  if (isDefault) p.delete("types");
-  else p.set("types", types.join(","));
-  setOrDel("falaises", state.onlyFalaises ? "1" : "");
-  setOrDel("deleted", state.showDeleted ? "1" : "");
+  for (const g of filterGroups()) {
+    const v = filterValue(g);
+    const param = FILTER_PARAM[g.dataset.filterGroup];
+    v === filterDefault(g) ? p.delete(param) : p.set(param, v || "all");
+  }
+  p.delete("deleted");
+  p.delete("falaises");
   setOrDel("view", state.view === "carte" ? "carte" : "");
   if (mapReady) {
     const c = map.getCenter();
@@ -136,28 +99,30 @@ function writeUrl() {
 // --- Filtres -------------------------------------------------------------
 const state = {
   q: "",
-  types: new Set(),
-  showDeleted: false,
-  onlyFalaises: false,
+  type: "local",
+  statut: "",
   view: "liste",
 };
 const readFilters = () => {
   state.q = norm($("search").value.trim());
-  state.types = new Set(
-    [...document.querySelectorAll("#type-filters [data-type]")]
-      .filter((c) => c.checked)
-      .map((c) => c.dataset.type),
-  );
-  state.showDeleted = $("show-deleted").checked;
-  state.onlyFalaises = $("only-falaises").checked;
+  for (const g of filterGroups()) state[g.dataset.filterGroup] = filterValue(g);
 };
 
-// Un arrêt est visible si l'un de ses types est coché (un arrêt TER + bus reste visible
-// avec « Bus » seul coché) ; un arrêt sans aucun type n'est jamais masqué par ce filtre.
+const LOCAL_TYPES = ["bus", "tram", "telepherique"];
+const typeVisible = (a) =>
+  state.type === ""
+    ? true
+    : state.type === "local"
+      ? a.types.length === 0 || a.types.some((t) => LOCAL_TYPES.includes(t))
+      : a.types.includes(state.type);
+
+// Un arrêt est visible si l'un de ses types correspond au filtre (un arrêt TER + bus reste visible
+// avec « Bus » ou « Hors trains ») ; un arrêt sans aucun type n'est masqué que par un type précis.
 const arretVisible = (a) =>
-  (state.showDeleted || !a.deleted) &&
-  (!state.onlyFalaises || a.falaises.length > 0) &&
-  (a.types.length === 0 || a.types.some((t) => state.types.has(t))) &&
+  a.deleted === (state.statut === "supprimes") &&
+  (state.statut !== "lies" || a.falaises.length > 0) &&
+  (state.statut !== "non_lies" || a.falaises.length === 0) &&
+  typeVisible(a) &&
   (!state.q ||
     norm(
       `${a.nom} ${a.commune ?? ""} ${a.id} ${a.falaises.join(" ")}`,
@@ -1486,9 +1451,12 @@ $("search").addEventListener("input", () => {
   clearTimeout(timer);
   timer = setTimeout(refresh, 150);
 });
-document
-  .querySelectorAll("#type-filters input, #other-filters input")
-  .forEach((c) => c.addEventListener("change", refresh));
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-filter]");
+  if (!b) return;
+  setFilter(b.closest("[data-filter-group]"), b.dataset.value);
+  refresh();
+});
 $("layer-arrets").addEventListener("change", renderMap);
 $("layer-lignes").addEventListener("change", renderMap);
 $("layer-falaises").addEventListener("change", renderFalaises);

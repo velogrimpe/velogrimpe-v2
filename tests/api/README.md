@@ -12,7 +12,7 @@ différentes :
    appelle l'endpoint réel via HTTP, vérifie la réponse JSON et l'état DB,
    puis nettoie ce qu'il a créé.
 2. **Tests de non-régression sur les pages** (`CartePageDataTest`,
-   `TableauPageDataTest`, `FalaisePageDataTest`) : ne créent aucune fixture,
+   `TableauPageDataTest`, `FalaisePageDataTest`, `AdminPagesTest` pour les pages `/admin/` via `httpGetAdmin()`) : ne créent aucune fixture,
    ne testent pas le rendu (pas de navigateur) — ils récupèrent le HTML de
    `carte.php`/`tableau.php`/`falaise.php` via HTTP, extraient les données
    JSON qui y sont embarquées pour le JS/Vue (cf. `ApiTestCase::extractJsValue()`),
