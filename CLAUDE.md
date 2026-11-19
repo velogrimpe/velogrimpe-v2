@@ -96,6 +96,12 @@ Puis les arrêts parents / enfants (`parent_id`, `position_manuelle`) :
 docker exec -i velogrimpe /opt/lampp/bin/mysql -uroot u829510062_bdd < sql_migrations/2_arrets_parents.sql
 ```
 
+Enfin la normalisation de la collection `falaise` → `falaises` dans `edit_logs` (rejouable) :
+
+```bash
+docker exec -i velogrimpe /opt/lampp/bin/mysql -uroot u829510062_bdd < sql_migrations/3_edit_logs_falaises.sql
+```
+
 L'export ne couvre que les données SQL. Les fichiers associés (images de
 falaises, GPX, GeoJSON de barres) vivent dans `public/` et se récupèrent
 séparément.
@@ -154,6 +160,13 @@ chemins relatifs à la racine des données (`'gpx/x.gpx'`), pas des chemins disq
 
 Détails et règles `.htaccess` : section « Chemins de données » de
 `public_html/README.md`.
+
+**Journal des modifications (`edit_logs`, `lib/logChanges`) :** tout endpoint ou lib qui écrit en base
+(contribution publique ou action d'admin) appelle `logChanges()` — auteur `"Admin"` pour l'admin, collection
+= nom de table au pluriel (`falaises`, `arrets`…, libellé dans `admin/edit_logs.php`), suppression = valeurs
+supprimées en `old`. Exceptions : compteurs / inscriptions publiques et crons. Lire `$mysqli->insert_id`
+avant `logChanges()` (qui réutilise la connexion et l'écrase). Détail : section « Journal des modifications »
+de `public_html/README.md`.
 
 **Vue-PHP Integration:**
 

@@ -18,6 +18,13 @@ final class AddLigneRegroupementTest extends ApiTestCase
     ], $override);
   }
 
+  /** add_ligne.php est réservé à l'admin : Bearer par défaut (`$token` = null pour l'omettre). */
+  private function postAddLigne(array $payload, ?string $token = 'admin'): array
+  {
+    $headers = $token === null ? [] : ['Authorization: Bearer ' . ($token === 'admin' ? (string) VG_TEST_CONFIG['admin_token'] : $token)];
+    return $this->httpPostJson('/api/add_ligne.php', $payload, $headers);
+  }
+
   /** @param int[] $ids arrêts (créés par l'API) à nettoyer : enfants détachés d'abord */
   private function registerCreated(array $ids): void
   {
@@ -30,7 +37,7 @@ final class AddLigneRegroupementTest extends ApiTestCase
   /** Envoie la ligne ; enregistre les nettoyages (ligne, arrêts créés, parents créés). */
   private function post(array $override): array
   {
-    $res = $this->httpPostJson('/api/add_ligne.php', $this->payload($override));
+    $res = $this->postAddLigne($this->payload($override));
     if ($res['status'] === 200) {
       $this->cleanupOnTearDown("DELETE FROM lignes_transport WHERE id = " . (int) $res['body']['ligne_id']);
       $ids = array_merge($res['body']['arrets_crees'] ?? [], $res['body']['parents'] ?? []);
@@ -101,7 +108,7 @@ final class AddLigneRegroupementTest extends ApiTestCase
   {
     $gare = $this->createFixtureArret('PHPUnit Import gare', 45.76, 4.86, ['ter']);
     foreach ([999999999, $gare] as $cible) {
-      $res = $this->httpPostJson('/api/add_ligne.php', $this->payload([
+      $res = $this->postAddLigne($this->payload([
         'nom' => 'PHPUnit - doit échouer',
         'nouveaux_arrets' => [$this->nouvel('PHPUnit Import refus', 4.8605, ['regrouper_avec' => $cible])],
       ]));
@@ -157,7 +164,7 @@ final class AddLigneRegroupementTest extends ApiTestCase
     $p = (int) $fusion['body']['parent_id'];
     $this->registerCreated([$p]);
 
-    $res = $this->httpPostJson('/api/add_ligne.php', $this->payload(['nom' => 'PHPUnit - parent lié', 'arret_ids' => [$p]]));
+    $res = $this->postAddLigne($this->payload(['nom' => 'PHPUnit - parent lié', 'arret_ids' => [$p]]));
     $this->assertSame(400, $res['status'], $res['raw']);
     $this->assertNull(self::dbQueryOne("SELECT 1 AS x FROM lignes_transport WHERE nom = 'PHPUnit - parent lié'"));
 

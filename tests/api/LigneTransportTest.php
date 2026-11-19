@@ -6,7 +6,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * CRUD des lignes BTT (Lot 7, cf. docs/plan-implementation-arrets.md) :
- *  - api/add_ligne.php   : création + édition, arrêts liés (non protégé)
+ *  - api/add_ligne.php   : création + édition, arrêts liés (Bearer admin_token)
  *  - api/fetch_ligne.php : lecture d'une ligne (géométrie GeoJSON + arrêts liés)
  *  - api/fetch_lignes.php: liste, filtrable par arrêt (bouton « voir la ligne »)
  *  - api/delete_ligne.php: suppression (Bearer admin_token)
@@ -26,6 +26,13 @@ final class LigneTransportTest extends ApiTestCase
   private function bearer(?string $token = null): array
   {
     return ['Authorization: Bearer ' . ($token ?? (string) VG_TEST_CONFIG['admin_token'])];
+  }
+
+  /** add_ligne.php est réservé à l'admin : Bearer par défaut (`$token` = null pour l'omettre). */
+  private function postAddLigne(array $payload, ?string $token = 'admin'): array
+  {
+    $headers = $token === null ? [] : ['Authorization: Bearer ' . ($token === 'admin' ? (string) VG_TEST_CONFIG['admin_token'] : $token)];
+    return $this->httpPostJson('/api/add_ligne.php', $payload, $headers);
   }
 
   /** @param array<string, mixed> $override */
@@ -48,7 +55,7 @@ final class LigneTransportTest extends ApiTestCase
   /** Crée une ligne via l'API et enregistre son nettoyage. */
   private function createLigne(array $override = []): int
   {
-    $res = $this->httpPostJson('/api/add_ligne.php', $this->payload($override));
+    $res = $this->postAddLigne($this->payload($override));
     $this->assertSame(200, $res['status'], $res['raw']);
     $id = $res['body']['ligne_id'];
     $this->assertIsInt($id);
@@ -62,16 +69,50 @@ final class LigneTransportTest extends ApiTestCase
     $this->assertSame(405, $res['status']);
   }
 
+  public function testAddLigneWithoutOrWithWrongBearerIsRejected(): void
+  {
+    foreach ([null, 'mauvais'] as $token) {
+      $res = $this->postAddLigne($this->payload(['nom' => 'PHPUnit - sans auth']), $token);
+      $this->assertSame(401, $res['status'], $res['raw']);
+    }
+    $this->assertNull(self::dbQueryOne("SELECT id FROM lignes_transport WHERE nom = 'PHPUnit - sans auth'"));
+  }
+
+  /** @return array<int, array<string, mixed>> logs d'une ligne, du plus ancien au plus récent */
+  private function logsLigne(int $ligneId): array
+  {
+    return self::dbQuery("SELECT type, author, changes FROM edit_logs WHERE collection = 'lignes_transport' AND record_id = $ligneId ORDER BY id");
+  }
+
+  public function testCreateUpdateDeleteLigneAreLoggedInEditLogs(): void
+  {
+    $ligneId = $this->createLigne(['nom' => 'PHPUnit - Ligne loguée']);
+    $this->cleanupOnTearDown("DELETE FROM edit_logs WHERE collection = 'lignes_transport' AND record_id = $ligneId");
+
+    $res = $this->httpPostJson('/api/update_ligne.php', ['ligne_id' => $ligneId, 'nom' => 'PHPUnit - Ligne renommée'], $this->bearer());
+    $this->assertSame(200, $res['status'], $res['raw']);
+
+    $res = $this->httpPostJson('/api/delete_ligne.php', ['ligne_id' => $ligneId], $this->bearer());
+    $this->assertSame(200, $res['status'], $res['raw']);
+
+    $logs = $this->logsLigne($ligneId);
+    $this->assertSame(['insert', 'update', 'delete'], array_column($logs, 'type'));
+    $this->assertSame(['Admin', 'Admin', 'Admin'], array_column($logs, 'author'));
+    // `changes` est du JSON dont dbQuery (mysql CLI) échappe les backslashes : on teste le radical ASCII du nom
+    $this->assertStringContainsString('PHPUnit - Ligne renomm', $logs[1]['changes']);
+    $this->assertStringContainsString('PHPUnit - Ligne renomm', $logs[2]['changes'], 'la suppression conserve les valeurs supprimées');
+  }
+
   public function testMissingNomIsRejected(): void
   {
-    $res = $this->httpPostJson('/api/add_ligne.php', $this->payload(['nom' => '']));
+    $res = $this->postAddLigne($this->payload(['nom' => '']));
     $this->assertSame(400, $res['status']);
     $this->assertArrayHasKey('error', $res['body']);
   }
 
   public function testInvalidGeometryTypeIsRejected(): void
   {
-    $res = $this->httpPostJson('/api/add_ligne.php', $this->payload([
+    $res = $this->postAddLigne($this->payload([
       'geometry' => ['type' => 'Point', 'coordinates' => [5.38, 43.82]],
     ]));
     $this->assertSame(400, $res['status']);
@@ -135,7 +176,7 @@ final class LigneTransportTest extends ApiTestCase
     $b = $this->createFixtureArret('PHPUnit Arrêt B');
     $ligneId = $this->createLigne(['arret_ids' => [$a]]);
 
-    $res = $this->httpPostJson('/api/add_ligne.php', $this->payload([
+    $res = $this->postAddLigne($this->payload([
       'ligne_id' => $ligneId,
       'nom' => 'PHPUnit - Ligne modifiée',
       'couleur' => 'gold',
@@ -157,14 +198,14 @@ final class LigneTransportTest extends ApiTestCase
 
   public function testEditUnknownLigneReturns404(): void
   {
-    $res = $this->httpPostJson('/api/add_ligne.php', $this->payload(['ligne_id' => 999999999]));
+    $res = $this->postAddLigne($this->payload(['ligne_id' => 999999999]));
     $this->assertSame(404, $res['status']);
   }
 
   public function testUnknownArretIdIsRejectedAtomically(): void
   {
     $before = self::dbQueryOne("SELECT COUNT(*) AS n FROM lignes_transport")['n'];
-    $res = $this->httpPostJson('/api/add_ligne.php', $this->payload(['arret_ids' => [999999999]]));
+    $res = $this->postAddLigne($this->payload(['arret_ids' => [999999999]]));
     $this->assertSame(400, $res['status']);
     $after = self::dbQueryOne("SELECT COUNT(*) AS n FROM lignes_transport")['n'];
     $this->assertSame($before, $after, 'aucune ligne orpheline si un arrêt lié est invalide');
@@ -368,7 +409,7 @@ final class LigneTransportTest extends ApiTestCase
   public function testCreatesNouveauxArretsAndLinksThemInTheSameCall(): void
   {
     $existing = $this->createFixtureArret('PHPUnit Arrêt existant');
-    $res = $this->httpPostJson('/api/add_ligne.php', $this->payload([
+    $res = $this->postAddLigne($this->payload([
       'arret_ids' => [$existing],
       'nouveaux_arrets' => [
         ['nom' => 'PHPUnit GTFS - Arrêt Un', 'lat' => 45.5, 'lng' => 6.1, 'types' => ['bus']],
@@ -405,7 +446,7 @@ final class LigneTransportTest extends ApiTestCase
 
   public function testNouvelArretWithoutTypesDefaultsToBus(): void
   {
-    $res = $this->httpPostJson('/api/add_ligne.php', $this->payload([
+    $res = $this->postAddLigne($this->payload([
       'nouveaux_arrets' => [['nom' => 'PHPUnit GTFS - Sans type', 'lat' => 45.5, 'lng' => 6.1]],
     ]));
     $this->assertSame(200, $res['status'], $res['raw']);
@@ -419,7 +460,7 @@ final class LigneTransportTest extends ApiTestCase
   {
     $avantLignes = self::dbQueryOne("SELECT COUNT(*) AS n FROM lignes_transport")['n'];
     $avantArrets = self::dbQueryOne("SELECT COUNT(*) AS n FROM arrets")['n'];
-    $res = $this->httpPostJson('/api/add_ligne.php', $this->payload([
+    $res = $this->postAddLigne($this->payload([
       'nouveaux_arrets' => [
         ['nom' => 'PHPUnit GTFS - Valide', 'lat' => 45.5, 'lng' => 6.1],
         $nouvel,
@@ -445,7 +486,7 @@ final class LigneTransportTest extends ApiTestCase
   {
     $a = $this->createFixtureArret('PHPUnit Arrêt A');
     $ligneId = $this->createLigne(['arret_ids' => [$a]]);
-    $res = $this->httpPostJson('/api/add_ligne.php', $this->payload([
+    $res = $this->postAddLigne($this->payload([
       'ligne_id' => $ligneId,
       'arret_ids' => [$a],
       'nouveaux_arrets' => [['nom' => 'PHPUnit GTFS - Ajout édition', 'lat' => 45.5, 'lng' => 6.1]],
@@ -468,7 +509,7 @@ final class LigneTransportTest extends ApiTestCase
   public function testNouveauxArretsAreReverseGeocodedAtCreation(): void
   {
     // Moins de 10 arrêts : géocodage unitaire. Lyon (point témoin de ReverseGeocodeTest) + plein océan.
-    $res = $this->httpPostJson('/api/add_ligne.php', $this->payload([
+    $res = $this->postAddLigne($this->payload([
       'nouveaux_arrets' => [
         ['nom' => 'PHPUnit GTFS - Lyon', 'lat' => 45.7596, 'lng' => 4.8586],
         ['nom' => 'PHPUnit GTFS - Océan', 'lat' => 0, 'lng' => -30],
@@ -494,7 +535,7 @@ final class LigneTransportTest extends ApiTestCase
     }
     $nouveaux[] = ['nom' => 'PHPUnit GTFS - Lot océan', 'lat' => 0, 'lng' => -30];
 
-    $res = $this->httpPostJson('/api/add_ligne.php', $this->payload(['nouveaux_arrets' => $nouveaux]));
+    $res = $this->postAddLigne($this->payload(['nouveaux_arrets' => $nouveaux]));
     $this->assertSame(200, $res['status'], $res['raw']);
     $this->cleanupOnTearDown("DELETE FROM lignes_transport WHERE id = {$res['body']['ligne_id']}");
     $crees = $res['body']['arrets_crees'];
@@ -517,7 +558,7 @@ final class LigneTransportTest extends ApiTestCase
   public function testGtfsStopIdsAreStoredAndReturnedByFetchLigne(): void
   {
     $a = $this->createFixtureArret('PHPUnit Arrêt GTFS A');
-    $res = $this->httpPostJson('/api/add_ligne.php', $this->payload([
+    $res = $this->postAddLigne($this->payload([
       'arret_ids' => [$a],
       'gtfs_refs' => [['arret_id' => $a, 'stop_id' => 'STOP_A', 'nom' => 'Stop A']],
       'nouveaux_arrets' => [['nom' => 'PHPUnit GTFS - Nouveau', 'lat' => 45.7596, 'lng' => 4.8586, 'stop_id' => 'STOP_N']],
@@ -550,15 +591,15 @@ final class LigneTransportTest extends ApiTestCase
       ],
     ]);
     // Deux envois identiques : pas d'erreur de doublon, une seule référence
-    $this->assertSame(200, $this->httpPostJson('/api/add_ligne.php', $payload)['status']);
-    $this->assertSame(200, $this->httpPostJson('/api/add_ligne.php', $payload)['status']);
+    $this->assertSame(200, $this->postAddLigne($payload)['status']);
+    $this->assertSame(200, $this->postAddLigne($payload)['status']);
     $this->assertCount(1, $this->gtfsRefs($a));
     $this->assertSame([], $this->gtfsRefs($b));
   }
 
   public function testInvalidGtfsRefIsRejected(): void
   {
-    $res = $this->httpPostJson('/api/add_ligne.php', $this->payload([
+    $res = $this->postAddLigne($this->payload([
       'gtfs_refs' => [['arret_id' => 0, 'stop_id' => '']],
     ]));
     $this->assertSame(400, $res['status']);

@@ -14,6 +14,7 @@ GET {{host}}/api/fetch_ligne.php?ligne_id=1
 # Pour éditer, renseigner ligne_id. La réponse liste les ids créés dans `arrets_crees`.
 POST {{host}}/api/add_ligne.php
 Content-Type: application/json
+Authorization: Bearer {{admin_token}}
 
 {
   "ligne_id": null,
@@ -38,6 +39,7 @@ Content-Type: application/json
 # Les stop_id sont écrits en references_externes (source gtfs) et relus dans `gtfs_refs` de fetch_ligne.php.
 POST {{host}}/api/add_ligne.php
 Content-Type: application/json
+Authorization: Bearer {{admin_token}}
 
 {
   "ligne_id": 1,
@@ -119,7 +121,7 @@ Content-Type: application/json
 
 { "arret_id": 10, "auto": true }
 
-### Import GTFS avec regroupements (api/add_ligne.php, non protégé)
+### Import GTFS avec regroupements (api/add_ligne.php, Bearer admin_token)
 # nouveaux_arrets[] :
 #  - regrouper_avec : id d'un arrêt existant ; le nouvel arrêt est rangé sous son parent (créé si l'arrêt est orphelin)
 #  - groupe : clé commune aux nouveaux arrêts à regrouper sous un même parent (≥ 2 membres, sinon sans effet)
@@ -130,6 +132,7 @@ Content-Type: application/json
 # Réponse : { success, ligne_id, arrets_crees, parents } (parents = parents créés par cet envoi).
 POST {{host}}/api/add_ligne.php
 Content-Type: application/json
+Authorization: Bearer {{admin_token}}
 
 {
   "ligne_id": null,

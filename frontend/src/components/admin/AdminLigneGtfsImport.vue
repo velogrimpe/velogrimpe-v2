@@ -49,7 +49,7 @@ interface Ligne {
   geometry: MultiLineString | null;
 }
 
-const page = JSON.parse(document.getElementById("page-data")!.textContent!) as { arrets: PageArret[] };
+const page = JSON.parse(document.getElementById("page-data")!.textContent!) as { arrets: PageArret[]; token: string };
 // Arrêts sélectionnables pour une ligne : orphelins et enfants, jamais les parents ni les supprimés
 const catalog: ArretGeo[] = page.arrets
   .filter((a) => !a.deleted && a.nb_enfants === 0)
@@ -212,7 +212,7 @@ async function confirmer(sel: { added: number[]; removed: number[] }) {
   try {
     const res = await fetch("/api/add_ligne.php", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${page.token}` },
       body: JSON.stringify({
         ligne_id: ligne.value?.id ?? null,
         nom: l.nom,

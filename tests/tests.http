@@ -33,6 +33,18 @@ Content-Type: application/json
 }
 
 ###
+# Exclusion d'un triplet ville / gare / falaise — réponse { "success": true } (401 / 405 / 400 / 409 sinon, en JSON)
+POST http://localhost:4000/api/private/exclude_vgf.php
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+{
+  "ville_id": 6,
+  "gare_id": 33,
+  "falaise_id": 33
+}
+
+###
 GET http://localhost:4000/api/private/falaises.php
 
 

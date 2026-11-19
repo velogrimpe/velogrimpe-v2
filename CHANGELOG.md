@@ -4,6 +4,28 @@ Tous les changements notables de ce projet sont documentés dans ce fichier.
 
 Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 2026-11-19
+
+### Security
+
+- `api/add_ligne.php` exige désormais le `Bearer admin_token` (il était ouvert à tous) ; les deux appelants du front (`ajout-ligne.ts`, `AdminLigneGtfsImport.vue`) envoient l'en-tête.
+
+### Added
+
+- Journalisation `edit_logs` des actions d'admin jusque-là silencieuses : lignes (`add_ligne`, `update_ligne`, `delete_ligne`), arrêts (`delete_arret`, fusion / détachement / défusion — journalisés dans `lib/arrets_parents_lib.php`, donc aussi quand `add_ligne` regroupe des arrêts), exclusions de villes (`exclude_falaise`, `exclude_train`, `exclude_vgf`), suppression de sortie (admin et organisateur), `batch-geocode` (une entrée par falaise réellement modifiée), newsletters et pages (création, modification, suppression ; contenu résumé par empreinte), envois de newsletter, téléversements d'images et de fichiers (collection `fichiers`).
+- `admin/edit_logs.php` : libellés des nouvelles collections.
+- `tests/api/EditLogsAdminTest.php`, tests de journalisation et d'authentification de `add_ligne` dans `LigneTransportTest`.
+
+### Changed
+
+- Collection `edit_logs` `falaise` normalisée en `falaises` (`accept_falaise`, `backfill_altitudes`) ; migration `sql_migrations/3_edit_logs_falaises.sql` à rejouer en prod pour les anciens logs.
+- `exclude_falaise`, `exclude_train`, `exclude_vgf` : réponses JSON (`{success: true}` / `{error}`) avec codes HTTP (401, 405, 400, 409, 500) au lieu de texte brut ; `admin/tableau_trains.php` adapté.
+
+### Fixed
+
+- `delete_comment.php` : l'e-mail de l'auteur était enregistré `0` dans `edit_logs` (type `i` dans `bind_param`) et les valeurs supprimées n'étaient pas conservées ; passe par `logChanges`.
+- `logChanges()` : les gardes d'erreur testaient `$stmt` au lieu du retour de `bind_param` / `execute`, donc ne se déclenchaient jamais. Elle réutilise désormais la connexion de la requête (ou celle passée en `$db`) : le log fait partie de la transaction de l'appelant.
+
 ## 2026-11-18
 
 ### Added (admin)
