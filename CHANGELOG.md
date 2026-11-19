@@ -24,6 +24,19 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 - `delete_comment.php` : l'e-mail de l'auteur était enregistré `0` dans `edit_logs` (type `i` dans `bind_param`) et les valeurs supprimées n'étaient pas conservées ; passe par `logChanges`.
 - `logChanges()` : les gardes d'erreur testaient `$stmt` au lieu du retour de `bind_param` / `execute`, donc ne se déclenchaient jamais. Elle réutilise désormais la connexion de la requête (ou celle passée en `$db`) : le log fait partie de la transaction de l'appelant.
 
+## 2026-11-19
+
+### Added (admin)
+
+- Tableau de bord : liens « Statistiques » et « Kanban », compteurs Contributeurs et Inscrits à la newsletter (Falaises hors topo et Arrêts actifs retirés), tableau des 50 derniers changements distincts de falaises / accès et top 50 des contributeurs (8 lignes visibles, défilement) (zone de prédilection, falaises, accès vélo) ; `contact@velogrimpe.fr` est exclu des derniers changements mais pas des contributeurs (`lib/admin_dashboard.php`).
+- Liste des falaises : filtre « Fermeture » (fermées / ouvertes) et badge « Fermée ».
+- Icône `mountain` dans le sprite.
+
+### Changed (admin)
+
+- Liste des accès : colonne et filtre « GPX : Avec / Sans GPX ».
+- Liste des falaises : la colonne Cotations disparaît ; le bouton des détails prend l'icône montagne.
+
 ## 2026-11-18
 
 ### Added (admin)

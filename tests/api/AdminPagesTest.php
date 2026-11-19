@@ -106,6 +106,7 @@ final class AdminPagesTest extends ApiTestCase
       $types,
       'vélo et à pied doivent tous deux figurer'
     );
+    $this->assertIsBool($rows[0]['gpx']);
     foreach ($rows as $r) {
       $this->assertNotSame('', $r['falaise'], "accès #{$r['id']} sans falaise liée");
       $this->assertNotSame('', $r['arret'], "accès #{$r['id']} sans arrêt lié");
@@ -123,5 +124,67 @@ final class AdminPagesTest extends ApiTestCase
     $villes = $this->pageRows('/admin/villes.php', 'villes');
     $this->assertCount((int) self::dbQueryOne('SELECT COUNT(*) AS n FROM villes')['n'], $villes);
     $this->assertSame(count($trains), array_sum(array_column($villes, 'nb_trains')), 'chaque trajet est compté dans exactement une ville');
+  }
+
+  private function insertLog(string $author, string $email): int
+  {
+    return self::dbInsert(
+      "INSERT INTO edit_logs (type, collection, record_id, author, author_email, changes, falaise_id)
+       VALUES ('update', 'falaises', " . self::WITNESS_FALAISE_ID . ", '$author', '$email',
+       '[{\"field\":\"zz_champ_test\",\"old\":\"a\",\"new\":\"b\"}]', " . self::WITNESS_FALAISE_ID . ")"
+    );
+  }
+
+  public function testTableauDeBordLiensCompteursEtTableaux(): void
+  {
+    $res = $this->httpGetAdmin('/admin/');
+    $this->assertSame(200, $res['status']);
+    $this->assertStringContainsString('href="https://couble.eu/stats-velogrimpe"', $res['raw']);
+    $this->assertStringContainsString('href="https://github.com/orgs/velogrimpe/projects/1"', $res['raw']);
+    foreach (['Contributeurs', 'Inscrits newsletter', 'Falaises à vérifier', 'Accès à vérifier'] as $label) {
+      $this->assertStringContainsString($label, $res['raw']);
+    }
+    $this->assertStringNotContainsString('Falaises hors topo', $res['raw']);
+
+    $this->assertSame(1, preg_match('#id="derniers-changements".*?</table>#s', $res['raw'], $m));
+    $this->assertLessThanOrEqual(50, substr_count($m[0], '<tr>') - 1);
+    $this->assertSame(1, preg_match('#id="top-contributeurs".*?</table>#s', $res['raw'], $t));
+    $rows = substr_count($t[0], '<tr>') - 1;
+    $this->assertGreaterThan(0, $rows);
+    $this->assertLessThanOrEqual(50, $rows);
+    // Classement décroissant (falaises + accès vélo).
+    preg_match_all('#<td class="text-right">(\d+)</td>\s*<td class="text-right">(\d+)</td>#', $t[0], $n, PREG_SET_ORDER);
+    $totaux = array_map(fn($x) => (int) $x[1] + (int) $x[2], $n);
+    $tries = $totaux;
+    rsort($tries);
+    $this->assertSame($tries, $totaux);
+  }
+
+  public function testDerniersChangementsExcluentLEquipeEtSontDistincts(): void
+  {
+    $ids = [];
+    try {
+      $ids[] = $this->insertLog('ZZ Membre', 'zz.membre@example.net');
+      $ids[] = $this->insertLog('ZZ Membre', 'zz.membre@example.net'); // même falaise : une seule ligne
+      $ids[] = $this->insertLog('ZZ Equipe', 'contact@velogrimpe.fr');   // plus récent mais exclu
+      $raw = $this->httpGetAdmin('/admin/')['raw'];
+      $this->assertStringContainsString('ZZ Membre', $raw);
+      $this->assertSame(1, substr_count($raw, 'ZZ Membre'), 'un seul changement par falaise');
+      $this->assertStringContainsString('zz_champ_test', $raw, 'résumé des champs modifiés');
+      $this->assertStringNotContainsString('ZZ Equipe', $raw, 'les modifications de contact@velogrimpe.fr sont exclues');
+    } finally {
+      if ($ids) self::dbQuery('DELETE FROM edit_logs WHERE id IN (' . implode(',', $ids) . ')');
+    }
+  }
+
+  public function testListeFalaisesPorteLaFermetureSansCotations(): void
+  {
+    $rows = $this->pageRows('/admin/falaises.php', 'falaises');
+    $this->assertSame(
+      (int) self::dbQueryOne("SELECT COUNT(*) AS n FROM falaises WHERE falaise_fermee <> ''")['n'],
+      count(array_filter($rows, fn($r) => $r['fermee'] === true)),
+      'filtre « fermées »'
+    );
+    $this->assertArrayNotHasKey('cotmin', $rows[0]);
   }
 }

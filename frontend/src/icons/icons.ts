@@ -11,6 +11,8 @@ export interface IconDefinition {
 }
 
 export const icons: IconDefinition[] = [
+  // Montagne (tracé maison, même style trait que les icônes Heroicons ci-dessous)
+  { name: "mountain", paths: ["M2.25 19.5 9 7.5l4.5 7.5 2.25-3.75 6 8.25H2.25Z"] },
   { name: "arrow-down", paths: ["M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3"] },
   {
     name: "download",
