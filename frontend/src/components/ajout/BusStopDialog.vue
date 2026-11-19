@@ -23,6 +23,7 @@ const ARRET_TYPES: { value: string; label: string }[] = [
   { value: 'tgv', label: 'TGV' },
   { value: 'bus', label: 'Bus' },
   { value: 'tram', label: 'Tram' },
+  { value: 'metro', label: 'Métro' },
   { value: 'telepherique', label: 'Téléphérique' },
 ]
 
@@ -107,7 +108,7 @@ async function submit() {
     return
   }
   if (!types.value.length) {
-    alert('Merci de sélectionner au moins une modalité desservie (ter/tgv/bus/tram/téléphérique).')
+    alert('Merci de sélectionner au moins une modalité desservie (ter/tgv/bus/tram/métro/téléphérique).')
     return
   }
   if (!contribNom.value.trim() || !contribEmail.value.trim()) {

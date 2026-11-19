@@ -19,6 +19,7 @@ import {
   listRouteStops,
   listRoutes,
   readGtfs,
+  routeLabel,
   routeModalites,
   routeToLigneFields,
   shapesToMultiLineString,
@@ -271,7 +272,7 @@ async function confirmer(sel: { added: number[]; removed: number[] }) {
           <b class="text-sm">Ligne du GTFS</b>
           <select v-model="routeIdx" class="select select-sm select-primary w-full" data-testid="gtfs-route">
             <option value="">Choisir une ligne…</option>
-            <option v-for="(r, i) in routes" :key="r.id" :value="String(i)">{{ r.numero ? r.numero + " — " : "" }}{{ r.nom }}</option>
+            <option v-for="(r, i) in routes" :key="r.id" :value="String(i)">{{ routeLabel(r) }}</option>
           </select>
         </label>
         <button

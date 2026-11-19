@@ -15,6 +15,7 @@ import {
   listRouteStops,
   listRoutes,
   readGtfs,
+  routeLabel,
   routeModalites,
   routeToLigneFields,
   shapesToMultiLineString,
@@ -182,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
     routes.forEach((r, i) => {
       const o = document.createElement('option')
       o.value = String(i)
-      o.textContent = `${r.numero ? r.numero + ' — ' : ''}${r.nom}`
+      o.textContent = routeLabel(r)
       routesSelect.appendChild(o)
     })
     el('gtfs-choose')!.classList.remove('hidden')

@@ -27,7 +27,7 @@ const selectedArret = computed(() =>
 const isGare = (arret: CarteArret) =>
   arret.types.includes("ter") || arret.types.includes("tgv");
 const libelleArret = (arret: CarteArret) =>
-  isGare(arret) ? "Gare" : arret.types.includes("tram") ? "Arrêt de tram" : arret.types.includes("telepherique") ? "Téléphérique" : "Arrêt de bus";
+  isGare(arret) ? "Gare" : arret.types.includes("metro") ? "Station de métro" : arret.types.includes("tram") ? "Arrêt de tram" : arret.types.includes("telepherique") ? "Téléphérique" : "Arrêt de bus";
 
 // Lignes BTT desservant l'arrêt sélectionné : leur tracé et leurs arrêts sont
 // affichés d'emblée par les cartes, qui écoutent `velogrimpe:voir-ligne`
@@ -57,12 +57,13 @@ watch(
 const SYMBOLES_ARRET: Record<string, string> = {
   ter: "train",
   tgv: "tgv",
+  metro: "metro",
   tram: "tram",
   telepherique: "aerial-tram",
   bus: "bus-stop",
 };
 function symboleArret(arret: CarteArret): string {
-  const t = ["ter", "tgv", "tram", "telepherique", "bus"].find((x) =>
+  const t = ["ter", "tgv", "metro", "tram", "telepherique", "bus"].find((x) =>
     (arret.types as string[]).includes(x),
   );
   return SYMBOLES_ARRET[t ?? "bus"];

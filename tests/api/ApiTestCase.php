@@ -329,13 +329,13 @@ abstract class ApiTestCase extends TestCase
   /**
    * Crée un arrêt minimal de test (table `arrets`) et enregistre son nettoyage.
    *
-   * @param string[] $types Sous-ensemble de ter/tgv/bus/tram/teleph à activer (bus par défaut).
+   * @param string[] $types Sous-ensemble de ter/tgv/bus/tram/metro/teleph à activer (bus par défaut).
    */
   protected function createFixtureArret(string $nom = 'PHPUnit Fixture Arrêt', float $lat = 43.8270, float $lng = 5.3830, array $types = ['bus']): int
   {
     $nomEsc = self::escape($nom);
     $slugEsc = self::escape(trim(preg_replace('/[^a-z0-9]+/', '-', strtolower($nom)), '-'));
-    $columns = ['ter', 'tgv', 'bus', 'tram', 'teleph'];
+    $columns = ['ter', 'tgv', 'bus', 'tram', 'metro', 'teleph'];
     $values = array_map(fn($col) => in_array($col, $types, true) ? 1 : 0, $columns);
     $assignments = implode(', ', array_map(fn($col, $val) => "$col = $val", $columns, $values));
     $id = self::dbInsert(

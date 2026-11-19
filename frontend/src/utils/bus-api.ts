@@ -11,7 +11,7 @@ export interface BusStopPayload {
   arret_id: string | number | null
   nom: string
   loc: string
-  /** Sous-ensemble de ter/tgv/bus/tram/telepherique, cf. lib/arrets_lib.php */
+  /** Sous-ensemble de ter/tgv/bus/tram/metro/telepherique, cf. lib/arrets_lib.php */
   types: string[]
   commune?: string | null
   code_insee?: string | null

@@ -314,7 +314,7 @@ test.describe('ajout_ligne.php — import GTFS', () => {
     const options = page.locator('#gtfs-routes option:not([value=""])')
     await expect(options).toHaveCount(20)
 
-    await page.locator('#gtfs-routes').selectOption({ label: 'S01 — ST-ALBAN DE MONTBEL < > CHAMBÉRY' })
+    await page.locator('#gtfs-routes').selectOption({ label: '[Bus] S01 — ST-ALBAN DE MONTBEL < > CHAMBÉRY' })
     await page.locator('#gtfs-import').click()
 
     await expect(page.locator('#ligne_numero')).toHaveValue('S01')

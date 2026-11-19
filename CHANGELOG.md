@@ -8,6 +8,9 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ### Added
 
+- Admin arrêts : suppression d'un arrêt parent possible, y compris avec des accès liés. Confirmation avec avertissement (enfants supprimés, accès falaise effacés définitivement) ; `api/delete_arret.php` accepte `cascade: true` (409 sinon), logique dans `arret_supprimer()` (`lib/arrets_parents_lib.php`).
+- **Métro** : nouvelle modalité d'arrêt (`arrets.metro`, `sql_migrations/4_arrets_metro.sql` à jouer en prod), icône `metro` (pinhead.ink) dans le sprite, priorité d'icône ter > tgv > métro > tram > téléphérique > bus. Prise en charge dans les formulaires (ajout d'arrêt, import de ligne), l'admin arrêts/lignes, la carte et les API (`add_arret`, `update_arret`, `add_ligne`, `fetch_arrets?types=metro`). Import GTFS : `route_type` 1 et 400-499 → métro (tram : 0, 5, 900-999).
+- Import GTFS (admin et `ajout_ligne.php`) : la nature de la ligne est affichée entre crochets devant son libellé dans le select (`[Métro] M1 — …`).
 - Mail à `admin_mail` à la création d'une ligne (`api/add_ligne.php`, donc formulaire `ajout_ligne.php` et import GTFS du panneau d'admin) ; pas d'envoi pour une édition. Un échec d'envoi n'annule pas l'enregistrement.
 - Journalisation `edit_logs` des actions d'admin jusque-là silencieuses : lignes (`add_ligne`, `update_ligne`, `delete_ligne`), arrêts (`delete_arret`, fusion / détachement / défusion — journalisés dans `lib/arrets_parents_lib.php`, donc aussi quand `add_ligne` regroupe des arrêts), exclusions de villes (`exclude_falaise`, `exclude_train`, `exclude_vgf`), suppression de sortie (admin et organisateur), `batch-geocode` (une entrée par falaise réellement modifiée), newsletters et pages (création, modification, suppression ; contenu résumé par empreinte), envois de newsletter, téléversements d'images et de fichiers (collection `fichiers`).
 - `admin/edit_logs.php` : libellés des nouvelles collections.
@@ -15,6 +18,10 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ### Changed
 
+- `ajout_arret.php` : arrêts existants en simple point coloré (plus petit, halo réduit) à tout zoom ; falaises non liées en point vert, icône falaise seulement pour les liées ; propositions Overpass plus petites.
+- Couleurs d'arrêt par type : tram orange, téléphérique violet (bus reste doré) ; sur `ajout_arret.php`, les arrêts existants sont tous en noir.
+- `carte.php` : les popups MapLibre passent au-dessus des marqueurs de gares.
+- Fusion manuelle d'arrêts (admin) : deux arrêts de modes différents peuvent être regroupés, le parent porte les deux modalités (OU). `merge_arrets.php` ne refuse plus les « modes sans famille commune » et `update_arret.php` ne vérifie plus la famille des frères. Le rapprochement automatique de l'import GTFS reste intra-mode.
 - `api/add_ligne.php` et le formulaire `ajout_ligne.php` restent publics, sans jeton admin (ni `?admin=` ni Bearer) ; le bouton « Supprimer » du formulaire est retiré (suppression via l'admin). Les entrées `edit_logs` de `add_ligne` ont pour auteur « Contributeur ».
 - Collection `edit_logs` `falaise` normalisée en `falaises` (`accept_falaise`, `backfill_altitudes`) ; migration `sql_migrations/3_edit_logs_falaises.sql` à rejouer en prod pour les anciens logs.
 - `exclude_falaise`, `exclude_train`, `exclude_vgf` : réponses JSON (`{success: true}` / `{error}`) avec codes HTTP (401, 405, 400, 409, 500) au lieu de texte brut ; `admin/tableau_trains.php` adapté.

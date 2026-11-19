@@ -21,6 +21,7 @@ const modeLabels: Record<string, string> = {
   tgv: 'TGV',
   bus: 'Bus',
   tram: 'Tram',
+  metro: 'Métro',
   telepherique: 'Téléphérique',
 }
 

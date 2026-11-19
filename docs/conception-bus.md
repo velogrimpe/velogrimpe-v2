@@ -26,6 +26,7 @@ Description de la table arrets:
 - tgv: boolean (l'arrêt est desservi en tgv)
 - bus: boolean (l'arrêt est desservi en bus)
 - tram: boolean (l'arrêt est desservi en tram)
+- metro: boolean (l'arrêt est desservi en métro ; `sql_migrations/4_arrets_metro.sql`)
 - teleph: boolean (l'arrêt est desservi en telephérique)
 - deleted: boolean (arrêt supprimé)
 - description: text? (commentaire libre sur l'arrêt, repris de bus_arrets.description)
@@ -75,7 +76,7 @@ On permet aussi de lier aux falaises (accès piétons uniquement, indiquer que d
 Modifier la requête overpass de recherche d'arrêts de bus ou en créer d'autres pour les autres types d'arrêts BTT (mais pas de recherche de gares ter/tgv).
 
 Sur la carte du formulaire, il faudrait ajouter les couches de lignes de trains (pmtiles et layers existants (trainlinesLayer et tgvLayers)), et montrer les arrêts existants dans la base de données.
-Il faut que chaque type d'arrêt soit représenté par un icone différent, représentatif du type (icones existants: train, tgv, aerial-tram (telepherique), tram, bus-stop). Quand il y a plusieurs type voici la priorité d'icone : ter > tgv > tram > telepherique > bus). Cette logique va être réutilisée partout donc il faut factoriser la résolution et la création de marqueurs arrêts.
+Il faut que chaque type d'arrêt soit représenté par un icone différent, représentatif du type (icones existants: train, tgv, aerial-tram (telepherique), tram, metro, bus-stop). Quand il y a plusieurs type voici la priorité d'icone : ter > tgv > metro > tram > telepherique > bus). Cette logique va être réutilisée partout donc il faut factoriser la résolution et la création de marqueurs arrêts.
 
 À l'écran de confirmation proposer d'ajouter un itinéraire vélo au départ de cet arrêt.
 
@@ -121,7 +122,7 @@ Voici les steps de zoom et les options d'apparence:
 - Gares TER+TGV : comportement actuel différent selon que la gare est reliée ou non à un itinéraire vélo affiché sur la carte (`gare.access.length`) :
   - Gares hors topo (aucun itinéraire vélo relié) : Rien -z=11-> point (cercle, rayon 4px, contour blanc, noir si TER seul / `#a00` si TGV)
   - Gares topo (reliées à un itinéraire vélo) : Rien -z=9-> icône train (PNG `icone_train_carte.png`, 24px, teinte rouge via la classe CSS `filterred` si TGV)
-- Bus/Tram/Téléphérique : Rien -z=9-> Point jaune (html: gold) -z=11-> icone sur fond jaune (gold), inspiré de l'icone bus actuel.
+- Bus/Tram/Téléphérique : Rien -z=9-> Point -z=11-> icone sur fond coloré par type (bus : jaune `gold`, tram : orange `#f97316`, téléphérique : violet `#7c3aed`), inspiré de l'icone bus actuel.
 
 On garde le même comportement hover/click des gares actuellement. La seule exception est le fait qu'il y aura des itinéraires piétons (liens arrêt -> falaise de la table acces_pieton_falaise) qui ne sont plus représentés par un trait droit arrêt -> falaise (supprimé : il laissait croire à un chemin) ; seule la liaison dans les panneaux d'info / listes les matérialise.
 
@@ -209,7 +210,7 @@ bus_lignes et bus_liaisons deviennent obsolètes. On ne supprime pas ces tables 
 
 Chaque arrêt GTFS (`stop_id`, quai ou sens de circulation : `listRouteStops`) devient un arrêt ; ses références (`references_externes`, `source = 'gtfs'`, `ref = stop_id`, `libelle` = nom GTFS) restent sur l'arrêt, les stations GTFS (`parent_station`) deviennent des **parents** (cf. « Arrêts parents et enfants » dans `public_html/README.md`). La politique est dans `frontend/src/utils/gtfs-match.ts` (`planGtfsStops`), commune à « Importer les arrêts », « Montrer les arrêts » et à la comparaison de mise à jour (`GtfsComparaison.vue`). Pas de notion de flux (`feed`) : on ne regarde que les arrêts de la ligne (références) ; hors ligne, seuls la distance et le nom comptent.
 
-Pour chaque arrêt GTFS S, dans l'ordre (toujours intra-mode : TER et TGV ensemble, les autres modes distincts) :
+Pour chaque arrêt GTFS S, dans l'ordre (toujours intra-mode : TER et TGV ensemble, les autres modes distincts, métro et tram compris ; seule la fusion manuelle admin peut regrouper des modes différents). Modalité d'une route d'après `route_type` : 1 et 400-499 → métro, 0, 5 et 900-999 → tram, 6, 7 et 1300-1399 → téléphérique, 2 et 100-199 → TER, sinon bus :
 
 1. **Déjà suivi** : un arrêt lié à la ligne porte la référence S → mise à jour (`served`). À la réimport sa position est mise à jour (sauf `position_manuelle`), son nom jamais.
 2. **Même référence ailleurs** : un arrêt du catalogue porte déjà la référence S, à 100 m ou moins → il est repris (`adopt`).

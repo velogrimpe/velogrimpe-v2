@@ -1,22 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { enveloppe, fusionnable, memeMode } from "../../public_html/js/components/map/arrets-groupes.js";
+import { enveloppe, fusionnable } from "../../public_html/js/components/map/arrets-groupes.js";
 
 const arret = (id, types, extra = {}) => ({ id, types, deleted: false, parent_id: null, ...extra });
-
-describe("memeMode (intra-mode : TER et TGV ensemble, les autres modes distincts)", () => {
-  test("même famille", () => {
-    expect(memeMode(["bus"], ["bus"])).toBe(true);
-    expect(memeMode(["ter"], ["tgv"])).toBe(true);
-    expect(memeMode(["bus", "tram"], ["tram"])).toBe(true);
-  });
-  test("familles différentes", () => {
-    expect(memeMode(["bus"], ["ter"])).toBe(false);
-    expect(memeMode(["tram"], ["telepherique"])).toBe(false);
-  });
-  test("arrêt sans type : aucune famille en commun", () => {
-    expect(memeMode([], ["bus"])).toBe(false);
-  });
-});
 
 describe("fusionnable", () => {
   test("deux orphelins de même mode", () => {
@@ -26,11 +11,15 @@ describe("fusionnable", () => {
     expect(fusionnable(arret(1, ["bus"], { nb_enfants: 2 }), arret(2, ["bus"])).ok).toBe(true);
     expect(fusionnable(arret(1, ["bus"], { nb_enfants: 2 }), arret(2, ["bus"], { nb_enfants: 3 })).ok).toBe(true);
   });
-  test("refus avec une raison : même arrêt, supprimé, enfant, modes différents", () => {
+  test("modes différents : fusion manuelle autorisée (bus + métro, gare + bus…)", () => {
+    expect(fusionnable(arret(1, ["bus"]), arret(2, ["ter"]))).toEqual({ ok: true });
+    expect(fusionnable(arret(1, ["metro"]), arret(2, ["tram"]))).toEqual({ ok: true });
+    expect(fusionnable(arret(1, []), arret(2, ["bus"]))).toEqual({ ok: true });
+  });
+  test("refus avec une raison : même arrêt, supprimé, enfant", () => {
     expect(fusionnable(arret(1, ["bus"]), arret(1, ["bus"]))).toMatchObject({ ok: false });
     expect(fusionnable(arret(1, ["bus"], { deleted: true }), arret(2, ["bus"]))).toMatchObject({ ok: false, raison: expect.stringMatching(/supprimé/) });
     expect(fusionnable(arret(1, ["bus"]), arret(2, ["bus"], { parent_id: 9 }))).toMatchObject({ ok: false, raison: expect.stringMatching(/enfant/) });
-    expect(fusionnable(arret(1, ["bus"]), arret(2, ["ter"]))).toMatchObject({ ok: false, raison: expect.stringMatching(/mode/) });
   });
 });
 

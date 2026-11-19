@@ -70,17 +70,26 @@ GET {{host}}/api/fetch_lignes.php?geometry=1
 GET {{host}}/api/fetch_lignes.php?geometry=1&arrets=1
 
 ### Supprimer un arrêt (suppression logique, Bearer admin)
+# Un parent ou un arrêt qui porte des accès falaise est refusé (409) sans `cascade`.
 POST {{host}}/api/delete_arret.php
 Authorization: Bearer {{admin_token}}
 Content-Type: application/json
 
 { "arret_id": 1 }
 
+### Supprimer un arrêt en cascade : enfants supprimés (logiquement) + accès falaise effacés (définitivement)
+# Réponse : { success, enfants_supprimes, acces_supprimes }. Trajets train et GPX non touchés.
+POST {{host}}/api/delete_arret.php
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{ "arret_id": 1, "cascade": true }
+
 ### Fusionner deux arrêts (Bearer admin) : rien n'est supprimé, ils sont regroupés sous un parent
 # Deux orphelins → nouveau parent (nom de cible_id, position au barycentre) ; parent + orphelin → l'orphelin rejoint
 # le parent ; deux parents → cible_id absorbe les enfants de source_id. Accès falaise et trajets train passent au
-# parent ; lignes et références GTFS restent sur les enfants. 409 : enfant, supprimé, modes sans famille commune
-# (TER+TGV ensemble), ou accès identique (même falaise, type, variante). Réponse : { success, parent_id, acces_deplaces }.
+# parent ; lignes et références GTFS restent sur les enfants. Les modes peuvent différer (bus + métro…) : le parent cumule
+# les modalités de ses enfants. 409 : enfant, supprimé, ou accès identique (même falaise, type, variante). Réponse : { success, parent_id, acces_deplaces }.
 POST {{host}}/api/merge_arrets.php
 Authorization: Bearer {{admin_token}}
 Content-Type: application/json
@@ -126,7 +135,7 @@ Content-Type: application/json
 #  - groupe_stop_id : stop_id GTFS de la station parente, mémorisé comme référence du parent
 # gtfs_refs[] : lat / lng optionnels, pour un arrêt déjà suivi par cette ligne sous ce stop_id (réimport) :
 #  repositionné sauf position manuelle ; le nom n'est jamais modifié.
-# 400 : arret_ids contenant un parent (lier ses enfants), regrouper_avec inconnu ; 409 : modes différents.
+# 400 : arret_ids contenant un parent (lier ses enfants), regrouper_avec inconnu. nouveaux_arrets[].types accepte aussi "metro".
 # Réponse : { success, ligne_id, arrets_crees, parents } (parents = parents créés par cet envoi).
 POST {{host}}/api/add_ligne.php
 Content-Type: application/json
@@ -144,7 +153,7 @@ Content-Type: application/json
 }
 
 ### Modifier le nom et les modalités d'un arrêt (admin) : met à jour nom + slug + types. 400 nom vide / types invalides, 404 introuvable,
-### 409 arrêt supprimé, types d'un parent modifiés, ou famille incompatible avec les arrêts regroupés.
+### 409 arrêt supprimé ou types d'un parent modifiés. Types : ter, tgv, bus, tram, metro, telepherique.
 POST {{host}}/api/update_arret.php
 Authorization: Bearer {{admin_token}}
 Content-Type: application/json

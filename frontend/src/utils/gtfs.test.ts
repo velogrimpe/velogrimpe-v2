@@ -9,6 +9,7 @@ import {
   listRoutes,
   parseCsv,
   readGtfs,
+  routeLabel,
   routeModalites,
   routeToLigneFields,
   simplifyLine,
@@ -247,9 +248,30 @@ t5,09:00,09:00,Q9,1
     expect(m('200')).toEqual(['bus'])
     expect(m('0')).toEqual(['tram'])
     expect(m('900')).toEqual(['tram'])
+    expect(m('1')).toEqual(['metro'])
+    expect(m('400')).toEqual(['metro'])
+    expect(m('401')).toEqual(['metro'])
     expect(m('6')).toEqual(['telepherique'])
     expect(m('2')).toEqual(['ter'])
     expect(m('')).toEqual(['bus'])
+  })
+})
+
+describe('routeLabel (select d\'import : nature entre crochets)', () => {
+  const label = (route_type: string, short = '', long = 'Ligne') => {
+    const f = readGtfs(buildZip({ 'routes.txt': `route_id,route_short_name,route_long_name,route_type\nR,${short},${long},${route_type}\n`, 'trips.txt': 'route_id,trip_id,shape_id\n' }))
+    return routeLabel(listRoutes(f)[0]!)
+  }
+  test('nature devant le libellé', () => {
+    expect(label('1', 'M1', 'La Défense')).toBe('[Métro] M1 — La Défense')
+    expect(label('0', 'T2', 'Tram 2')).toBe('[Tram] T2 — Tram 2')
+    expect(label('3', '21', 'Centre')).toBe('[Bus] 21 — Centre')
+    expect(label('2', '', 'TER Alpes')).toBe('[Train] TER Alpes')
+    expect(label('6', 'TC', 'Télécabine')).toBe('[Téléphérique] TC — Télécabine')
+    expect(label('4', 'B', 'Navette')).toBe('[Bateau] B — Navette')
+  })
+  test('route_type absent → bus', () => {
+    expect(label('', 'X', 'Y')).toBe('[Bus] X — Y')
   })
 })
 

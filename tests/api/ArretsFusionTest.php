@@ -42,7 +42,7 @@ final class ArretsFusionTest extends ApiTestCase
   private function arret(int $id): array
   {
     return self::dbQueryOne(
-      "SELECT id, nom, parent_id, deleted, position_manuelle, ter, tgv, bus, tram, teleph, ST_Y(loc) AS lat, ST_X(loc) AS lng
+      "SELECT id, nom, parent_id, deleted, position_manuelle, ter, tgv, bus, tram, metro, teleph, ST_Y(loc) AS lat, ST_X(loc) AS lng
        FROM arrets WHERE id = $id"
     );
   }
@@ -119,17 +119,30 @@ final class ArretsFusionTest extends ApiTestCase
     $p = $this->mergeOk($a, $b);
     $parent = $this->arret($p);
     $this->assertSame(['1', '1'], [$parent['ter'], $parent['tgv']]);
-    $this->assertSame(['0', '0', '0'], [$parent['bus'], $parent['tram'], $parent['teleph']]);
+    $this->assertSame(['0', '0', '0', '0'], [$parent['bus'], $parent['tram'], $parent['metro'], $parent['teleph']]);
   }
 
-  public function testFusionEntreModesDifferentsRefusee(): void
+  public function testFusionManuelleEntreModesDifferentsCumuleLesTypes(): void
   {
     $bus = $this->createFixtureArret('PHPUnit Fusion bus', 43.8, 5.4, ['bus']);
-    $ter = $this->createFixtureArret('PHPUnit Fusion gare', 43.8, 5.4001, ['ter']);
-    $res = $this->merge($bus, $ter);
-    $this->assertSame(409, $res['status'], $res['raw']);
-    $this->assertNull($this->arret($bus)['parent_id']);
-    $this->assertNull($this->arret($ter)['parent_id']);
+    $metro = $this->createFixtureArret('PHPUnit Fusion métro', 43.8, 5.4001, ['metro']);
+    $p = $this->mergeOk($bus, $metro);
+    $parent = $this->arret($p);
+    $this->assertSame(['1', '1'], [$parent['bus'], $parent['metro']]);
+    $this->assertSame(['0', '0', '0', '0'], [$parent['ter'], $parent['tgv'], $parent['tram'], $parent['teleph']]);
+    $this->assertSame((string) $p, $this->arret($bus)['parent_id']);
+    $this->assertSame((string) $p, $this->arret($metro)['parent_id']);
+  }
+
+  public function testFusionGareEtBusPuisParentEtTram(): void
+  {
+    $bus = $this->createFixtureArret('PHPUnit Fusion bus 2', 43.8, 5.4, ['bus']);
+    $ter = $this->createFixtureArret('PHPUnit Fusion gare 2', 43.8, 5.4001, ['ter']);
+    $tram = $this->createFixtureArret('PHPUnit Fusion tram 2', 43.8, 5.4002, ['tram']);
+    $p = $this->mergeOk($bus, $ter);
+    $this->assertSame($p, $this->mergeOk($p, $tram));
+    $parent = $this->arret($p);
+    $this->assertSame(['1', '1', '1'], [$parent['bus'], $parent['ter'], $parent['tram']]);
   }
 
   public function testFusionAccepteUnArretMultimodalPartageantUneFamille(): void
@@ -281,7 +294,7 @@ final class ArretsFusionTest extends ApiTestCase
     $this->assertSame(401, $this->update($a, 'x', ['bus'], false)['status']);
     $this->assertSame(400, $this->update($a, '   ', ['bus'])['status']);
     $this->assertSame(400, $this->update($a, 'x', [])['status']);
-    $this->assertSame(400, $this->update($a, 'x', ['metro'])['status']);
+    $this->assertSame(400, $this->update($a, 'x', ['monorail'])['status']);
     $this->assertSame(404, $this->update(999999999, 'x', ['bus'])['status']);
     self::dbExec("UPDATE arrets SET deleted = 1 WHERE id = $a");
     $this->assertSame(409, $this->update($a, 'x', ['bus'])['status']);
@@ -295,9 +308,9 @@ final class ArretsFusionTest extends ApiTestCase
     $p = (int) $this->merge($a, $b)['body']['parent_id'];
     $this->assertSame(200, $this->update($a, 'PHPUnit Update enfant A', ['bus', 'tram'])['status']);
     $this->assertSame('1', self::dbQueryOne("SELECT tram FROM arrets WHERE id = $p")['tram']);
-    // une autre famille que celle du frère est refusée
-    $this->assertSame(409, $this->update($a, 'PHPUnit Update enfant A', ['ter'])['status']);
-    $this->assertSame('1', self::dbQueryOne("SELECT bus FROM arrets WHERE id = $a")['bus']);
+    // les groupes pouvant mêler les modes, l'enfant peut changer de mode : le parent suit
+    $this->assertSame(200, $this->update($a, 'PHPUnit Update enfant A', ['metro'])['status']);
+    $this->assertSame('1', self::dbQueryOne("SELECT metro FROM arrets WHERE id = $p")['metro']);
   }
 
   public function testModifierLesTypesDunParentRefuseMaisPasSonNom(): void
@@ -409,7 +422,7 @@ final class ArretsFusionTest extends ApiTestCase
 
   // --- delete_arret / move_arret ------------------------------------------------------------------
 
-  public function testSupprimerUnParentAvecEnfantsEstRefuse(): void
+  public function testSupprimerUnParentSansCascadeEstRefuse(): void
   {
     $a = $this->createFixtureArret('PHPUnit Delete a', 43.8, 5.4, ['bus']);
     $b = $this->createFixtureArret('PHPUnit Delete b', 43.8, 5.4002, ['bus']);
@@ -417,6 +430,34 @@ final class ArretsFusionTest extends ApiTestCase
     $res = $this->httpPostJson('/api/delete_arret.php', ['arret_id' => $p], $this->bearer());
     $this->assertSame(409, $res['status'], $res['raw']);
     $this->assertSame('0', $this->arret($p)['deleted']);
+    $this->assertSame('0', $this->arret($a)['deleted']);
+  }
+
+  public function testSupprimerUnParentEnCascadeSupprimeEnfantsEtAcces(): void
+  {
+    $falaise = $this->createFixtureFalaise();
+    $a = $this->createFixtureArret('PHPUnit Delete c-a', 43.8, 5.4, ['bus']);
+    $b = $this->createFixtureArret('PHPUnit Delete c-b', 43.8, 5.4002, ['bus']);
+    $p = $this->mergeOk($a, $b);
+    $acces = $this->createFixtureAcces($p, $falaise);
+    $res = $this->httpPostJson('/api/delete_arret.php', ['arret_id' => $p, 'cascade' => true], $this->bearer());
+    $this->assertSame(200, $res['status'], $res['raw']);
+    $this->assertSame(2, $res['body']['enfants_supprimes'] ?? null, $res['raw']);
+    $this->assertSame(1, $res['body']['acces_supprimes'] ?? null, $res['raw']);
+    foreach ([$p, $a, $b] as $id) $this->assertSame('1', $this->arret($id)['deleted']);
+    $this->assertNull(self::dbQueryOne("SELECT acces_id FROM acces_falaise WHERE acces_id = $acces"));
+  }
+
+  public function testSupprimerUnOrphelinAvecAccesExigeLaCascade(): void
+  {
+    $falaise = $this->createFixtureFalaise();
+    $a = $this->createFixtureArret('PHPUnit Delete d', 43.8, 5.4, ['bus']);
+    $acces = $this->createFixtureAcces($a, $falaise);
+    $res = $this->httpPostJson('/api/delete_arret.php', ['arret_id' => $a], $this->bearer());
+    $this->assertSame(409, $res['status'], $res['raw']);
+    $res = $this->httpPostJson('/api/delete_arret.php', ['arret_id' => $a, 'cascade' => true], $this->bearer());
+    $this->assertSame(200, $res['status'], $res['raw']);
+    $this->assertNull(self::dbQueryOne("SELECT acces_id FROM acces_falaise WHERE acces_id = $acces"));
   }
 
   public function testSupprimerUnEnfantRecalculeLeParent(): void

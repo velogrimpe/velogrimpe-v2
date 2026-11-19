@@ -31,7 +31,7 @@ export interface GtfsStop {
 /** Clé d'une paire d'arrêts, indépendante du sens (`a|b` avec a ≤ b). */
 export const pairKey = (a: string, b: string) => (a <= b ? `${a}|${b}` : `${b}|${a}`);
 
-export type Modalite = "ter" | "tgv" | "bus" | "tram" | "telepherique";
+export type Modalite = "ter" | "tgv" | "bus" | "tram" | "metro" | "telepherique";
 
 export interface GtfsRoute {
   id: string;
@@ -333,15 +333,36 @@ export function listRouteStopPairs(feed: GtfsFeed, route: GtfsRoute): Set<string
 export function routeModalites(route: GtfsRoute): Modalite[] {
   const t = Number(route.routeType);
   if (route.routeType === "" || isNaN(t)) return ["bus"];
-  if (
-    t === 0 ||
-    t === 1 ||
-    t === 5 ||
-    (t >= 900 && t < 1000) ||
-    (t >= 400 && t < 500)
-  )
-    return ["tram"];
+  if (t === 1 || (t >= 400 && t < 500)) return ["metro"];
+  if (t === 0 || t === 5 || (t >= 900 && t < 1000)) return ["tram"];
   if (t === 6 || t === 7 || (t >= 1300 && t < 1400)) return ["telepherique"];
   if (t === 2 || (t >= 100 && t < 200)) return ["ter"];
   return ["bus"];
+}
+
+const MODALITE_NATURE: Record<Modalite, string> = {
+  ter: "Train",
+  tgv: "Train",
+  bus: "Bus",
+  tram: "Tram",
+  metro: "Métro",
+  telepherique: "Téléphérique",
+};
+
+/** Nature de la ligne d'après `route_type` (plus fine que la modalité : car, bateau, funiculaire…). */
+export function routeNature(route: GtfsRoute): string {
+  const t = Number(route.routeType);
+  if (route.routeType !== "" && !isNaN(t)) {
+    if (t === 4 || (t >= 1000 && t < 1100) || t === 1200) return "Bateau";
+    if (t === 7 || t === 1400) return "Funiculaire";
+    if (t === 11 || t === 800) return "Trolleybus";
+    if (t === 12 || t === 405) return "Monorail";
+    if ((t >= 200 && t < 300) || (t >= 700 && t < 800)) return t < 300 ? "Car" : "Bus";
+  }
+  return MODALITE_NATURE[routeModalites(route)[0] ?? "bus"];
+}
+
+/** Libellé d'une ligne dans le select d'import : « [Métro] M1 — La Défense ⇄ Château de Vincennes ». */
+export function routeLabel(route: GtfsRoute): string {
+  return `[${routeNature(route)}] ${route.numero ? route.numero + " — " : ""}${route.nom}`;
 }

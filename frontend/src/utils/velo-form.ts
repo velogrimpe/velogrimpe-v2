@@ -60,7 +60,7 @@ export const emitMapEvent = (kind: 'gare' | 'falaise' | 'gpx-url', detail: unkno
   document.dispatchEvent(new CustomEvent(`velogrimpe:velo-form:${kind}`, { detail }))
 }
 
-/** `types` (ter/tgv/bus/tram/teleph) : la carte dessine l'icône de l'arrêt selon son type. */
+/** `types` (ter/tgv/bus/tram/metro/teleph) : la carte dessine l'icône de l'arrêt selon son type. */
 export const gareMapDetail = (g: (GareItem & { types?: string[] }) | null) =>
   g ? { latlng: g.latlng, nom: g.nom, types: g.types ?? [] } : null
 

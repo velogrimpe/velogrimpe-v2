@@ -32,11 +32,13 @@ defineExpose({ focus });
 const libelleModalite = (types: string[]) =>
   types.includes("ter") || types.includes("tgv")
     ? "gare"
-    : types.includes("tram")
-      ? "tram"
-      : types.includes("telepherique")
-        ? "téléphérique"
-        : "bus";
+    : types.includes("metro")
+      ? "métro"
+      : types.includes("tram")
+        ? "tram"
+        : types.includes("telepherique")
+          ? "téléphérique"
+          : "bus";
 
 const options = computed<AutocompleteOption[]>(() => {
   const falaiseOptions: AutocompleteOption[] = props.falaises.map((f) => ({

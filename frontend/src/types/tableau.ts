@@ -41,7 +41,7 @@ export interface TableauItinerary {
   falaise_acces_tc_ailleurs?: number;
   /** null pour un accès à pied (temps de marche arrêt → falaise inconnu). */
   temps_total: number | null;
-  /** Modalités de l'arrêt d'un accès à pied (ter, tgv, bus, tram, telepherique) ; [] pour un itinéraire vélo. */
+  /** Modalités de l'arrêt d'un accès à pied (ter, tgv, bus, tram, metro, telepherique) ; [] pour un itinéraire vélo. */
   acces_pieton_types: string[];
   /** Noms des lignes qui desservent l'arrêt d'un accès à pied. */
   acces_pieton_lignes: string[];

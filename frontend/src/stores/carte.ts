@@ -26,7 +26,7 @@ export interface CarteAccesPied {
   has_gpx?: boolean
 }
 
-export type ArretType = 'ter' | 'tgv' | 'bus' | 'tram' | 'telepherique'
+export type ArretType = 'ter' | 'tgv' | 'bus' | 'tram' | 'metro' | 'telepherique'
 
 export interface CarteArret {
   arret_id: number

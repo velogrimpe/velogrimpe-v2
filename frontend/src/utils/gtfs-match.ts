@@ -26,7 +26,7 @@ export interface ArretGeo {
   nom: string;
   lat: number;
   lng: number;
-  /** ter / tgv / bus / tram / telepherique (absent : compatible avec tout). */
+  /** ter / tgv / bus / tram / metro / telepherique (absent : compatible avec tout). */
   types?: string[];
   /** `stop_id` GTFS mémorisés sur l'arrêt (références externes de source gtfs). */
   gtfsRefs?: string[];
