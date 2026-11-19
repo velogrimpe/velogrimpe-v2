@@ -212,7 +212,7 @@ async function confirmer(sel: { added: number[]; removed: number[] }) {
   try {
     const res = await fetch("/api/add_ligne.php", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${page.token}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ligne_id: ligne.value?.id ?? null,
         nom: l.nom,

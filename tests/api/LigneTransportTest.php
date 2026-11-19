@@ -6,7 +6,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * CRUD des lignes BTT (Lot 7, cf. docs/plan-implementation-arrets.md) :
- *  - api/add_ligne.php   : création + édition, arrêts liés (Bearer admin_token)
+ *  - api/add_ligne.php   : création + édition, arrêts liés (public, sans authentification)
  *  - api/fetch_ligne.php : lecture d'une ligne (géométrie GeoJSON + arrêts liés)
  *  - api/fetch_lignes.php: liste, filtrable par arrêt (bouton « voir la ligne »)
  *  - api/delete_ligne.php: suppression (Bearer admin_token)
@@ -28,11 +28,10 @@ final class LigneTransportTest extends ApiTestCase
     return ['Authorization: Bearer ' . ($token ?? (string) VG_TEST_CONFIG['admin_token'])];
   }
 
-  /** add_ligne.php est réservé à l'admin : Bearer par défaut (`$token` = null pour l'omettre). */
-  private function postAddLigne(array $payload, ?string $token = 'admin'): array
+  /** add_ligne.php est public : aucun en-tête d'authentification. */
+  private function postAddLigne(array $payload): array
   {
-    $headers = $token === null ? [] : ['Authorization: Bearer ' . ($token === 'admin' ? (string) VG_TEST_CONFIG['admin_token'] : $token)];
-    return $this->httpPostJson('/api/add_ligne.php', $payload, $headers);
+    return $this->httpPostJson('/api/add_ligne.php', $payload);
   }
 
   /** @param array<string, mixed> $override */
@@ -69,13 +68,12 @@ final class LigneTransportTest extends ApiTestCase
     $this->assertSame(405, $res['status']);
   }
 
-  public function testAddLigneWithoutOrWithWrongBearerIsRejected(): void
+  public function testAddLigneIsPublicNoAuthRequired(): void
   {
-    foreach ([null, 'mauvais'] as $token) {
-      $res = $this->postAddLigne($this->payload(['nom' => 'PHPUnit - sans auth']), $token);
-      $this->assertSame(401, $res['status'], $res['raw']);
-    }
-    $this->assertNull(self::dbQueryOne("SELECT id FROM lignes_transport WHERE nom = 'PHPUnit - sans auth'"));
+    $res = $this->postAddLigne($this->payload(['nom' => 'PHPUnit - public']));
+    $this->assertSame(200, $res['status'], $res['raw']);
+    $this->assertTrue($res['body']['success']);
+    $this->cleanupOnTearDown('DELETE FROM lignes_transport WHERE id = ' . (int) $res['body']['ligne_id']);
   }
 
   /** @return array<int, array<string, mixed>> logs d'une ligne, du plus ancien au plus récent */
@@ -97,7 +95,7 @@ final class LigneTransportTest extends ApiTestCase
 
     $logs = $this->logsLigne($ligneId);
     $this->assertSame(['insert', 'update', 'delete'], array_column($logs, 'type'));
-    $this->assertSame(['Admin', 'Admin', 'Admin'], array_column($logs, 'author'));
+    $this->assertSame(['Contributeur', 'Admin', 'Admin'], array_column($logs, 'author'));
     // `changes` est du JSON dont dbQuery (mysql CLI) échappe les backslashes : on teste le radical ASCII du nom
     $this->assertStringContainsString('PHPUnit - Ligne renomm', $logs[1]['changes']);
     $this->assertStringContainsString('PHPUnit - Ligne renomm', $logs[2]['changes'], 'la suppression conserve les valeurs supprimées');

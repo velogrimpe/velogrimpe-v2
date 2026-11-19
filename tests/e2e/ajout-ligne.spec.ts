@@ -15,7 +15,7 @@ import { resolve } from 'node:path'
 const ROOT = resolve(__dirname, '../..')
 const ADMIN_TOKEN = /['"]admin_token['"]\s*=>\s*['"]([^'"]+)['"]/.exec(readFileSync(resolve(ROOT, 'config.php'), 'utf8'))![1]
 const GTFS_ZIP = resolve(ROOT, 'assets/gtfs_savoie.zip')
-const URL_ADMIN = `/ajout/ajout_ligne.php?admin=${encodeURIComponent(ADMIN_TOKEN)}`
+const URL_ADMIN = '/ajout/ajout_ligne.php'
 const BEARER = { Authorization: `Bearer ${ADMIN_TOKEN}` }
 
 const GEOMETRY = {
@@ -47,7 +47,7 @@ async function firstArrets(page: Page, n: number) {
 }
 
 test.describe('ajout_ligne.php — accès', () => {
-  test('sans jeton admin : formulaire accessible, pas de bouton Supprimer', async ({ page, request }) => {
+  test('formulaire public accessible, sans bouton Supprimer', async ({ page, request }) => {
     const res = await page.goto('/ajout/ajout_ligne.php')
     expect(res!.status()).toBe(200)
     await expect(page.locator('form#form')).toBeVisible()
@@ -463,7 +463,7 @@ test.describe('ajout_ligne.php — enregistrement', () => {
     const [arret] = await firstArrets(page, 1)
     const id = await createViaApi(request, { nom: 'PHPUnit e2e - Édition', arret_ids: [arret.id] })
 
-    await page.goto(`${URL_ADMIN}&ligne_id=${id}`)
+    await page.goto(`${URL_ADMIN}?ligne_id=${id}`)
     await expect(page.locator('#ligne_nom')).toHaveValue('PHPUnit e2e - Édition')
     await expect(page.locator('#ligne_numero')).toHaveValue('E2E')
     await expect(page.locator('#ligne_couleur')).toHaveValue('#123456')
@@ -477,15 +477,6 @@ test.describe('ajout_ligne.php — enregistrement', () => {
     const body = await (await request.get(`/api/fetch_ligne.php?ligne_id=${id}`)).json()
     expect(body.ligne.nom).toBe('PHPUnit e2e - Édition modifiée')
     expect(body.arret_ids).toEqual([arret.id])
-  })
-
-  test('suppression : confirmée, la ligne disparaît', async ({ page, request }) => {
-    const id = await createViaApi(request, { nom: 'PHPUnit e2e - À supprimer' })
-    await page.goto(`${URL_ADMIN}&ligne_id=${id}`)
-    page.once('dialog', (d) => d.accept())
-    await page.locator('#btn-delete').click()
-    await page.waitForURL((u) => !u.searchParams.has('ligne_id'))
-    expect((await request.get(`/api/fetch_ligne.php?ligne_id=${id}`)).status()).toBe(404)
   })
 
   test('le sélecteur liste les lignes existantes pour édition', async ({ page, request }) => {

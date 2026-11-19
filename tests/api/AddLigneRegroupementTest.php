@@ -18,11 +18,10 @@ final class AddLigneRegroupementTest extends ApiTestCase
     ], $override);
   }
 
-  /** add_ligne.php est réservé à l'admin : Bearer par défaut (`$token` = null pour l'omettre). */
-  private function postAddLigne(array $payload, ?string $token = 'admin'): array
+  /** add_ligne.php est public : aucun en-tête d'authentification. */
+  private function postAddLigne(array $payload): array
   {
-    $headers = $token === null ? [] : ['Authorization: Bearer ' . ($token === 'admin' ? (string) VG_TEST_CONFIG['admin_token'] : $token)];
-    return $this->httpPostJson('/api/add_ligne.php', $payload, $headers);
+    return $this->httpPostJson('/api/add_ligne.php', $payload);
   }
 
   /** @param int[] $ids arrêts (créés par l'API) à nettoyer : enfants détachés d'abord */

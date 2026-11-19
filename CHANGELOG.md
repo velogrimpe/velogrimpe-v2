@@ -6,18 +6,16 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ## 2026-11-19
 
-### Security
-
-- `api/add_ligne.php` exige désormais le `Bearer admin_token` (il était ouvert à tous) ; les deux appelants du front (`ajout-ligne.ts`, `AdminLigneGtfsImport.vue`) envoient l'en-tête.
-
 ### Added
 
+- Mail à `admin_mail` à la création d'une ligne (`api/add_ligne.php`, donc formulaire `ajout_ligne.php` et import GTFS du panneau d'admin) ; pas d'envoi pour une édition. Un échec d'envoi n'annule pas l'enregistrement.
 - Journalisation `edit_logs` des actions d'admin jusque-là silencieuses : lignes (`add_ligne`, `update_ligne`, `delete_ligne`), arrêts (`delete_arret`, fusion / détachement / défusion — journalisés dans `lib/arrets_parents_lib.php`, donc aussi quand `add_ligne` regroupe des arrêts), exclusions de villes (`exclude_falaise`, `exclude_train`, `exclude_vgf`), suppression de sortie (admin et organisateur), `batch-geocode` (une entrée par falaise réellement modifiée), newsletters et pages (création, modification, suppression ; contenu résumé par empreinte), envois de newsletter, téléversements d'images et de fichiers (collection `fichiers`).
 - `admin/edit_logs.php` : libellés des nouvelles collections.
 - `tests/api/EditLogsAdminTest.php`, tests de journalisation et d'authentification de `add_ligne` dans `LigneTransportTest`.
 
 ### Changed
 
+- `api/add_ligne.php` et le formulaire `ajout_ligne.php` restent publics, sans jeton admin (ni `?admin=` ni Bearer) ; le bouton « Supprimer » du formulaire est retiré (suppression via l'admin). Les entrées `edit_logs` de `add_ligne` ont pour auteur « Contributeur ».
 - Collection `edit_logs` `falaise` normalisée en `falaises` (`accept_falaise`, `backfill_altitudes`) ; migration `sql_migrations/3_edit_logs_falaises.sql` à rejouer en prod pour les anciens logs.
 - `exclude_falaise`, `exclude_train`, `exclude_vgf` : réponses JSON (`{success: true}` / `{error}`) avec codes HTTP (401, 405, 400, 409, 500) au lieu de texte brut ; `admin/tableau_trains.php` adapté.
 

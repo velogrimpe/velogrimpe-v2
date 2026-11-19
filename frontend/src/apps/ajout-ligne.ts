@@ -131,8 +131,6 @@ function showGtfsTooLarge(sizeBytes: number) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  const adminToken = new URLSearchParams(window.location.search).get('admin') ?? ''
-
   // --- Arrêts liés (liste Vue branchée sur les événements du script carte) ---
   const mountEl = el('vue-arrets-lies')
   if (mountEl) {
@@ -327,31 +325,16 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await fetch('/api/add_ligne.php', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
       const body = await res.json().catch(() => ({}))
       if (!res.ok || !body.success) throw new Error(body.error || `HTTP ${res.status}`)
-      const params = new URLSearchParams({ admin: adminToken, ligne_id: String(body.ligne_id), saved: '1' })
+      const params = new URLSearchParams({ ligne_id: String(body.ligne_id), saved: '1' })
       window.location.href = `/ajout/ajout_ligne.php?${params}`
     } catch (err) {
       alert('Erreur : ' + (err instanceof Error ? err.message : err))
       if (btn) btn.disabled = false
     }
-  })
-
-  // --- Suppression (Bearer admin) ---
-  el('btn-delete')?.addEventListener('click', async () => {
-    if (!confirm('Supprimer définitivement cette ligne ?')) return
-    const res = await fetch('/api/delete_ligne.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
-      body: JSON.stringify({ ligne_id: Number(ligneId) }),
-    })
-    if (!res.ok) {
-      alert('Suppression impossible (' + res.status + ')')
-      return
-    }
-    window.location.href = `/ajout/ajout_ligne.php?admin=${encodeURIComponent(adminToken)}`
   })
 })
