@@ -7,6 +7,12 @@ GET {{host}}/api/fetch_lignes.php
 ### Lignes desservant un arrêt (avec géométrie + arrêts liés)
 GET {{host}}/api/fetch_lignes.php?arret_id=1
 
+### Lignes desservant un arrêt lié à une falaise (avec géométrie) — page falaise
+GET {{host}}/api/fetch_lignes.php?falaise_id=7
+
+### Lignes dont l'emprise rencontre une boîte sud,ouest,nord,est (avec géométrie) — éditeur de falaise
+GET {{host}}/api/fetch_lignes.php?bbox=44,5,46,7
+
 ### Lire une ligne
 GET {{host}}/api/fetch_ligne.php?ligne_id=1
 
