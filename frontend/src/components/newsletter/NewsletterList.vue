@@ -14,15 +14,6 @@ onMounted(() => {
   store.fetchList()
 })
 
-function statusBadge(status: string) {
-  switch (status) {
-    case 'draft': return 'badge-warning'
-    case 'published': return 'badge-info'
-    case 'sent': return 'badge-success'
-    default: return 'badge-ghost'
-  }
-}
-
 function statusLabel(status: string) {
   switch (status) {
     case 'draft': return 'Brouillon'
@@ -31,6 +22,9 @@ function statusLabel(status: string) {
     default: return status
   }
 }
+
+const isPublic = (status: string) => status !== 'draft'
+const publicUrl = (slug: string) => `/actualites/newsletter.php?slug=${encodeURIComponent(slug)}`
 
 async function onDelete(id: number, title: string) {
   if (!confirm(`Supprimer la newsletter "${title}" ?`)) return
@@ -67,16 +61,27 @@ async function onDelete(id: number, title: string) {
         <div class="card-body p-4 gap-2">
           <div class="flex justify-between items-start gap-2">
             <p class="font-semibold leading-tight">{{ nl.title }}</p>
-            <span class="badge badge-sm shrink-0" :class="statusBadge(nl.status)">{{ statusLabel(nl.status) }}</span>
           </div>
           <p class="text-sm text-base-content/60">{{ nl.date_label }}</p>
-          <div class="flex gap-2 justify-end mt-1">
-            <button class="btn btn-sm btn-outline" @click="emit('edit', nl.id!)">
-              <Icon name="pencil" class="size-4" />Éditer
-            </button>
-            <button class="btn btn-sm btn-error btn-outline btn-square" @click="onDelete(nl.id!, nl.title)">
-              <Icon name="trash" class="size-4" />
-            </button>
+          <div class="flex justify-end mt-1">
+            <div class="vg-toolbar">
+              <a
+                class="btn btn-xs btn-outline gap-1"
+                :class="{ 'btn-disabled': !isPublic(nl.status) }"
+                :href="isPublic(nl.status) ? publicUrl(nl.slug) : undefined"
+                :target="isPublic(nl.status) ? '_blank' : undefined"
+                :aria-disabled="!isPublic(nl.status)"
+                :data-tip="isPublic(nl.status) ? 'Voir la newsletter' : 'Brouillon : non visible'"
+              >
+                <Icon name="eye" class="size-4" />{{ statusLabel(nl.status) }}
+              </a>
+              <button type="button" class="btn btn-xs btn-square btn-outline" data-tip="Modifier la newsletter" aria-label="Modifier la newsletter" @click="emit('edit', nl.id!)">
+                <Icon name="pencil" class="size-4" />
+              </button>
+              <button type="button" class="btn btn-xs btn-square btn-outline btn-error" data-tip="Supprimer la newsletter" aria-label="Supprimer la newsletter" @click="onDelete(nl.id!, nl.title)">
+                <Icon name="trash" class="size-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -89,26 +94,34 @@ async function onDelete(id: number, title: string) {
           <tr>
             <th>Titre</th>
             <th>Date</th>
-            <th>Statut</th>
             <th>Créée le</th>
-            <th>Actions</th>
+            <th class="w-px whitespace-nowrap">Actions</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="nl in store.list" :key="nl.id">
             <td class="font-medium">{{ nl.title }}</td>
             <td>{{ nl.date_label }}</td>
-            <td>
-              <span class="badge" :class="statusBadge(nl.status)">{{ statusLabel(nl.status) }}</span>
-            </td>
             <td>{{ nl.date_creation ? new Date(nl.date_creation).toLocaleDateString('fr-FR') : '' }}</td>
-            <td class="flex gap-2">
-              <button class="btn btn-sm btn-outline" @click="emit('edit', nl.id!)">
-                <Icon name="pencil" class="size-4" />Éditer
-              </button>
-              <button class="btn btn-sm btn-error btn-outline btn-square" @click="onDelete(nl.id!, nl.title)">
-                <Icon name="trash" class="size-4" />
-              </button>
+            <td class="w-px whitespace-nowrap">
+              <div class="vg-toolbar">
+                <a
+                  class="btn btn-xs btn-outline gap-1"
+                  :class="{ 'btn-disabled': !isPublic(nl.status) }"
+                  :href="isPublic(nl.status) ? publicUrl(nl.slug) : undefined"
+                  :target="isPublic(nl.status) ? '_blank' : undefined"
+                  :aria-disabled="!isPublic(nl.status)"
+                  :data-tip="isPublic(nl.status) ? 'Voir la newsletter' : 'Brouillon : non visible'"
+                >
+                  <Icon name="eye" class="size-4" />{{ statusLabel(nl.status) }}
+                </a>
+                <button type="button" class="btn btn-xs btn-square btn-outline" data-tip="Modifier la newsletter" aria-label="Modifier la newsletter" @click="emit('edit', nl.id!)">
+                  <Icon name="pencil" class="size-4" />
+                </button>
+                <button type="button" class="btn btn-xs btn-square btn-outline btn-error" data-tip="Supprimer la newsletter" aria-label="Supprimer la newsletter" @click="onDelete(nl.id!, nl.title)">
+                  <Icon name="trash" class="size-4" />
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>
