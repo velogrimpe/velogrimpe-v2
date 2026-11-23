@@ -135,7 +135,7 @@ function formatDescription(text: string | null): string {
 
       <p
         v-if="selectedFalaise.falaise_fermee"
-        class="text-wrap text-error"
+        class="text-wrap text-error [&_a]:underline!"
         v-html="formatDescription(selectedFalaise.falaise_fermee)"
       />
       <p
