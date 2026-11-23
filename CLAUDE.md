@@ -108,6 +108,12 @@ Enfin la modalité métro (`arrets.metro`, non rejouable) :
 docker exec -i velogrimpe /opt/lampp/bin/mysql -uroot u829510062_bdd < sql_migrations/4_arrets_metro.sql
 ```
 
+Enfin le lien vers le fichier GTFS d'une ligne (`lignes_transport.gtfs_url`, non rejouable) :
+
+```bash
+docker exec -i velogrimpe /opt/lampp/bin/mysql -uroot u829510062_bdd < sql_migrations/5_lignes_gtfs_url.sql
+```
+
 L'export ne couvre que les données SQL. Les fichiers associés (images de
 falaises, GPX, GeoJSON de barres) vivent dans `public/` et se récupèrent
 séparément.

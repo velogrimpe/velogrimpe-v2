@@ -4,6 +4,12 @@ Tous les changements notables de ce projet sont documentés dans ce fichier.
 
 Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 2026-11-23
+
+### Added
+
+- **Lignes** : champ `gtfs_url` (lien vers le fichier GTFS de la ligne, `sql_migrations/5_lignes_gtfs_url.sql` à jouer en prod), saisissable dans `ajout/ajout_ligne.php` et l'admin ; validé http(s) par `api/add_ligne.php` et `api/update_ligne.php`. Non affiché publiquement.
+
 ## 2026-11-19
 
 ### Added

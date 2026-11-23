@@ -28,6 +28,7 @@ Content-Type: application/json
   "operateur": "Opérateur Test",
   "operateur_url": "https://operateur.example.org",
   "horaire_url": "https://operateur.example.org/horaires.pdf",
+  "gtfs_url": "https://operateur.example.org/gtfs.zip",
   "ref": "REF-123",
   "couleur": "#123456",
   "geometry": {

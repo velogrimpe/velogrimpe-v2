@@ -44,6 +44,7 @@ final class LigneTransportTest extends ApiTestCase
       'operateur' => 'Opérateur Test',
       'operateur_url' => 'https://operateur.example.org',
       'horaire_url' => 'https://operateur.example.org/horaires.pdf',
+      'gtfs_url' => 'https://operateur.example.org/gtfs.zip',
       'ref' => 'REF-123',
       'couleur' => '#123456',
       'geometry' => self::GEOMETRY,
@@ -131,6 +132,7 @@ final class LigneTransportTest extends ApiTestCase
     $this->assertSame('Opérateur Test', $ligne['operateur']);
     $this->assertSame('https://operateur.example.org', $ligne['operateur_url']);
     $this->assertSame('https://operateur.example.org/horaires.pdf', $ligne['horaire_url']);
+    $this->assertSame('https://operateur.example.org/gtfs.zip', $ligne['gtfs_url']);
     $this->assertSame('REF-123', $ligne['ref']);
     $this->assertSame('#123456', $ligne['couleur']);
     // Aller-retour GeoJSON : ordre lng,lat et deux segments conservés
@@ -639,6 +641,7 @@ final class LigneTransportTest extends ApiTestCase
     $this->assertSame(401, $this->updateLigne(['ligne_id' => $id, 'nom' => 'x'], false)['status']);
     $this->assertSame(400, $this->updateLigne(['ligne_id' => $id, 'nom' => '  '])['status']);
     $this->assertSame(400, $this->updateLigne(['ligne_id' => $id, 'nom' => 'x', 'horaire_url' => 'javascript:alert(1)'])['status']);
+    $this->assertSame(400, $this->updateLigne(['ligne_id' => $id, 'nom' => 'x', 'gtfs_url' => 'ftp://x/gtfs.zip'])['status']);
     $this->assertSame(400, $this->updateLigne(['ligne_id' => $id, 'nom' => 'x', 'numero' => str_repeat('a', 65)])['status']);
     $this->assertSame(404, $this->updateLigne(['ligne_id' => 999999999, 'nom' => 'x'])['status']);
     $this->assertSame('PHPUnit - Ligne de test', self::dbQueryOne("SELECT nom FROM lignes_transport WHERE id = $id")['nom']);

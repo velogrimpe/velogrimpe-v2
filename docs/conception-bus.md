@@ -144,6 +144,7 @@ Champs (? --> optionnel)
 - operateur: varchar(64)? (Nom de l'opérateur)
 - operateur_url: text? (URL du site de l'opérateur)
 - horaire_url: text? (URL des horaires, ex: pdf, page web etc.)
+- gtfs_url: text? (URL du fichier GTFS de la ligne ; migration 5)
 - ref: text? (référence ou identifiant officiel de la ligne chez l'opérateur)
 - couleur: varchar(64) (code couleur CSS, ex: #123456, gold, hsl(0 0% 0%)...)
 - geometry: MultiLineString

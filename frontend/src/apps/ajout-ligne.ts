@@ -58,6 +58,7 @@ const FIELDS = {
   operateur: 'ligne_operateur',
   operateur_url: 'ligne_operateur_url',
   horaire_url: 'ligne_horaire_url',
+  gtfs_url: 'ligne_gtfs_url',
   ref: 'ligne_ref',
   couleur: 'ligne_couleur',
 } as const

@@ -45,6 +45,7 @@ interface Ligne {
   operateur: string | null;
   operateur_url: string | null;
   horaire_url: string | null;
+  gtfs_url: string | null;
   ref: string | null;
   couleur: string | null;
   geometry: MultiLineString | null;
@@ -170,7 +171,7 @@ async function analyser() {
     types.value = routeModalites(route);
     geometry.value = shapesToMultiLineString(feed.value.shapesText, route.shapeIds);
     const { nom, numero, operateur, operateur_url, horaire_url, ref, couleur } = routeToLigneFields(feed.value, route);
-    nouvelleLigne.value = { nom, numero, operateur, operateur_url, horaire_url, ref, couleur };
+    nouvelleLigne.value = { nom, numero, operateur, operateur_url, horaire_url, gtfs_url: null, ref, couleur };
     const linkedIds = new Set(arretIds.value);
     diffKey.value++;
     diff.value = compareGtfsStops(
@@ -221,6 +222,7 @@ async function confirmer(sel: { added: number[]; removed: number[] }) {
         operateur: l.operateur ?? "",
         operateur_url: l.operateur_url ?? "",
         horaire_url: l.horaire_url ?? "",
+        gtfs_url: l.gtfs_url ?? "",
         ref: l.ref ?? "",
         couleur: l.couleur ?? "",
         // Sans shapes.txt dans le GTFS, le tracé actuel est conservé
