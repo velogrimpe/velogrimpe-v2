@@ -114,6 +114,12 @@ Enfin le lien vers le fichier GTFS d'une ligne (`lignes_transport.gtfs_url`, non
 docker exec -i velogrimpe /opt/lampp/bin/mysql -uroot u829510062_bdd < sql_migrations/5_lignes_gtfs_url.sql
 ```
 
+Enfin les pages CMS des éditions GRAVE 2027 (contenu « à venir », rejouable) :
+
+```bash
+docker exec -i velogrimpe /opt/lampp/bin/mysql -uroot u829510062_bdd < sql_migrations/6_pages_grave_2027.sql
+```
+
 L'export ne couvre que les données SQL. Les fichiers associés (images de
 falaises, GPX, GeoJSON de barres) vivent dans `public/` et se récupèrent
 séparément.
