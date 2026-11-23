@@ -1,0 +1,49 @@
+@host = http://localhost:4000
+
+### delete_acces.php — suppression DÉFINITIVE d'un accès falaise (vélo ou à pied) et de son GPX (public/gpx/)
+### Bearer admin ({{admin_token}}). Journalisé dans edit_logs (collection acces_falaise, type delete). gpx-historique/ conservé.
+
+### Sans token => 401
+POST {{host}}/api/delete_acces.php
+Content-Type: application/json
+
+{ "acces_id": 9 }
+
+### acces_id manquant => 400
+POST {{host}}/api/delete_acces.php
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{}
+
+### Accès inexistant => 404
+POST {{host}}/api/delete_acces.php
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{ "acces_id": 999999 }
+
+### Suppression => { success: true, acces_id, gpx_supprime }
+### ATTENTION : irréversible.
+POST {{host}}/api/delete_acces.php
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{ "acces_id": 9 }
+
+### replace_acces_gpx.php — remplace (ou ajoute) le GPX d'un accès ; ancienne trace archivée dans gpx-historique/
+### Multipart : acces_id + gpx_file. Km / D+ / D- non recalculés. 401 sans token, 400 sans fichier, 404 accès inconnu, 422 GPX invalide.
+POST {{host}}/api/replace_acces_gpx.php
+Authorization: Bearer {{admin_token}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="acces_id"
+
+9
+--WebAppBoundary
+Content-Disposition: form-data; name="gpx_file"; filename="trace.gpx"
+Content-Type: application/gpx+xml
+
+< ./fixtures/velo-with-wpt.gpx
+--WebAppBoundary--

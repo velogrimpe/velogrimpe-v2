@@ -212,9 +212,10 @@ abstract class ApiTestCase extends TestCase
    *
    * @param array<string, string> $fields
    * @param array<string, string> $files Nom de champ => chemin absolu du fichier à téléverser.
+   * @param string[] $extraHeaders En-têtes HTTP supplémentaires (ex. Authorization).
    * @return array{status:int, location:?string, raw:string}
    */
-  protected function httpPostMultipart(string $path, array $fields, array $files = []): array
+  protected function httpPostMultipart(string $path, array $fields, array $files = [], array $extraHeaders = []): array
   {
     $payload = $fields;
     foreach ($files as $field => $filePath) {
@@ -223,6 +224,7 @@ abstract class ApiTestCase extends TestCase
     $ch = curl_init(VG_TEST_BASE_URL . $path);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $extraHeaders);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
     $raw = curl_exec($ch);

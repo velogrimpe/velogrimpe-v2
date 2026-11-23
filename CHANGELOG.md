@@ -8,6 +8,7 @@ Le format s'appuie sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ### Added
 
+- **Admin accès falaises** : bouton corbeille par ligne (`/admin/acces.php`) pour supprimer définitivement un accès, après confirmation (qui prévient de la suppression du GPX) ; bouton de téléchargement du GPX ; bouton d'envoi d'un GPX de remplacement (ou d'ajout) via `api/replace_acces_gpx.php` (même validation que les formulaires, ancienne trace archivée dans `gpx-historique/`, journalisé) ; la trace GPX associée (`public/gpx/`) est supprimée aussi (`gpx-historique/` conservé). `api/delete_acces.php` (Bearer admin, `{ acces_id }`), journalisé dans `edit_logs` (`acces_falaise`, `delete`).
 - **Lignes** : champ `gtfs_url` (lien vers le fichier GTFS de la ligne, `sql_migrations/5_lignes_gtfs_url.sql` à jouer en prod), saisissable dans `ajout/ajout_ligne.php` et l'admin ; validé http(s) par `api/add_ligne.php` et `api/update_ligne.php`. Non affiché publiquement.
 
 ## 2026-11-19
